@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+/// Génère le client Prisma TypeScript utilisé dans le backend Node.
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// Connexion à la base Postgres définie via la variable d'environnement DATABASE_URL.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Utilisateurs de l'application : authentification, informations personnelles
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique // identifiant unique de connexion
+  password      String // hash du mot de passe
+  firstName     String // prénom utilisé dans l'UI
+  lastName      String // nom utilisé dans l'UI
+  geminiApiKey  String? // clé personnelle pour interroger l'API Gemini
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  fridgeItems    FridgeItem[]
+  recipes        Recipe[]
+  favoriteRecipes FavoriteRecipe[]
+  shoppingLists  ShoppingList[]
+
+  @@map("users") // table physique dans Postgres
+}
+
+/// Catégories d'ingrédients (ex: fruits, légumes, produits laitiers)
+model Category {
+  id    String @id @default(uuid())
+  name  String @unique // nom affiché
+  color String @default("#3b82f6") // couleur par défaut dans l'UI
+  icon  String @default("🥬") // emoji/icône associée
+
+  // Relations
+  ingredients Ingredient[]
+
+  @@map("categories")
+}
+
+model Ingredient {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  categoryId String?
+
+  // Informations nutritionnelles optionnelles (valeurs moyennes pour 100g)
+  calories   Float?
+  protein    Float?
+  carbs      Float?
+  fat        Float?
+  fiber      Float?
+
+  // Relations
+  category         Category?        @relation(fields: [categoryId], references: [id])
+  fridgeItems      FridgeItem[]
+  recipeIngredients RecipeIngredient[]
+  shoppingListItems ShoppingListItem[]
+
+  @@map("ingredients")
+}
+
+/// Inventaire du frigo d'un utilisateur (un enregistrement par ingrédient)
+model FridgeItem {
+  id           String    @id @default(uuid())
+  userId       String
+  ingredientId String
+  quantity     Float // quantité disponible dans le frigo
+  unit         String // unité: g, ml, pièces...
+  expiryDate   DateTime? // date limite de consommation
+  addedDate    DateTime  @default(now()) // suivi pour FIFO
+  notes        String? // commentaire utilisateur
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([userId, ingredientId])
+  @@map("fridge_items")
+}
+
+/// Recettes disponibles dans l'application (créées manuellement ou par l'IA)
+model Recipe {
+  id            String   @id @default(uuid())
+  title         String // titre visible dans la liste
+  description   String? // résumé court
+  instructions  String[] // étapes détaillées
+  prepTime      Int?     // en minutes
+  cookTime      Int?     // en minutes
+  servings      Int      @default(4)
+  difficulty    String   @default("medium") // easy, medium, hard
+  imageUrl      String? // photo stockée en externe
+  source        String?  // "user", "ai_generated", "imported"
+  createdById   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  createdBy        User?              @relation(fields: [createdById], references: [id])
+  ingredients      RecipeIngredient[]
+  favoriteRecipes  FavoriteRecipe[]
+
+  @@map("recipes")
+}
+
+/// Pivot entre recette et ingrédient avec informations de quantité
+model RecipeIngredient {
+  id           String @id @default(uuid())
+  recipeId     String
+  ingredientId String
+  quantity     Float // quantité requise pour la recette
+  unit         String // unité de mesure
+  notes        String? // ex: "haché finement", "en dés"
+
+  // Relations
+  recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([recipeId, ingredientId])
+  @@map("recipe_ingredients")
+}
+
+/// Table des favoris pour permettre aux utilisateurs de sauvegarder des recettes
+model FavoriteRecipe {
+  id       String @id @default(uuid())
+  userId   String
+  recipeId String
+  addedAt  DateTime @default(now())
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@map("favorite_recipes")
+}
+
+/// Listes de courses créées par l'utilisateur
+model ShoppingList {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ShoppingListItem[]
+
+  @@map("shopping_lists")
+}
+
+/// Items individuels des listes de courses
+model ShoppingListItem {
+  id             String  @id @default(uuid())
+  shoppingListId String
+  ingredientId   String
+  quantity       Float
+  unit           String
+  purchased      Boolean @default(false)
+  notes          String?
+
+  // Relations
+  shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient   @relation(fields: [ingredientId], references: [id])
+
+  @@unique([shoppingListId, ingredientId])
+  @@map("shopping_list_items")
+} 
