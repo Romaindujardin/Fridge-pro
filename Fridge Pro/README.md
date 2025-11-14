@@ -59,8 +59,17 @@ cp backend/env.example backend/.env
 
 # Modifier backend/.env avec vos informations :
 # - DATABASE_URL
-# - GEMINI_API_KEY
 # - JWT_SECRET
+```
+
+### Lancer PostgreSQL (ex. via Homebrew)
+
+```bash
+# Mac
+brew services start postgresql
+
+# Windows
+net start postgresql-x64-16
 ```
 
 ### 4. Initialiser la base de données
