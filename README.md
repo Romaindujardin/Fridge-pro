@@ -4,7 +4,7 @@ export ARM_SUBSCRIPTION_ID="<votre numéro id azure>" && terraform init
 export ARM_SUBSCRIPTION_ID="f09100f3-48bd-4686-b75d-acea68571837" && terraform apply
 (copier les outputs)
 terraform output -raw database_url_connection_string
-(copier tout ce qu'il y a apres le postgresql://fridgeadmin !sans le %!)
+(copier tout ce qu'il y a apres le postgresql://fridgeadmin... !sans le %!)
 export DATABASE_URL='<l'url de la databse que vous venez de copier>'
 prenez votre ip ici "https://www.whatismyip.com"
 az postgres flexible-server firewall-rule create \
@@ -39,7 +39,7 @@ az webapp deploy \
 cd ..
 cd ./frontend/
 
-export VITE_API_URL="<url du front>"
+export VITE_API_URL="<url du backend>"
 npm run build
 
 mkdir deploy_front
@@ -55,3 +55,8 @@ az webapp deploy \
  --name fridge-pro-web-xpeyok \
  --src-path frontend.zip \
  --type zip
+
+az webapp cors add \
+ --resource-group fridge-pro-prod-rg \
+ --name fridge-pro-api-xpeyok \
+ --allowed-origins "https://fridge-pro-web-xpeyok.azurewebsites.net"
