@@ -9,7 +9,7 @@ export ARM_SUBSCRIPTION_ID="<votre numéro id azure>" && terraform init
 ```
 
 ```
-export ARM_SUBSCRIPTION_ID="f09100f3-48bd-4686-b75d-acea68571837" && terraform apply
+export ARM_SUBSCRIPTION_ID="<votre numéro id azure>" && terraform apply
 ```
 
 ### copier les outputs
