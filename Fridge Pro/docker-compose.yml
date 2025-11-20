@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:16-alpine
+    container_name: fridge-pro-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-fridge_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-FridgePro2025!}
+      POSTGRES_DB: ${DB_NAME:-fridge_pro}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fridge-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-fridge_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fridge-pro-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-fridge_user}:${DB_PASSWORD:-FridgePro2025!}@database:5432/${DB_NAME:-fridge_pro}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-fridge-pro-jwt-secret-key-2025-secure}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      PORT: 5000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
+      UPLOAD_DIR: uploads
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - fridge-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fridge-pro-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - fridge-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  postgres_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  fridge-network:
+    driver: bridge
