@@ -1,0 +1,95 @@
+name: Infrastructure Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  TF_VERSION: '1.5.0'
+  WORKING_DIR: ./infrastructure/terraform
+
+jobs:
+  terraform:
+    name: Terraform ${{ github.event.inputs.action }}
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Plan
+        if: github.event.inputs.action == 'plan'
+        run: |
+          terraform plan \
+            -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        run: |
+          terraform apply \
+            -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -auto-approve
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          terraform destroy \
+            -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -auto-approve
+
+      - name: Get Terraform Outputs
+        if: github.event.inputs.action == 'apply'
+        id: tf_outputs
+        run: |
+          echo "BACKEND_URL=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
+          echo "FRONTEND_URL=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
+          echo "ACR_NAME=$(terraform output -raw acr_login_server)" >> $GITHUB_OUTPUT
+
+      - name: Display Outputs
+        if: github.event.inputs.action == 'apply'
+        run: |
+          echo "🎉 Infrastructure deployed successfully!"
+          echo ""
+          echo "📱 Frontend URL: ${{ steps.tf_outputs.outputs.FRONTEND_URL }}"
+          echo "🔧 Backend URL: ${{ steps.tf_outputs.outputs.BACKEND_URL }}"
+          echo "📦 Container Registry: ${{ steps.tf_outputs.outputs.ACR_NAME }}"
+
+      - name: Logout from Azure
+        run: az logout
+        if: always()
