@@ -111,13 +111,13 @@ resource "azurerm_linux_web_app" "api" {
     }
     always_on = true
     
-    cors {
-      allowed_origins = [
-        "https://${azurerm_linux_web_app.frontend.default_hostname}",
-        "http://localhost:3000",
-        "http://localhost:5173"
-      ]
-    }
+    #cors {
+    #  allowed_origins = [
+    #    "https://${azurerm_linux_web_app.frontend.default_hostname}",
+    #    "http://localhost:3000",
+    #    "http://localhost:5173"
+    #  ]
+    #}
   }
 
   app_settings = {
