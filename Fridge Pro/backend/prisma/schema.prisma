@@ -3,7 +3,8 @@
 
 /// Génère le client Prisma TypeScript utilisé dans le backend Node.
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 /// Connexion à la base Postgres définie via la variable d'environnement DATABASE_URL.

@@ -1,0 +1,42 @@
+{
+  "backend_app_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "fridge-pro-api-vqptop"
+  },
+  "backend_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://fridge-pro-api-vqptop.azurewebsites.net"
+  },
+  "database_url_connection_string": {
+    "sensitive": true,
+    "type": "string",
+    "value": "postgresql://fridgeadmin:qVyK1T6ty%3FVG0y8%3A@fridge-pro-db-vqptop.postgres.database.azure.com:5432/fridge_pro?schema=public\u0026sslmode=require"
+  },
+  "db_password": {
+    "sensitive": true,
+    "type": "string",
+    "value": "qVyK1T6ty?VG0y8:"
+  },
+  "db_server_fqdn": {
+    "sensitive": false,
+    "type": "string",
+    "value": "fridge-pro-db-vqptop.postgres.database.azure.com"
+  },
+  "frontend_app_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "fridge-pro-web-vqptop"
+  },
+  "frontend_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://fridge-pro-web-vqptop.azurewebsites.net"
+  },
+  "resource_group_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "fridge-pro-prod-rg"
+  }
+}
