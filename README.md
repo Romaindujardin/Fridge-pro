@@ -20,7 +20,7 @@ export ARM_SUBSCRIPTION_ID="<votre numéro id azure>" && terraform apply
 terraform output -raw database_url_connection_string
 ```
 
-### Exemple
+### Exemple de sortie
 
 ```
 Outputs:
@@ -35,6 +35,12 @@ frontend_url = "https://fridge-pro-web-xpeyok.azurewebsites.net"
 resource_group_name = "fridge-pro-prod-rg"
 romain@MacBook-Pro-de-Romain terraform % terraform output -raw database_url_connection_string
 postgresql://fridgeadmin:SNHWm1%25C_nsKtuqu@fridge-pro-db-xpeyok.postgres.database.azure.com:5432/fridge_pro?schema=public&sslmode=require%
+```
+
+### Si nécessaire, elles sont accessible de nouveau avec :
+
+```
+az account show --query id -o tsv
 ```
 
 ### (copier tout ce qu'il y a apres le postgresql://fridgeadmin... !sans le %!)
@@ -54,6 +60,8 @@ az postgres flexible-server firewall-rule create \
  --end-ip-address <votre IP>
 ```
 
+## Deploiement de la DB
+
 ```
 cd ..
 ```
@@ -71,6 +79,10 @@ npx prisma migrate deploy
 / Optionnel : npx prisma db seed pour le peuplement
 ```
 
+## Deploiement du backend
+
+### On build le backend et on zip le dossier
+
 ```
 npm install
 npm run build
@@ -83,13 +95,17 @@ cd ..
 rm -rf deploy_temp
 ```
 
+### On deploie sur azure le dossier du backend zippé
+
 ```
 az webapp deploy \
  --resource-group <nom du ressource group> \
- --name <nom de l'api> \
+ --name <nom du backend> \
  --src-path backend.zip \
  --type zip
 ```
+
+## Frontend
 
 ```
 cd ..
@@ -98,8 +114,6 @@ cd ..
 ```
 cd ./frontend/
 ```
-
-## Frontend
 
 ### On compile le code
 
