@@ -37,7 +37,7 @@ const addItemSchema = z.object({
     })
     .positive("La quantité doit être supérieure à 0"),
   unit: z.string().min(1, "L'unité est requise"),
-  notes: z.string().optional(),
+  notes: z.string().nullable().optional().transform((val) => val ?? undefined),
 });
 
 const updateItemSchema = addItemSchema.partial().extend({

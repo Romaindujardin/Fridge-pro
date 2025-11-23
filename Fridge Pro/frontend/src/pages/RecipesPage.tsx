@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
 import { recipeService } from "@/services/recipeService";
 import { fridgeService } from "@/services/fridgeService";
+import { shoppingListService } from "@/services/shoppingListService";
 import type { Recipe } from "@/types";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -66,7 +67,7 @@ const createRecipeSchema = z.object({
   ingredients: z
     .array(
       z.object({
-        ingredientId: z.string().min(1, "Veuillez sélectionner un ingrédient"),
+        ingredientName: z.string().trim().min(1, "Le nom de l'ingrédient est requis"),
         quantity: z.coerce
           .number({ invalid_type_error: "Quantité invalide" })
           .positive("La quantité doit être positive"),
@@ -94,8 +95,15 @@ export function RecipesPage() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((state) => state.user);
+
+  // Récupérer les listes de courses pour ajouter des ingrédients
+  const { data: shoppingLists = [] } = useQuery({
+    queryKey: ["shoppingLists"],
+    queryFn: shoppingListService.getShoppingLists,
+  });
 
   const generateRecipeForm = useForm<z.infer<typeof generateRecipeSchema>>({
     resolver: zodResolver(generateRecipeSchema),
@@ -123,7 +131,7 @@ export function RecipesPage() {
       difficulty: "medium",
       ingredients: [
         {
-          ingredientId: "",
+          ingredientName: "",
           quantity: 1,
           unit: "",
           notes: "",
@@ -163,13 +171,6 @@ export function RecipesPage() {
     name: "instructions",
   });
 
-  const { data: availableIngredients = [], isLoading: isIngredientsLoading } =
-    useQuery({
-      queryKey: ["availableIngredients"],
-      queryFn: () => fridgeService.getIngredients(),
-      enabled: isCreateModalOpen,
-      staleTime: 1000 * 60 * 5,
-    });
 
   // Récupérer les recettes avec filtres
   const { data: recipes = [], isLoading } = useQuery({
@@ -258,7 +259,7 @@ export function RecipesPage() {
         servings: values.servings,
         difficulty: values.difficulty,
         ingredients: values.ingredients.map((ingredient) => ({
-          ingredientId: ingredient.ingredientId,
+          ingredientName: ingredient.ingredientName.trim(),
           quantity: ingredient.quantity,
           unit: ingredient.unit.trim(),
           notes: ingredient.notes?.trim() || undefined,
@@ -549,15 +550,6 @@ export function RecipesPage() {
                     )}
                 </div>
 
-                {/* Badge réalisable */}
-                {(recipe.compatibilityScore ?? 0) >= 80 && (
-                  <div className="absolute top-3 right-12">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      ✅ Réalisable
-                    </span>
-                  </div>
-                )}
-
                 {/* Bouton favoris */}
                 <button
                   onClick={(e) => handleToggleFavorite(recipe.id, e)}
@@ -585,7 +577,7 @@ export function RecipesPage() {
               </CardHeader>
 
               <CardContent className="pt-0">
-                <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
                   <div className="flex items-center space-x-4">
                     {recipe.prepTime && (
                       <div className="flex items-center space-x-1">
@@ -601,14 +593,11 @@ export function RecipesPage() {
                       <span>{recipe.servings} pers.</span>
                     </div>
                   </div>
+                </div>
 
-                  {(recipe.compatibilityScore ?? 0) < 80 &&
-                    recipe.missingIngredientsCount && (
-                      <div className="text-orange-600 text-xs font-medium">
-                        {recipe.missingIngredientsCount} manquant
-                        {recipe.missingIngredientsCount > 1 ? "s" : ""}
-                      </div>
-                    )}
+                {/* Affichage des ingrédients disponibles */}
+                <div className="text-sm font-medium text-blue-600">
+                  {recipe.ingredients.length - (recipe.missingIngredientsCount || 0)} / {recipe.ingredients.length} ingrédients disponibles
                 </div>
 
                 {/* Ingrédients preview */}
@@ -847,7 +836,7 @@ export function RecipesPage() {
                 size="sm"
                 onClick={() =>
                   appendIngredient({
-                    ingredientId: "",
+                    ingredientName: "",
                     quantity: 1,
                     unit: "",
                     notes: "",
@@ -860,13 +849,6 @@ export function RecipesPage() {
             </div>
 
             <div className="space-y-4">
-              {!isIngredientsLoading && availableIngredients.length === 0 && (
-                <p className="text-sm text-orange-600">
-                  Aucun ingrédient disponible. Ajoutez d'abord des ingrédients
-                  dans votre frigo.
-                </p>
-              )}
-
               {ingredientFields.map((field, index) => (
                 <div
                   key={field.id}
@@ -877,27 +859,18 @@ export function RecipesPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Ingrédient *
                       </label>
-                      <select
+                      <input
+                        type="text"
+                        placeholder="Ex: Tomate, Oignon, Beurre..."
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         {...createRegister(
-                          `ingredients.${index}.ingredientId` as const
+                          `ingredients.${index}.ingredientName` as const
                         )}
-                      >
-                        <option value="">
-                          {isIngredientsLoading
-                            ? "Chargement..."
-                            : "Sélectionnez un ingrédient"}
-                        </option>
-                        {availableIngredients.map((ingredient) => (
-                          <option key={ingredient.id} value={ingredient.id}>
-                            {ingredient.name}
-                          </option>
-                        ))}
-                      </select>
-                      {createErrors.ingredients?.[index]?.ingredientId && (
+                      />
+                      {createErrors.ingredients?.[index]?.ingredientName && (
                         <p className="mt-1 text-sm text-red-600">
                           {
-                            createErrors.ingredients?.[index]?.ingredientId
+                            createErrors.ingredients?.[index]?.ingredientName
                               ?.message
                           }
                         </p>
@@ -1093,11 +1066,6 @@ export function RecipesPage() {
                   >
                     {getDifficultyLabel(selectedRecipe.difficulty)}
                   </span>
-                  {(selectedRecipe.compatibilityScore ?? 0) >= 80 && (
-                    <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                      ✅ Réalisable
-                    </span>
-                  )}
                   {selectedRecipe.isFavorite && (
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
                       ❤️ Favori
@@ -1151,24 +1119,79 @@ export function RecipesPage() {
                 Ingrédients ({selectedRecipe.ingredients.length})
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {selectedRecipe.ingredients.map((ingredient, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-lg">
-                        {ingredient.ingredient?.category?.icon || "🥬"}
-                      </span>
-                      <span className="font-medium">
-                        {ingredient.ingredient?.name || "Ingrédient"}
-                      </span>
+                {selectedRecipe.ingredients.map((ingredient, index) => {
+                  const isAvailable = ingredient.available ?? false;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        isAvailable
+                          ? "bg-green-50 border border-green-200"
+                          : "bg-red-50 border border-red-200"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 flex-1">
+                        <span className="text-lg">
+                          {ingredient.ingredient?.category?.icon || "🥬"}
+                        </span>
+                        <div className="flex-1">
+                          <span
+                            className={`font-medium ${
+                              isAvailable ? "text-green-800" : "text-red-800"
+                            }`}
+                          >
+                            {ingredient.ingredient?.name || "Ingrédient"}
+                          </span>
+                          <div
+                            className={`text-sm ${
+                              isAvailable ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
+                            {ingredient.quantity} {ingredient.unit}
+                          </div>
+                        </div>
+                      </div>
+                      {!isAvailable && shoppingLists.length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="ml-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                          onClick={async () => {
+                            if (!selectedListId && shoppingLists.length > 0) {
+                              setSelectedListId(shoppingLists[0].id);
+                            }
+                            const listId = selectedListId || shoppingLists[0].id;
+                            try {
+                              if (!ingredient.ingredientId || !ingredient.unit) {
+                                toast.error("Impossible d'ajouter cet ingrédient : données incomplètes");
+                                return;
+                              }
+                              await shoppingListService.addItemToShoppingList(
+                                listId,
+                                {
+                                  ingredientId: ingredient.ingredientId,
+                                  quantity: ingredient.quantity,
+                                  unit: ingredient.unit,
+                                  notes: ingredient.notes || undefined,
+                                }
+                              );
+                              toast.success(
+                                `${ingredient.ingredient?.name} ajouté à la liste de courses !`
+                              );
+                            } catch (error: any) {
+                              toast.error(
+                                error?.message ||
+                                  "Erreur lors de l'ajout à la liste de courses"
+                              );
+                            }
+                          }}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {ingredient.quantity} {ingredient.unit}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

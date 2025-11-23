@@ -62,7 +62,7 @@ export function FridgePage() {
   });
 
   // Récupérer les ingrédients pour le formulaire
-  const { data: ingredients = [] } = useQuery({
+  const { data: ingredients = [], isLoading: isLoadingIngredients, isFetching: isFetchingIngredients } = useQuery({
     queryKey: ["ingredients", ingredientSearch],
     queryFn: () =>
       ingredientSearch
@@ -363,9 +363,9 @@ export function FridgePage() {
           <CardContent className="px-6 py-6">
             <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
-                {stats.total}
-              </h3>
-              <p className="text-sm text-gray-600">Ingrédients total</p>
+                  {stats.total}
+                </h3>
+                <p className="text-sm text-gray-600">Ingrédients total</p>
             </div>
           </CardContent>
         </Card>
@@ -374,9 +374,9 @@ export function FridgePage() {
           <CardContent className="px-6 py-6">
             <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
-                {stats.expiringSoon}
-              </h3>
-              <p className="text-sm text-gray-600">Expirent bientôt</p>
+                  {stats.expiringSoon}
+                </h3>
+                <p className="text-sm text-gray-600">Expirent bientôt</p>
             </div>
           </CardContent>
         </Card>
@@ -385,9 +385,9 @@ export function FridgePage() {
           <CardContent className="px-6 py-6">
             <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
-                {stats.expired}
-              </h3>
-              <p className="text-sm text-gray-600">Expirés</p>
+                  {stats.expired}
+                </h3>
+                <p className="text-sm text-gray-600">Expirés</p>
             </div>
           </CardContent>
         </Card>
@@ -548,10 +548,17 @@ export function FridgePage() {
                 }}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
-              {(showCustomOption || ingredients.length > 0) && ingredientSearch.trim() && (
+              {(isFetchingIngredients || showCustomOption || ingredients.length > 0) && ingredientSearch.trim() && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {/* Indicateur de chargement */}
+                  {isFetchingIngredients && (
+                    <div className="px-4 py-3 flex items-center space-x-3 text-gray-600">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+                      <span className="text-sm">Recherche des ingrédients...</span>
+                    </div>
+                  )}
                   {/* Option pour créer un ingrédient personnalisé */}
-                  {showCustomOption && (
+                  {!isFetchingIngredients && showCustomOption && (
                     <button
                       type="button"
                       onClick={async () => {
@@ -571,7 +578,7 @@ export function FridgePage() {
                     </button>
                   )}
                   {/* Suggestions existantes */}
-                  {ingredients.map((ingredient) => (
+                  {!isFetchingIngredients && ingredients.map((ingredient) => (
                     <button
                       key={ingredient.id}
                       type="button"

@@ -140,15 +140,24 @@ export function HomePage() {
               Scannez votre ticket de caisse ou ajoutez manuellement
             </p>
             <div className="flex space-x-3">
-              <Button asChild variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+              <Button
+                asChild
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
                 <Link to="/fridge">
                   <Plus className="w-4 h-4 mr-2" />
                   Ajouter manuellement
                 </Link>
               </Button>
-              <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
-                <ScanLine className="w-4 h-4 mr-2" />
-                Scanner ticket
+              <Button
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
+                <Link to="/fridge">
+                  <ScanLine className="w-4 h-4 mr-2" />
+                  Scanner ticket
+                </Link>
               </Button>
             </div>
           </CardContent>
@@ -156,11 +165,16 @@ export function HomePage() {
 
         <Card hover>
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-2 text-gray-900">Générer une recette</h3>
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">
+              <Link to="/recipes">Générer une recette</Link>
+            </h3>
             <p className="text-gray-600 mb-4 text-sm">
               Laissez l'IA créer une recette avec vos ingrédients
             </p>
-            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+            <Button
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
               <Sparkles className="w-4 h-4 mr-2" />
               Générer avec IA
             </Button>
@@ -243,16 +257,11 @@ export function HomePage() {
                         )}
                         <span>{recipe.servings} pers.</span>
                       </div>
-                      {(recipe.compatibilityScore ?? 0) >= 80 ? (
-                        <span className="text-green-600 font-medium">
-                          Réalisable
-                        </span>
-                      ) : (
-                        <span className="text-orange-600 font-medium">
-                          {recipe.missingIngredientsCount || 0} manquant
-                          {(recipe.missingIngredientsCount || 0) > 1 ? "s" : ""}
-                        </span>
-                      )}
+                      <span className="text-blue-600 font-medium">
+                        {recipe.ingredients.length -
+                          (recipe.missingIngredientsCount || 0)}{" "}
+                        / {recipe.ingredients.length} ingrédients
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
