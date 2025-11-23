@@ -98,6 +98,7 @@ export interface RecipeIngredient {
   unit: string;
   notes?: string;
   ingredient: Ingredient;
+  available?: boolean;
 }
 
 export interface CreateRecipeRequest {
@@ -109,7 +110,8 @@ export interface CreateRecipeRequest {
   servings: number;
   difficulty: "easy" | "medium" | "hard";
   ingredients: {
-    ingredientId: string;
+    ingredientId?: string;
+    ingredientName?: string;
     quantity: number;
     unit: string;
     notes?: string;

@@ -22,11 +22,15 @@ const createRecipeSchema = z.object({
   ingredients: z
     .array(
       z.object({
-        ingredientId: z.string(),
+        ingredientId: z.string().optional(),
+        ingredientName: z.string().optional(),
         quantity: z.number().positive(),
         unit: z.string(),
         notes: z.string().optional(),
-      })
+      }).refine(
+        (data) => data.ingredientId || data.ingredientName,
+        "Vous devez fournir soit ingredientId soit ingredientName"
+      )
     )
     .min(1, "Au moins un ingrédient est requis"),
 });
@@ -35,7 +39,7 @@ const filterSchema = z.object({
   search: z.string().optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   maxPrepTime: z.number().int().positive().optional(),
-  makeable: z.boolean().optional(),
+  makeable: z.coerce.boolean().optional(),
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(50).default(20),
 });
@@ -74,28 +78,66 @@ router.get(
 
       // Filtrer par recettes réalisables uniquement avec le contenu du frigo
       if (makeable) {
-        const userFridgeItems = await prisma.fridgeItem.findMany({
+        const userFridgeItemsForFilter = await prisma.fridgeItem.findMany({
           where: { userId: req.userId },
           include: { ingredient: true },
         });
 
-        const availableIngredientIds = userFridgeItems.map(
+        const availableIngredientIdsForFilter = userFridgeItemsForFilter.map(
           (item) => item.ingredientId
         );
+
+        // Créer un map des noms d'ingrédients du frigo pour comparaison partielle
+        const fridgeIngredientNamesForFilter = new Map<string, string>();
+        userFridgeItemsForFilter.forEach((item) => {
+          const normalizedName = item.ingredient.name.toLowerCase().trim();
+          fridgeIngredientNamesForFilter.set(item.ingredientId, normalizedName);
+        });
+
+        // Fonction pour vérifier si un ingrédient est disponible (par ID ou par nom partiel)
+        const isIngredientAvailableForFilter = (
+          recipeIngredientId: string,
+          recipeIngredientName: string
+        ): boolean => {
+          // Vérification exacte par ID
+          if (availableIngredientIdsForFilter.includes(recipeIngredientId)) {
+            return true;
+          }
+
+          // Vérification partielle par nom
+          const normalizedRecipeName = recipeIngredientName.toLowerCase().trim();
+          for (const [fridgeId, fridgeName] of fridgeIngredientNamesForFilter.entries()) {
+            // Si le nom de la recette est contenu dans le nom du frigo, ou vice versa
+            if (
+              fridgeName.includes(normalizedRecipeName) ||
+              normalizedRecipeName.includes(fridgeName)
+            ) {
+              return true;
+            }
+          }
+          return false;
+        };
 
         // Trouver les recettes où tous les ingrédients sont disponibles
         const recipeIds = await prisma.recipe
           .findMany({
             where,
             include: {
-              ingredients: true,
+              ingredients: {
+                include: {
+                  ingredient: true,
+                },
+              },
             },
           })
           .then((recipes) => {
             return recipes
               .filter((recipe) => {
                 return recipe.ingredients.every((recipeIngredient) =>
-                  availableIngredientIds.includes(recipeIngredient.ingredientId)
+                  isIngredientAvailableForFilter(
+                    recipeIngredient.ingredientId,
+                    recipeIngredient.ingredient.name
+                  )
                 );
               })
               .map((recipe) => recipe.id);
@@ -103,6 +145,47 @@ router.get(
 
         where.id = { in: recipeIds };
       }
+
+      // Récupérer les ingrédients du frigo pour calculer la compatibilité
+      const userFridgeItems = await prisma.fridgeItem.findMany({
+        where: { userId: req.userId },
+        include: { ingredient: true },
+      });
+
+      const availableIngredientIds = userFridgeItems.map(
+        (item) => item.ingredientId
+      );
+
+      // Créer un map des noms d'ingrédients du frigo (normalisés) pour comparaison partielle
+      const fridgeIngredientNames = new Map<string, string>();
+      userFridgeItems.forEach((item) => {
+        const normalizedName = item.ingredient.name.toLowerCase().trim();
+        fridgeIngredientNames.set(item.ingredientId, normalizedName);
+      });
+
+      // Fonction pour vérifier si un ingrédient est disponible (par ID ou par nom partiel)
+      const isIngredientAvailable = (
+        recipeIngredientId: string,
+        recipeIngredientName: string
+      ): boolean => {
+        // Vérification exacte par ID
+        if (availableIngredientIds.includes(recipeIngredientId)) {
+          return true;
+        }
+
+        // Vérification partielle par nom
+        const normalizedRecipeName = recipeIngredientName.toLowerCase().trim();
+        for (const [fridgeId, fridgeName] of fridgeIngredientNames.entries()) {
+          // Si le nom de la recette est contenu dans le nom du frigo, ou vice versa
+          if (
+            fridgeName.includes(normalizedRecipeName) ||
+            normalizedRecipeName.includes(fridgeName)
+          ) {
+            return true;
+          }
+        }
+        return false;
+      };
 
       const [recipes, total] = await Promise.all([
         prisma.recipe.findMany({
@@ -132,37 +215,53 @@ router.get(
         prisma.recipe.count({ where }),
       ]);
 
-      // Formater les résultats pour l'UI
-      const formattedRecipes = recipes.map((recipe) => ({
-        id: recipe.id,
-        title: recipe.title,
-        description: recipe.description,
-        instructions: recipe.instructions,
-        prepTime: recipe.prepTime,
-        cookTime: recipe.cookTime,
-        servings: recipe.servings,
-        difficulty: recipe.difficulty,
-        imageUrl: recipe.imageUrl,
-        createdAt: recipe.createdAt,
-        createdById: recipe.createdById,
-        createdBy: recipe.createdBy,
-        source: recipe.source,
-        ingredients: recipe.ingredients.map((ri) => ({
-          id: ri.id,
-          recipeId: ri.recipeId,
-          ingredientId: ri.ingredientId,
-          quantity: ri.quantity,
-          unit: ri.unit,
-          notes: ri.notes,
-          ingredient: {
-            id: ri.ingredient.id,
-            name: ri.ingredient.name,
-            categoryId: ri.ingredient.categoryId,
-            category: ri.ingredient.category,
-          },
-        })),
-        isFavorite: recipe.favoriteRecipes.length > 0,
-      }));
+      // Formater les résultats pour l'UI avec calcul de compatibilité
+      const formattedRecipes = recipes.map((recipe) => {
+        const totalIngredients = recipe.ingredients.length;
+        const availableIngredients = recipe.ingredients.filter((ri) =>
+          isIngredientAvailable(ri.ingredientId, ri.ingredient.name)
+        ).length;
+        const missingIngredients = totalIngredients - availableIngredients;
+
+        const score =
+          totalIngredients > 0
+            ? Math.round((availableIngredients / totalIngredients) * 100)
+            : 0;
+
+        return {
+          id: recipe.id,
+          title: recipe.title,
+          description: recipe.description,
+          instructions: recipe.instructions,
+          prepTime: recipe.prepTime,
+          cookTime: recipe.cookTime,
+          servings: recipe.servings,
+          difficulty: recipe.difficulty,
+          imageUrl: recipe.imageUrl,
+          createdAt: recipe.createdAt,
+          createdById: recipe.createdById,
+          createdBy: recipe.createdBy,
+          source: recipe.source,
+          ingredients: recipe.ingredients.map((ri) => ({
+            id: ri.id,
+            recipeId: ri.recipeId,
+            ingredientId: ri.ingredientId,
+            quantity: ri.quantity,
+            unit: ri.unit,
+            notes: ri.notes,
+            ingredient: {
+              id: ri.ingredient.id,
+              name: ri.ingredient.name,
+              categoryId: ri.ingredient.categoryId,
+              category: ri.ingredient.category,
+            },
+            available: isIngredientAvailable(ri.ingredientId, ri.ingredient.name),
+          })),
+          isFavorite: recipe.favoriteRecipes.length > 0,
+          compatibilityScore: score,
+          missingIngredientsCount: missingIngredients,
+        };
+      });
 
       res.json({
         success: true,
@@ -215,6 +314,37 @@ router.get(
           },
         });
       }
+
+      // Créer un map des noms d'ingrédients du frigo (normalisés) pour comparaison partielle
+      const fridgeIngredientNamesSuggestions = new Map<string, string>();
+      userFridgeItems.forEach((item) => {
+        const normalizedName = item.ingredient.name.toLowerCase().trim();
+        fridgeIngredientNamesSuggestions.set(item.ingredientId, normalizedName);
+      });
+
+      // Fonction pour vérifier si un ingrédient est disponible (par ID ou par nom partiel)
+      const isIngredientAvailableSuggestions = (
+        recipeIngredientId: string,
+        recipeIngredientName: string
+      ): boolean => {
+        // Vérification exacte par ID
+        if (availableIngredientIds.includes(recipeIngredientId)) {
+          return true;
+        }
+
+        // Vérification partielle par nom
+        const normalizedRecipeName = recipeIngredientName.toLowerCase().trim();
+        for (const [fridgeId, fridgeName] of fridgeIngredientNamesSuggestions.entries()) {
+          // Si le nom de la recette est contenu dans le nom du frigo, ou vice versa
+          if (
+            fridgeName.includes(normalizedRecipeName) ||
+            normalizedRecipeName.includes(fridgeName)
+          ) {
+            return true;
+          }
+        }
+        return false;
+      };
 
       const favoriteRecipeIds = await prisma.favoriteRecipe.findMany({
         where: { userId: req.userId },
@@ -279,7 +409,7 @@ router.get(
       const scoredRecipes = allRecipes.map((recipe) => {
         const totalIngredients = recipe.ingredients.length;
         const availableIngredients = recipe.ingredients.filter((ri) =>
-          availableIngredientIds.includes(ri.ingredientId)
+          isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name)
         ).length;
 
         const score =
@@ -291,7 +421,7 @@ router.get(
           recipe,
           score,
           missingIngredients: recipe.ingredients.filter(
-            (ri) => !availableIngredientIds.includes(ri.ingredientId)
+            (ri) => !isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name)
           ).length,
         };
       });
@@ -324,7 +454,7 @@ router.get(
             categoryId: ri.ingredient.categoryId,
             category: ri.ingredient.category,
           },
-          available: availableIngredientIds.includes(ri.ingredientId),
+          available: isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name),
         })),
         isFavorite: true,
         compatibilityScore: 100,
@@ -364,7 +494,7 @@ router.get(
               categoryId: ri.ingredient.categoryId,
               category: ri.ingredient.category,
             },
-            available: availableIngredientIds.includes(ri.ingredientId),
+            available: isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name),
           })),
           isFavorite: recipe.favoriteRecipes.length > 0,
           compatibilityScore: Math.round(score),
@@ -672,6 +802,53 @@ router.post(
         ingredients,
       } = createRecipeSchema.parse(req.body);
 
+      // Traiter les ingrédients : créer s'ils n'existent pas, ou utiliser l'ID fourni
+      const processedIngredients = await Promise.all(
+        ingredients.map(async (ing) => {
+          let ingredientId: string;
+
+          if (ing.ingredientId) {
+            // Vérifier que l'ingrédient existe
+            const existingIngredient = await prisma.ingredient.findUnique({
+              where: { id: ing.ingredientId },
+            });
+
+            if (!existingIngredient) {
+              throw new Error(`Ingrédient avec l'ID ${ing.ingredientId} non trouvé`);
+            }
+
+            ingredientId = ing.ingredientId;
+          } else if (ing.ingredientName) {
+            // Chercher ou créer l'ingrédient par nom
+            const normalizedName = ing.ingredientName.trim();
+            
+            let ingredient = await prisma.ingredient.findUnique({
+              where: { name: normalizedName },
+            });
+
+            if (!ingredient) {
+              // Créer l'ingrédient s'il n'existe pas
+              ingredient = await prisma.ingredient.create({
+                data: {
+                  name: normalizedName,
+                },
+              });
+            }
+
+            ingredientId = ingredient.id;
+          } else {
+            throw new Error("Vous devez fournir soit ingredientId soit ingredientName");
+          }
+
+          return {
+            ingredientId,
+            quantity: ing.quantity,
+            unit: ing.unit,
+            notes: ing.notes,
+          };
+        })
+      );
+
       // Créer la recette avec ses ingrédients
       const recipe = await prisma.recipe.create({
         data: {
@@ -686,12 +863,7 @@ router.post(
           source: "user",
           createdById: req.userId,
           ingredients: {
-            create: ingredients.map((ing) => ({
-              ingredientId: ing.ingredientId,
-              quantity: ing.quantity,
-              unit: ing.unit,
-              notes: ing.notes,
-            })),
+            create: processedIngredients,
           },
         },
         include: {
