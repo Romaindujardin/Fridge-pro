@@ -253,51 +253,36 @@ export function ShoppingListPage() {
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-0">
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-blue-100 rounded-lg p-3">
-                <ShoppingCart className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {shoppingLists.length}
-                </h3>
-                <p className="text-sm text-gray-600">Listes actives</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {shoppingLists.length}
+              </h3>
+              <p className="text-sm text-gray-600">Listes actives</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-orange-100 rounded-lg p-3">
-                <Package className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {totalItems}
-                </h3>
-                <p className="text-sm text-gray-600">Articles total</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {totalItems}
+              </h3>
+              <p className="text-sm text-gray-600">Articles total</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-green-100 rounded-lg p-3">
-                <Check className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {purchasedItems}
-                </h3>
-                <p className="text-sm text-gray-600">Articles achetés</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {purchasedItems}
+              </h3>
+              <p className="text-sm text-gray-600">Articles achetés</p>
             </div>
           </CardContent>
         </Card>

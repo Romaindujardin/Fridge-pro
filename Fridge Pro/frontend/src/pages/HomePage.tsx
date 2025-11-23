@@ -72,111 +72,81 @@ export function HomePage() {
   return (
     <div className="space-y-8">
       {/* Header personnalisé */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow-sm p-8 text-white">
-        <h1 className="text-3xl font-bold mb-2">
+      <div className="border-b border-gray-200 pb-6">
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">
           {getGreeting()} {user?.firstName} !
         </h1>
-        <p className="text-primary-100 text-lg">
+        <p className="text-gray-600 text-base">
           Que préparez-vous aujourd'hui ? Découvrez des recettes adaptées à vos
           ingrédients disponibles.
         </p>
       </div>
 
       {/* Statistiques rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-0">
         <Card hover>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-blue-100 rounded-lg p-3">
-                <TrendingUp className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {stats.fridgeItemsCount}
-                </h3>
-                <p className="text-sm text-gray-600">Ingrédients disponibles</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {stats.fridgeItemsCount}
+              </h3>
+              <p className="text-sm text-gray-600">Ingrédients disponibles</p>
             </div>
           </CardContent>
         </Card>
 
         <Card hover>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-green-100 rounded-lg p-3">
-                <ChefHat className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {stats.recipesCount}
-                </h3>
-                <p className="text-sm text-gray-600">Recettes réalisables</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {stats.recipesCount}
+              </h3>
+              <p className="text-sm text-gray-600">Recettes réalisables</p>
             </div>
           </CardContent>
         </Card>
 
         <Card hover>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-yellow-100 rounded-lg p-3">
-                <Star className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {stats.favoritesCount}
-                </h3>
-                <p className="text-sm text-gray-600">Recettes favorites</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {stats.favoritesCount}
+              </h3>
+              <p className="text-sm text-gray-600">Recettes favorites</p>
             </div>
           </CardContent>
         </Card>
 
         <Card hover>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-purple-100 rounded-lg p-3">
-                <Plus className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {stats.shoppingListItemsCount}
-                </h3>
-                <p className="text-sm text-gray-600">Articles en liste</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {stats.shoppingListItemsCount}
+              </h3>
+              <p className="text-sm text-gray-600">Articles en liste</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Actions rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card
-          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0"
-          hover
-        >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-0">
+        <Card hover>
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-2">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">
               Ajouter des ingrédients
             </h3>
-            <p className="text-blue-100 mb-4">
+            <p className="text-gray-600 mb-4 text-sm">
               Scannez votre ticket de caisse ou ajoutez manuellement
             </p>
             <div className="flex space-x-3">
-              <Button
-                asChild
-                variant="secondary"
-                className="bg-white text-blue-600 hover:bg-blue-50"
-              >
+              <Button asChild variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
                 <Link to="/fridge">
                   <Plus className="w-4 h-4 mr-2" />
                   Ajouter manuellement
                 </Link>
               </Button>
-              <Button
-                variant="outline"
-                className="border-white hover:bg-white hover:text-blue-600"
-              >
+              <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
                 <ScanLine className="w-4 h-4 mr-2" />
                 Scanner ticket
               </Button>
@@ -184,19 +154,13 @@ export function HomePage() {
           </CardContent>
         </Card>
 
-        <Card
-          className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0"
-          hover
-        >
+        <Card hover>
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-2">Générer une recette</h3>
-            <p className="text-green-100 mb-4">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Générer une recette</h3>
+            <p className="text-gray-600 mb-4 text-sm">
               Laissez l'IA créer une recette avec vos ingrédients
             </p>
-            <Button
-              variant="secondary"
-              className="bg-white text-green-600 hover:bg-green-50"
-            >
+            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
               <Sparkles className="w-4 h-4 mr-2" />
               Générer avec IA
             </Button>
