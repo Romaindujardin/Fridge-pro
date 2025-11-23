@@ -130,6 +130,34 @@ export function FridgePage() {
     }
   };
 
+  const handleCreateCustomIngredient = async (name: string) => {
+    try {
+      const created = await fridgeService.createIngredient({ name });
+      form.setValue("ingredientId", created.id, { shouldValidate: true });
+      form.clearErrors("ingredientId");
+      setIngredientInputValue(created.name);
+      setIngredientSearch("");
+      toast.success("Ingrédient créé avec succès !");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Impossible de créer cet ingrédient"
+      );
+    }
+  };
+
+  // Vérifier si le texte saisi correspond exactement à un ingrédient existant
+  const hasExactMatch = ingredients.some(
+    (ing) => ing.name.toLowerCase() === ingredientInputValue.trim().toLowerCase()
+  );
+
+  // Afficher l'option personnalisée si le texte saisi ne correspond pas exactement
+  const showCustomOption =
+    ingredientInputValue.trim().length > 0 &&
+    !hasExactMatch &&
+    ingredientSearch.trim().length > 0;
+
   const handleScanTicketClick = () => {
     if (isScanning) return;
     fileInputRef.current?.click();
@@ -332,8 +360,8 @@ export function FridgePage() {
       {/* Statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-0">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {stats.total}
               </h3>
@@ -343,8 +371,8 @@ export function FridgePage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {stats.expiringSoon}
               </h3>
@@ -354,8 +382,8 @@ export function FridgePage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {stats.expired}
               </h3>
@@ -520,8 +548,29 @@ export function FridgePage() {
                 }}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
-              {ingredients.length > 0 && ingredientSearch.trim() && (
+              {(showCustomOption || ingredients.length > 0) && ingredientSearch.trim() && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {/* Option pour créer un ingrédient personnalisé */}
+                  {showCustomOption && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await handleCreateCustomIngredient(ingredientInputValue.trim());
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-blue-50 flex items-center space-x-3 border-b border-gray-200 bg-blue-50/30"
+                    >
+                      <span className="text-lg">➕</span>
+                      <div>
+                        <div className="font-medium text-blue-600">
+                          Ajouter "{ingredientInputValue.trim()}"
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Créer un nouvel ingrédient
+                        </div>
+                      </div>
+                    </button>
+                  )}
+                  {/* Suggestions existantes */}
                   {ingredients.map((ingredient) => (
                     <button
                       key={ingredient.id}
