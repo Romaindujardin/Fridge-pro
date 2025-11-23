@@ -115,7 +115,7 @@ export function ProfilePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Profil 👤</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Profil</h1>
           <p className="text-gray-600">
             Gérez vos informations personnelles et préférences
           </p>
@@ -147,7 +147,12 @@ export function ProfilePage() {
                       <X className="w-4 h-4 mr-2" />
                       Annuler
                     </Button>
-                    <Button size="sm" type="submit" form="profile-form" loading={isLoading}>
+                    <Button
+                      size="sm"
+                      type="submit"
+                      form="profile-form"
+                      loading={isLoading}
+                    >
                       <Save className="w-4 h-4 mr-2" />
                       Sauvegarder
                     </Button>
@@ -191,7 +196,9 @@ export function ProfilePage() {
                     type="password"
                     placeholder="AIza..."
                     helper="Indiquez votre clé personnelle pour utiliser les fonctionnalités IA. Laissez vide pour la supprimer."
-                    error={form.formState.errors.geminiApiKey?.message || undefined}
+                    error={
+                      form.formState.errors.geminiApiKey?.message || undefined
+                    }
                     {...form.register("geminiApiKey")}
                   />
                 </form>
@@ -233,7 +240,8 @@ export function ProfilePage() {
                         : "Aucune clé configurée"}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      Cette clé est utilisée pour scanner les tickets et générer des recettes IA.
+                      Cette clé est utilisée pour scanner les tickets et générer
+                      des recettes IA.
                     </p>
                   </div>
 

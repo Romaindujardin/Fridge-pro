@@ -330,51 +330,36 @@ export function FridgePage() {
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-0">
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-blue-100 rounded-lg p-3">
-                <Calendar className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {stats.total}
-                </h3>
-                <p className="text-sm text-gray-600">Ingrédients total</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {stats.total}
+              </h3>
+              <p className="text-sm text-gray-600">Ingrédients total</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-orange-100 rounded-lg p-3">
-                <AlertTriangle className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {stats.expiringSoon}
-                </h3>
-                <p className="text-sm text-gray-600">Expirent bientôt</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {stats.expiringSoon}
+              </h3>
+              <p className="text-sm text-gray-600">Expirent bientôt</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="bg-red-100 rounded-lg p-3">
-                <Trash2 className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {stats.expired}
-                </h3>
-                <p className="text-sm text-gray-600">Expirés</p>
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                {stats.expired}
+              </h3>
+              <p className="text-sm text-gray-600">Expirés</p>
             </div>
           </CardContent>
         </Card>

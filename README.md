@@ -46,6 +46,10 @@ az account show --query id -o tsv
 ### (copier tout ce qu'il y a apres le postgresql://fridgeadmin... !sans le %!)
 
 ```
+terraform output -raw database_url_connection_string
+```
+
+```
 export DATABASE_URL='<l'url de la databse que vous venez de copier>'
 ```
 
