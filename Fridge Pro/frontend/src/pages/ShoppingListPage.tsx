@@ -255,8 +255,8 @@ export function ShoppingListPage() {
       {/* Statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-0">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {shoppingLists.length}
               </h3>
@@ -266,8 +266,8 @@ export function ShoppingListPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {totalItems}
               </h3>
@@ -277,8 +277,8 @@ export function ShoppingListPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {purchasedItems}
               </h3>

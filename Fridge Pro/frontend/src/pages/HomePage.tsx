@@ -85,8 +85,8 @@ export function HomePage() {
       {/* Statistiques rapides */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-0">
         <Card hover>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {stats.fridgeItemsCount}
               </h3>
@@ -96,8 +96,8 @@ export function HomePage() {
         </Card>
 
         <Card hover>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {stats.recipesCount}
               </h3>
@@ -107,8 +107,8 @@ export function HomePage() {
         </Card>
 
         <Card hover>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {stats.favoritesCount}
               </h3>
@@ -118,8 +118,8 @@ export function HomePage() {
         </Card>
 
         <Card hover>
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
+          <CardContent className="px-6 py-6">
+            <div className="flex flex-col items-center text-center pt-1">
               <h3 className="text-2xl font-bold text-blue-600 mb-1">
                 {stats.shoppingListItemsCount}
               </h3>
