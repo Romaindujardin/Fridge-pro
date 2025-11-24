@@ -500,6 +500,9 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 
 - Scanner de ticket de caisse
 
+![CleanShot 2025-11-24 at 23 50 29](https://github.com/user-attachments/assets/b3d06cb6-7587-4d33-a161-699419610f10)
+
+
 #### Recettes
 
 - Liste des recettes avec filtres
