@@ -489,6 +489,10 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 #### Gestion du frigo
 
 - Liste des ingrédients avec dates d'expiration
+
+<img width="288" height="137" alt="CleanShot 2025-11-24 at 23 47 10@2x" src="https://github.com/user-attachments/assets/6afa3a67-ffb9-46e1-9a47-98a7a4f16a85" />
+
+
 - Modal d'ajout d'ingrédient avec recherche OpenFoodFacts
 
 ![CleanShot 2025-11-24 at 23 44 23](https://github.com/user-attachments/assets/ed8d22fc-c74b-4fe8-a801-0e7d554c306b)
