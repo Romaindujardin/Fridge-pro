@@ -490,7 +490,7 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 
 - Liste des ingrédients avec dates d'expiration
 
-<img width="288" height="137" alt="CleanShot 2025-11-24 at 23 47 10@2x" src="https://github.com/user-attachments/assets/6afa3a67-ffb9-46e1-9a47-98a7a4f16a85" />
+<img width="2880" height="1369" alt="CleanShot 2025-11-24 at 23 47 10@2x" src="https://github.com/user-attachments/assets/6afa3a67-ffb9-46e1-9a47-98a7a4f16a85" />
 
 
 - Modal d'ajout d'ingrédient avec recherche OpenFoodFacts
