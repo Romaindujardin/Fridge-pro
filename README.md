@@ -1,5 +1,14 @@
 # Fridge Pro
 
+## Sommaire
+
+1. [Vue d'ensemble de l'application](#vue-densemble-de-lapplication)
+2. [Tuto déploiement Azure](#tuto-for-deployement-on-azure)
+3. [Features à ajouter/corriger](#features-à-ajoutercorriger)
+4. [Annexe photo](#annexe-photo)
+
+---
+
 ## Vue d'ensemble de l'application
 
 **Fridge Pro** est une application de gestion de frigo intelligente qui vous aide à optimiser votre frigo, découvrir de nouvelles recettes adaptés à vos ingrédients.
@@ -442,3 +451,60 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 1. **Backend** : Accédez à `https://<backend-url>/api/health` - vous devriez voir un statut "OK"
 2. **Frontend** : Accédez à `https://<frontend-url>` - l'application devrait se charger
 3. **Base de données** : Les migrations Prisma ont créé toutes les tables nécessaires
+
+---
+
+## Features à ajouter/corriger
+
+### Fonctionnalités à implémenter
+
+- [ ] Amélioration du système de notifications pour les dates d'expiration
+- [ ] Ajouter l'option d'Export/Import des données utilisateur & option supression compte
+- [ ] Partage de recettes entre utilisateurs
+- [ ] Mode hors-ligne pour la consultation des recettes
+- [ ] Génération de liste de courses automatique basée sur les recettes favorites
+- [ ] Historique des recettes préparées
+- [ ] Système de notation et commentaires sur les recettes
+- [ ] Mode sombre
+
+### Corrections et améliorations
+
+- [ ] Optimisation des performances de recherche d'ingrédients (via openfoodfact)
+- [ ] Gestion des erreurs plus robuste côté frontend
+- [ ] Tests unitaires et d'intégration
+- [ ] Régler le petit soucis de connexion où on doit s'y prendre à 2 reprises
+
+---
+
+## Annexe photo
+
+### Captures d'écran de l'application
+
+> **Note** : Les captures d'écran seront ajoutées ici pour illustrer les différentes fonctionnalités de l'application.
+
+#### Dashboard
+
+- Vue d'ensemble avec statistiques et recettes recommandées
+
+#### Gestion du frigo
+
+- Liste des ingrédients avec dates d'expiration
+- Modal d'ajout d'ingrédient avec recherche OpenFoodFacts
+- Scanner de ticket de caisse
+
+#### Recettes
+
+- Liste des recettes avec filtres
+- Détail d'une recette avec ingrédients et instructions
+- Modal de génération de recette par IA
+- Modal de création manuelle de recette
+
+#### Listes de courses
+
+- Gestion des listes de courses
+- Ajout d'ingrédients manquants depuis une recette
+
+#### Profil utilisateur
+
+- Modification des informations personnelles
+- Configuration de la clé API Gemini
