@@ -490,6 +490,9 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 
 - Liste des ingrédients avec dates d'expiration
 - Modal d'ajout d'ingrédient avec recherche OpenFoodFacts
+
+<img width="1332" height="1170" alt="CleanShot 2025-11-24 at 23 40 38@2x" src="https://github.com/user-attachments/assets/61f23f68-29b6-4b1f-be6c-dd102562a73d" />
+
 - Scanner de ticket de caisse
 
 #### Recettes
