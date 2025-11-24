@@ -2,20 +2,70 @@
 
 ## Vue d'ensemble de l'application
 
-**Fridge Pro** est une application de gestion de frigo intelligente.
+**Fridge Pro** est une application de gestion de frigo intelligente qui vous aide à optimiser votre frigo, découvrir de nouvelles recettes adaptés à vos ingrédients.
 
 ### Fonctionnalités
 
-- **Gestion des ingrédients de votre frigo** : Ajoutez les ingrédients que vous possédez
+- **Ajout d'ingrédients** :
 
-  - **Manuellement** : Renseignez les champs, l'API OpenFoodFacts vous aide à trouver vos ingrédients parmi un vaste choix.
-  - **Via OCR IA** : Prenez en photo votre ticket de caisse, et les ingrédients s'ajouteront automatiquement dans votre frigo.
+  - **Manuellement** : Recherchez et ajoutez vos ingrédients avec l'aide de l'API OpenFoodFacts pour un vaste catalogue de produits.
+  - **Scan de ticket de caisse** : Utilisez l'OCR IA (Google Gemini) pour scanner votre ticket de caisse et ajouter automatiquement tous les ingrédients à votre frigo.
 
-- **Gestion et création de recettes** : Créez vos recettes favorites ou générez-en via IA. Visualisez le nombre d'ingrédients disponibles dans votre frigo nécessaires à la réalisation de chaque recette.
+- **Suivi des dates d'expiration** : Visualisez les ingrédients qui expirent bientôt (dans les 3 jours) ou qui sont déjà expirés, avec des alertes visuelles pour éviter le gaspillage.
 
-- **Génération de recettes par IA** : Générez des recettes personnalisées via IA, avec la possibilité de créer des recettes uniquement basées sur les ingrédients disponibles dans votre frigo.
+- **Statistiques live** : Consultez le nombre total d'ingrédients, ceux qui expirent bientôt et ceux déjà expirés.
 
-- **Liste de courses** : Si des ingrédients manquent pour votre recette favorite, ajoutez-les automatiquement à votre liste de courses !
+#### **Gestion et création de recettes**
+
+- **Création manuelle** : Créez vos propres recettes avec ingrédients, quantités, instructions détaillées, temps de préparation/cuisson et niveau de difficulté.
+
+- **Génération par IA** : Générez des recettes personnalisées via Google Gemini AI :
+
+  - Décrivez vos envies culinaires (type de plat, inspiration, nombre de personnes)
+  - Option pour utiliser uniquement les ingrédients disponibles dans votre frigo
+  - Les recettes générées sont automatiquement sauvegardées
+
+- **Système de favoris** : Marquez vos recettes préférées pour un accès rapide.
+
+- **Recherche et filtres avancés** :
+
+  - Recherche par nom ou description
+  - Filtres par difficulté (facile, moyen, difficile)
+  - Filtre "Réalisables" : affiche uniquement les recettes pour lesquelles vous avez tous les ingrédients
+  - Filtre "Favoris" : vos recettes favorites
+  - Filtre "Recettes IA" : recettes générées par l'intelligence artificielle
+  - Filtre "Mes recettes" : vos créations personnelles
+
+- **Compatibilité avec le frigo** : Pour chaque recette, visualisez :
+
+  - Le nombre d'ingrédients disponibles dans votre frigo
+  - Les ingrédients manquants
+
+- **Recettes recommandées** : Le dashboard vous suggère des recettes adaptées à vos ingrédients disponibles.
+
+#### Listes de courses intelligentes
+
+- **Gestion de plusieurs listes** : Créez et gérez plusieurs listes de courses (ex: courses hebdomadaires, courses spéciales, etc.).
+
+- **Ajout automatique** : Ajoutez automatiquement les ingrédients manquants d'une recette à votre liste de courses en un clic.
+
+- **Suivi des achats** : Cochez/décochez les articles achetés pour suivre votre progression.
+
+- **Ajout manuel** : Ajoutez manuellement des ingrédients à vos listes avec quantités et unités.
+
+#### Dashboard
+
+- **Statistiques globales** : Vue d'ensemble de vos ingrédients disponibles, recettes réalisables, favoris et articles en liste de courses.
+
+- **Actions rapides** : Accès direct pour ajouter des ingrédients, scanner un ticket ou générer une recette.
+
+- **Recettes recommandées** : Suggestions de recettes basées sur vos ingrédients disponibles.
+
+#### Profil utilisateur
+
+- **Gestion des informations** : Modifiez vos informations personnelles (prénom, nom, email).
+
+- **Configuration de l'IA** : Configurez votre clé API Google Gemini personnelle pour utiliser les fonctionnalités IA (scan de tickets et génération de recettes).
 
 ## Structure de la Codebase
 
