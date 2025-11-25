@@ -119,24 +119,24 @@ const DIFFICULTY_VALUES = ["easy", "medium", "hard"] as const;
 
 const GENERATED_RECIPE_SCHEMA = z.object({
   title: z.string().min(1),
-  description: z.string().optional(),
-  servings: z.union([z.number(), z.string()]).optional(),
-  prepTime: z.union([z.number(), z.string()]).optional(),
-  cookTime: z.union([z.number(), z.string()]).optional(),
-  difficulty: z.string().optional(),
+  description: z.string().nullish(),
+  servings: z.union([z.number(), z.string()]).nullish(),
+  prepTime: z.union([z.number(), z.string()]).nullish(),
+  cookTime: z.union([z.number(), z.string()]).nullish(),
+  difficulty: z.string().nullish(),
   ingredients: z
     .array(
       z.object({
         name: z.string().min(1),
-        quantity: z.union([z.number(), z.string()]).optional(),
-        unit: z.string().optional(),
-        notes: z.string().optional(),
+        quantity: z.union([z.number(), z.string()]).nullish(),
+        unit: z.string().nullish(),
+        notes: z.string().nullish(),
       })
     )
     .min(1),
   instructions: z.array(z.string().min(1)).min(1),
-  imageUrl: z.string().url().optional(),
-  tips: z.array(z.string().min(1)).optional(),
+  imageUrl: z.string().url().nullish(),
+  tips: z.array(z.string().min(1)).nullish(),
 });
 
 export type GeneratedRecipe = {
@@ -302,13 +302,13 @@ ${fridgeContext}
   return {
     title: raw.title,
     description: raw.description?.trim() || undefined,
-    servings: normalizeNumber(raw.servings, 4),
-    prepTime: normalizeNumber(raw.prepTime, 15, true),
-    cookTime: normalizeNumber(raw.cookTime, 0, true),
+    servings: normalizeNumber(raw.servings ?? undefined, 4),
+    prepTime: normalizeNumber(raw.prepTime ?? undefined, 15, true),
+    cookTime: normalizeNumber(raw.cookTime ?? undefined, 0, true),
     difficulty: difficultyNormalized,
     ingredients,
     instructions,
-    imageUrl: raw.imageUrl,
+    imageUrl: raw.imageUrl ?? undefined,
     tips: raw.tips?.map((tip) => tip.trim()).filter(Boolean),
   };
 };
