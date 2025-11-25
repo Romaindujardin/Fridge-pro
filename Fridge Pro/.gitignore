@@ -66,9 +66,6 @@ backend/backend.zip
 *.db
 *.sqlite
 
-# Prisma
-backend/prisma/migrations/*/migration.sql
-
 # Temporary files
 tmp/
 temp/ 
