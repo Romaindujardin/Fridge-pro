@@ -508,6 +508,10 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 - Liste des recettes avec filtres
 - Détail d'une recette avec ingrédients et instructions
 - Modal de génération de recette par IA
+
+![CleanShot 2025-11-25 at 11 58 52](https://github.com/user-attachments/assets/416b8046-b69d-4963-8ecd-9b1634417805)
+
+
 - Modal de création manuelle de recette
 
 #### Listes de courses
