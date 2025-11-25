@@ -519,6 +519,9 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 - Gestion des listes de courses
 - Ajout d'ingrédients manquants depuis une recette
 
+![CleanShot 2025-11-25 at 12 00 46](https://github.com/user-attachments/assets/ea855fe7-8bea-4b6d-b638-9ab55bc1b982)
+
+
 #### Profil utilisateur
 
 - Modification des informations personnelles
