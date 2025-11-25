@@ -517,6 +517,10 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 #### Listes de courses
 
 - Gestion des listes de courses
+
+![CleanShot 2025-11-25 at 12 03 15](https://github.com/user-attachments/assets/b091664f-151d-4d69-8fea-cdd7f86d515b)
+
+
 - Ajout d'ingrédients manquants depuis une recette
 
 ![CleanShot 2025-11-25 at 12 00 46](https://github.com/user-attachments/assets/ea855fe7-8bea-4b6d-b638-9ab55bc1b982)
