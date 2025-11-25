@@ -507,6 +507,10 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 
 - Liste des recettes avec filtres
 - Détail d'une recette avec ingrédients et instructions
+
+![CleanShot 2025-11-25 at 12 05 02](https://github.com/user-attachments/assets/a7db47b2-d4e1-49ea-82c6-487feffb5047)
+
+
 - Modal de génération de recette par IA
 
 ![CleanShot 2025-11-25 at 11 58 52](https://github.com/user-attachments/assets/416b8046-b69d-4963-8ecd-9b1634417805)
