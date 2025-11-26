@@ -506,6 +506,10 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 #### Recettes
 
 - Liste des recettes avec filtres
+
+![CleanShot 2025-11-26 at 07 55 13](https://github.com/user-attachments/assets/c1dfb27d-64bd-4040-b3c1-c4128849362b)
+
+
 - Détail d'une recette avec ingrédients et instructions
 
 ![CleanShot 2025-11-25 at 12 05 02](https://github.com/user-attachments/assets/a7db47b2-d4e1-49ea-82c6-487feffb5047)
