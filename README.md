@@ -486,6 +486,9 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 
 - Vue d'ensemble avec statistiques et recettes recommandées
 
+![CleanShot 2025-11-26 at 07 58 48](https://github.com/user-attachments/assets/c883bffc-6c89-4396-9fcc-1fc6bb966fd6)
+
+
 #### Gestion du frigo
 
 - Liste des ingrédients avec dates d'expiration
