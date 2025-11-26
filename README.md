@@ -537,4 +537,8 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 #### Profil utilisateur
 
 - Modification des informations personnelles
+
+![CleanShot 2025-11-26 at 07 53 04](https://github.com/user-attachments/assets/dc12069e-e770-4f23-a2b2-e0fb4e2f1191)
+
+
 - Configuration de la clé API Gemini
