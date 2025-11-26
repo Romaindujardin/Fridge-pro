@@ -542,3 +542,5 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 
 
 - Configuration de la clé API Gemini
+
+<img width="2880" height="1366" alt="CleanShot 2025-11-26 at 07 53 45@2x" src="https://github.com/user-attachments/assets/5790d643-d11b-4d0b-99d8-10e0e880f180" />
