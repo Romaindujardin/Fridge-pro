@@ -518,6 +518,10 @@ Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionn
 
 - Modal de création manuelle de recette
 
+![CleanShot 2025-11-26 at 07 47 30](https://github.com/user-attachments/assets/3467058b-4197-4ff8-925d-249509f33da7)
+
+
+
 #### Listes de courses
 
 - Gestion des listes de courses
