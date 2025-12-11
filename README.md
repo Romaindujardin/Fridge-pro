@@ -222,6 +222,8 @@ Fridge-pro/
 
 ## Étape 1 : Déploiement de l'infrastructure avec Terraform
 
+###  NB: Pour éviter les erreurs de déploiement et garantir la compatibilité avec Azure, il est fortement recommandé d’utiliser PowerShell 7 (pwsh) pour les utilisateurs windows pour créer les archives ZIP.
+
 ### 1.1 Initialisation de Terraform
 
 Accédez au dossier Terraform et initialisez le projet :
@@ -232,23 +234,40 @@ cd ./terraform/
 
 Récupérez votre ID d'abonnement Azure :
 
+
+
 ```bash
 az account show --query id -o tsv
 ```
 
 Initialisez Terraform avec votre ID d'abonnement :
 
+Mac
 ```bash
 export ARM_SUBSCRIPTION_ID="<votre-id-abonnement-azure>" && terraform init
+```
+Windows
+
+```pwsh
+$env:ARM_SUBSCRIPTION_ID = "<votre-id-abonnement-azure>"
+terraform init
 ```
 
 ### 1.2 Création des ressources Azure
 
 Appliquez la configuration Terraform pour créer toutes les ressources (App Services, base de données PostgreSQL, etc.) :
 
+Mac
 ```bash
 export ARM_SUBSCRIPTION_ID="<votre-id-abonnement-azure>" && terraform apply
 ```
+Windows
+
+```pwsh
+$env:ARM_SUBSCRIPTION_ID = "<votre-id-abonnement-azure>"
+terraform apply
+```
+
 
 Terraform va créer :
 
@@ -261,7 +280,7 @@ Terraform va créer :
 
 Récupérez la chaîne de connexion à la base de données :
 
-```bash
+```pwsh
 terraform output -raw database_url_connection_string
 ```
 
@@ -306,8 +325,16 @@ terraform output -raw db_server_fqdn
 
 Exportez la variable d'environnement `DATABASE_URL` :
 
+Mac
 ```
 export DATABASE_URL='<l'url de la databse que vous venez de copier>'
+```
+
+Windows
+
+```bash
+$env:DATABASE_URL = "<l'url de la database que vous venez de copier>"
+
 ```
 
 ### 1.4 Configuration du pare-feu PostgreSQL
@@ -318,6 +345,7 @@ Récupérez votre adresse IP publique sur [whatismyip.com](https://www.whatismyi
 
 Créez une règle de pare-feu :
 
+Mac/windows
 ```bash
 az postgres flexible-server firewall-rule create \
   --resource-group <nom-du-groupe-de-ressources> \
@@ -326,6 +354,7 @@ az postgres flexible-server firewall-rule create \
   --start-ip-address <votre-IP> \
   --end-ip-address <votre-IP>
 ```
+
 
 ## Étape 2 : Déploiement de la base de données
 
@@ -339,7 +368,9 @@ cd ../Fridge\ Pro/backend
 
 Appliquez les migrations Prisma pour créer le schéma de base de données :
 
+
 ```bash
+npm install prisma @prisma/client
 npx prisma migrate deploy
 ```
 
@@ -364,6 +395,8 @@ npm run build
 
 Créez un package de déploiement contenant uniquement les fichiers nécessaires :
 
+Mac
+
 ```bash
 mkdir deploy_temp
 cp -r dist prisma package.json package-lock.json deploy_temp/
@@ -374,9 +407,23 @@ cd ..
 rm -rf deploy_temp
 ```
 
+Windows
+
+```pwsh
+mkdir deploy_temp
+Copy-Item -Recurse dist, prisma, package.json, package-lock.json -Destination deploy_temp
+Set-Location deploy_temp
+npm install --omit=dev
+Compress-Archive -Path * -DestinationPath ../backend.zip -Force
+Set-Location ..
+Remove-Item deploy_temp -Recurse -Force
+```
+
 ### 3.2 Déploiement sur Azure App Service
 
-Déployez le package sur l'App Service backend :
+Déployez le package sur l'App Service backend : 
+
+Mac/windows
 
 ```bash
 az webapp deploy \
@@ -402,12 +449,15 @@ Définissez l'URL de l'API backend et compilez l'application :
 
 ```bash
 export VITE_API_URL="<url-du-backend>"
+npm install
 npm run build
 ```
 
 ### 4.2 Préparation du package de déploiement
 
 Créez un package contenant les fichiers compilés et le serveur Node.js :
+
+Mac
 
 ```bash
 mkdir deploy_front
@@ -419,10 +469,23 @@ cd ..
 rm -rf deploy_front
 ```
 
+Windows
+
+```pwsh
+mkdir deploy_front
+Copy-Item -Recurse dist, server.js, package.json, package-lock.json -Destination deploy_front
+Set-Location deploy_front
+npm install --omit=dev
+Compress-Archive -Path * -DestinationPath ../frontend.zip -Force
+Set-Location ..
+Remove-Item deploy_front -Recurse -Force
+```
+
 ### 4.3 Déploiement sur Azure App Service
 
 Déployez le frontend sur son App Service :
 
+Mac/windows
 ```bash
 az webapp deploy \
   --resource-group <nom-du-groupe-de-ressources> \
@@ -435,6 +498,7 @@ az webapp deploy \
 
 Configurez CORS sur le backend pour autoriser les requêtes depuis le frontend :
 
+Mac/ windows
 ```bash
 az webapp cors add \
   --resource-group <nom-du-groupe-de-ressources> \
