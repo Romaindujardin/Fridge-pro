@@ -1,0 +1,50 @@
+name: Deploy Backend to Azure
+
+on:
+  push:
+    branches: [ main, azureP ]
+    paths:
+      - 'Fridge Pro/backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      working-directory: ./Fridge Pro/backend
+      run: npm ci
+    
+    - name: Build
+      working-directory: ./Fridge Pro/backend
+      run: npm run build
+    
+    - name: Run tests
+      working-directory: ./Fridge Pro/backend
+      run: npm test --if-present
+    
+    - name: Create deployment package
+      working-directory: ./Fridge Pro/backend
+      run: |
+        mkdir deploy_temp
+        cp -r dist prisma package.json package-lock.json deploy_temp/
+        cd deploy_temp
+        npm install --omit=dev
+        zip -r ../backend.zip .
+    
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: fridge-pro-api-rcabo0
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
+        package: ./Fridge Pro/backend/backend.zip
