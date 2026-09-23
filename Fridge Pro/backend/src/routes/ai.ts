@@ -8,6 +8,7 @@ import {
   analyzeReceiptImage,
   generateRecipeFromPrompt,
 } from "../services/geminiService";
+import { invalidateRecipeCache } from "../utils/recipeCache";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -360,6 +361,8 @@ router.post(
       });
 
       const formatted = formatRecipe(createdRecipe);
+
+      invalidateRecipeCache();
 
       res.status(201).json({
         success: true,

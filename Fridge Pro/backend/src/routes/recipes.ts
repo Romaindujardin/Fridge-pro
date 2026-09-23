@@ -3,7 +3,13 @@ import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
 import { isIngredientAvailable } from "../utils/ingredientMatcher";
-import { estimateRecipeCost, ItemWithPrice } from "../utils/costEstimator";
+import { estimateRecipeCost } from "../utils/costEstimator";
+import {
+  getCachedBaseRecipes,
+  getCachedUserInventory,
+  invalidateRecipeCache,
+  invalidateUserInventory,
+} from "../utils/recipeCache";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
@@ -40,46 +46,6 @@ const uploadRecipeImage = multer({
   },
 });
 
-// Helper pour récupérer les ingrédients du frigo et de l'historique d'achat ayant un prix
-async function getUserPricedItems(userId: string): Promise<ItemWithPrice[]> {
-  const [fridgeItems, historyItems] = await Promise.all([
-    prisma.fridgeItem.findMany({
-      where: { userId },
-      include: { ingredient: true },
-    }),
-    prisma.purchaseHistory.findMany({
-      where: { userId, price: { gt: 0 } },
-      select: {
-        ingredientId: true,
-        quantity: true,
-        unit: true,
-        price: true,
-        brand: true,
-        ingredient: { select: { id: true, name: true } },
-      },
-      orderBy: { finishedDate: "desc" },
-    }),
-  ]);
-
-  return [
-    ...fridgeItems.map((f) => ({
-      ingredientId: f.ingredientId,
-      quantity: f.quantity,
-      unit: f.unit,
-      price: f.price,
-      brand: f.brand,
-      ingredient: f.ingredient,
-    })),
-    ...historyItems.map((h) => ({
-      ingredientId: h.ingredientId,
-      quantity: h.quantity,
-      unit: h.unit,
-      price: h.price,
-      brand: h.brand,
-      ingredient: h.ingredient,
-    })),
-  ];
-}
 
 // Convertit et normalise un nombre décimal (gère virgule et point)
 const parseDecimalNumber = (val: unknown): number | unknown => {
@@ -188,81 +154,13 @@ router.get(
         filters;
       const skip = (page - 1) * limit;
 
-      // Construction dynamique de la clause WHERE
-      const where: any = {};
+      const [baseRecipes, { userFridgeItems, pricedItems, favoriteIds }] =
+        await Promise.all([
+          getCachedBaseRecipes(),
+          getCachedUserInventory(req.userId!),
+        ]);
 
-      if (search) {
-        where.OR = [
-          { title: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-        ];
-      }
-
-      if (difficulty) {
-        where.difficulty = difficulty;
-      }
-
-      if (maxPrepTime) {
-        where.prepTime = { lte: maxPrepTime };
-      }
-
-      // Filtrer par recettes réalisables uniquement avec le contenu du frigo
-      if (makeable) {
-        const userFridgeItemsForFilter = await prisma.fridgeItem.findMany({
-          where: { userId: req.userId },
-          include: { ingredient: true },
-        });
-
-        // Fonction pour vérifier si un ingrédient est disponible pour le filtre
-        const isIngredientAvailableForFilter = (
-          recipeIngredientId: string,
-          recipeIngredientName: string
-        ): boolean => {
-          return isIngredientAvailable(
-            recipeIngredientId,
-            recipeIngredientName,
-            userFridgeItemsForFilter
-          );
-        };
-
-        // Trouver les recettes où tous les ingrédients sont disponibles
-        const recipeIds = await prisma.recipe
-          .findMany({
-            where,
-            include: {
-              ingredients: {
-                include: {
-                  ingredient: true,
-                },
-              },
-            },
-          })
-          .then((recipes) => {
-            return recipes
-              .filter((recipe) => {
-                return recipe.ingredients.every((recipeIngredient) =>
-                  isIngredientAvailableForFilter(
-                    recipeIngredient.ingredientId,
-                    recipeIngredient.ingredient.name
-                  )
-                );
-              })
-              .map((recipe) => recipe.id);
-          });
-
-        where.id = { in: recipeIds };
-      }
-
-      // Récupérer les ingrédients du frigo et les prix connus pour la compatibilité et les coûts
-      const [userFridgeItems, pricedItems] = await Promise.all([
-        prisma.fridgeItem.findMany({
-          where: { userId: req.userId },
-          include: { ingredient: true },
-        }),
-        getUserPricedItems(req.userId!),
-      ]);
-
-      // Fonction pour vérifier si un ingrédient est disponible (par ID, nom, synonymes et marque)
+      // Fonction pour vérifier si un ingrédient est disponible
       const isIngredientAvailableInFridge = (
         recipeIngredientId: string,
         recipeIngredientName: string
@@ -274,38 +172,41 @@ router.get(
         );
       };
 
-      const [recipes, total] = await Promise.all([
-        prisma.recipe.findMany({
-          where,
-          skip,
-          take: limit,
-          include: {
-            ingredients: {
-              include: {
-                ingredient: {
-                  include: {
-                    category: true,
-                  },
-                },
-              },
-            },
-            favoriteRecipes: {
-              where: { userId: req.userId },
-              select: { id: true },
-            },
-            createdBy: {
-              select: { firstName: true, lastName: true },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.recipe.count({ where }),
-      ]);
+      // Filtrage ultra-rapide en mémoire (évite les aller-retours SQL lents)
+      let filtered = baseRecipes;
+
+      if (difficulty) {
+        filtered = filtered.filter((r) => r.difficulty === difficulty);
+      }
+
+      if (maxPrepTime) {
+        filtered = filtered.filter((r) => (r.prepTime || 0) <= maxPrepTime);
+      }
+
+      if (search) {
+        const s = search.toLowerCase();
+        filtered = filtered.filter(
+          (r) =>
+            r.title.toLowerCase().includes(s) ||
+            (r.description && r.description.toLowerCase().includes(s))
+        );
+      }
+
+      if (makeable) {
+        filtered = filtered.filter((r) =>
+          r.ingredients.every((ri: any) =>
+            isIngredientAvailableInFridge(ri.ingredientId, ri.ingredient.name)
+          )
+        );
+      }
+
+      const total = filtered.length;
+      const paginated = filtered.slice(skip, skip + limit);
 
       // Formater les résultats pour l'UI avec calcul de compatibilité et estimation des coûts
-      const formattedRecipes = recipes.map((recipe) => {
+      const formattedRecipes = paginated.map((recipe) => {
         const totalIngredients = recipe.ingredients.length;
-        const availableIngredients = recipe.ingredients.filter((ri) =>
+        const availableIngredients = recipe.ingredients.filter((ri: any) =>
           isIngredientAvailableInFridge(ri.ingredientId, ri.ingredient.name)
         ).length;
         const missingIngredients = totalIngredients - availableIngredients;
@@ -335,7 +236,7 @@ router.get(
           createdById: recipe.createdById,
           createdBy: recipe.createdBy,
           source: recipe.source,
-          ingredients: recipe.ingredients.map((ri) => ({
+          ingredients: recipe.ingredients.map((ri: any) => ({
             id: ri.id,
             recipeId: ri.recipeId,
             ingredientId: ri.ingredientId,
@@ -351,7 +252,7 @@ router.get(
             available: isIngredientAvailableInFridge(ri.ingredientId, ri.ingredient.name),
             estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
           })),
-          isFavorite: recipe.favoriteRecipes.length > 0,
+          isFavorite: favoriteIds.has(recipe.id),
           compatibilityScore: score,
           missingIngredientsCount: missingIngredients,
           estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
@@ -367,7 +268,7 @@ router.get(
             page,
             limit,
             total,
-            totalPages: Math.ceil(total / limit),
+            totalPages: Math.ceil(total / limit) || 1,
           },
         },
       });
@@ -392,14 +293,11 @@ router.get(
   authenticateToken,
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      // Récupérer les ingrédients du frigo et les prix connus pour les suggestions
-      const [userFridgeItems, pricedItems] = await Promise.all([
-        prisma.fridgeItem.findMany({
-          where: { userId: req.userId },
-          include: { ingredient: true },
-        }),
-        getUserPricedItems(req.userId!),
-      ]);
+      const [baseRecipes, { userFridgeItems, pricedItems, favoriteIds }] =
+        await Promise.all([
+          getCachedBaseRecipes(),
+          getCachedUserInventory(req.userId!),
+        ]);
 
       if (userFridgeItems.length === 0) {
         return res.json({
@@ -410,82 +308,15 @@ router.get(
         });
       }
 
-      // Fonction pour vérifier si un ingrédient est disponible pour les suggestions
-      const isIngredientAvailableSuggestions = (
-        recipeIngredientId: string,
-        recipeIngredientName: string
-      ): boolean => {
-        return isIngredientAvailable(
-          recipeIngredientId,
-          recipeIngredientName,
-          userFridgeItems
-        );
-      };
-
-      const favoriteRecipeIds = await prisma.favoriteRecipe.findMany({
-        where: { userId: req.userId },
-        select: { recipeId: true },
-      });
-      const favoriteIdsSet = new Set(
-        favoriteRecipeIds.map((fav) => fav.recipeId)
-      );
-
-      const favoriteRecipesPromise = prisma.recipe.findMany({
-        where: {
-          id: { in: Array.from(favoriteIdsSet) },
-        },
-        include: {
-          ingredients: {
-            include: {
-              ingredient: {
-                include: {
-                  category: true,
-                },
-              },
-            },
-          },
-          favoriteRecipes: {
-            where: { userId: req.userId },
-            select: { id: true },
-          },
-          createdBy: {
-            select: { firstName: true, lastName: true },
-          },
-        },
-      });
-
-      // Trouver toutes les recettes et calculer le score de compatibilité
-      const allRecipesPromise = prisma.recipe.findMany({
-        include: {
-          ingredients: {
-            include: {
-              ingredient: {
-                include: {
-                  category: true,
-                },
-              },
-            },
-          },
-          favoriteRecipes: {
-            where: { userId: req.userId },
-            select: { id: true },
-          },
-          createdBy: {
-            select: { firstName: true, lastName: true },
-          },
-        },
-      });
-
-      const [favoriteRecipes, allRecipes] = await Promise.all([
-        favoriteRecipesPromise,
-        allRecipesPromise,
-      ]);
-
       // Calculer le score pour chaque recette
-      const scoredRecipes = allRecipes.map((recipe) => {
+      const scoredRecipes = baseRecipes.map((recipe) => {
         const totalIngredients = recipe.ingredients.length;
-        const availableIngredients = recipe.ingredients.filter((ri) =>
-          isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name)
+        const availableIngredients = recipe.ingredients.filter((ri: any) =>
+          isIngredientAvailable(
+            ri.ingredientId,
+            ri.ingredient.name,
+            userFridgeItems
+          )
         ).length;
 
         const score =
@@ -496,17 +327,102 @@ router.get(
         return {
           recipe,
           score,
-          missingIngredients: recipe.ingredients.filter(
-            (ri) => !isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name)
-          ).length,
+          missingIngredients: totalIngredients - availableIngredients,
         };
       });
 
-      // Calculer le score réel pour les recettes favorites
-      const favoriteRecipesPayload = favoriteRecipes.map((recipe) => {
+      const suggestions = scoredRecipes
+        .filter(
+          ({ score, recipe }) => score > 0 && !favoriteIds.has(recipe.id)
+        )
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map(({ recipe, score, missingIngredients }) => {
+          const costInfo = estimateRecipeCost(
+            recipe.ingredients,
+            recipe.servings,
+            pricedItems
+          );
+
+          return {
+            id: recipe.id,
+            title: recipe.title,
+            description: recipe.description,
+            instructions: recipe.instructions,
+            prepTime: recipe.prepTime,
+            cookTime: recipe.cookTime,
+            servings: recipe.servings,
+            difficulty: recipe.difficulty,
+            imageUrl: recipe.imageUrl,
+            createdAt: recipe.createdAt,
+            createdById: recipe.createdById,
+            createdBy: recipe.createdBy,
+            source: recipe.source,
+            ingredients: recipe.ingredients.map((ri: any) => ({
+              id: ri.id,
+              recipeId: ri.recipeId,
+              ingredientId: ri.ingredientId,
+              quantity: ri.quantity,
+              unit: ri.unit,
+              notes: ri.notes,
+              ingredient: {
+                id: ri.ingredient.id,
+                name: ri.ingredient.name,
+                categoryId: ri.ingredient.categoryId,
+                category: ri.ingredient.category,
+              },
+              available: isIngredientAvailable(
+                ri.ingredientId,
+                ri.ingredient.name,
+                userFridgeItems
+              ),
+              estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
+            })),
+            isFavorite: favoriteIds.has(recipe.id),
+            compatibilityScore: Math.round(score),
+            missingIngredientsCount: missingIngredients,
+            estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
+            costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
+          };
+        });
+
+      res.json({
+        success: true,
+        data: {
+          suggestions,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /recipes/favorites
+ * Retourne la liste des favoris de l'utilisateur connecté.
+ */
+router.get(
+  "/favorites",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const [baseRecipes, { userFridgeItems, pricedItems, favoriteIds }] =
+        await Promise.all([
+          getCachedBaseRecipes(),
+          getCachedUserInventory(req.userId!),
+        ]);
+
+      const favoriteRecipes = baseRecipes.filter((r) => favoriteIds.has(r.id));
+
+      const formattedFavorites = favoriteRecipes.map((recipe) => {
         const totalIngredients = recipe.ingredients.length;
-        const availableIngredients = recipe.ingredients.filter((ri) =>
-          isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name)
+        const availableIngredients = recipe.ingredients.filter((ri: any) =>
+          isIngredientAvailable(
+            ri.ingredientId,
+            ri.ingredient.name,
+            userFridgeItems
+          )
         ).length;
         const missingIngredients = totalIngredients - availableIngredients;
         const score =
@@ -534,7 +450,7 @@ router.get(
           createdById: recipe.createdById,
           createdBy: recipe.createdBy,
           source: recipe.source,
-          ingredients: recipe.ingredients.map((ri) => ({
+          ingredients: recipe.ingredients.map((ri: any) => ({
             id: ri.id,
             recipeId: ri.recipeId,
             ingredientId: ri.ingredientId,
@@ -547,186 +463,14 @@ router.get(
               categoryId: ri.ingredient.categoryId,
               category: ri.ingredient.category,
             },
-            available: isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name),
+            available: isIngredientAvailable(
+              ri.ingredientId,
+              ri.ingredient.name,
+              userFridgeItems
+            ),
             estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
           })),
           isFavorite: true,
-          compatibilityScore: score,
-          missingIngredientsCount: missingIngredients,
-          estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
-          costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
-        };
-      });
-
-      const suggestions = scoredRecipes
-        .filter(
-          ({ score, recipe }) => score > 0 && !favoriteIdsSet.has(recipe.id)
-        )
-        .sort((a, b) => b.score - a.score)
-        .slice(0, Math.max(10 - favoriteRecipesPayload.length, 0))
-        .map(({ recipe, score, missingIngredients }) => {
-          const costInfo = estimateRecipeCost(
-            recipe.ingredients,
-            recipe.servings,
-            pricedItems
-          );
-
-          return {
-            id: recipe.id,
-            title: recipe.title,
-            description: recipe.description,
-            instructions: recipe.instructions,
-            prepTime: recipe.prepTime,
-            cookTime: recipe.cookTime,
-            servings: recipe.servings,
-            difficulty: recipe.difficulty,
-            imageUrl: recipe.imageUrl,
-            createdAt: recipe.createdAt,
-            createdById: recipe.createdById,
-            createdBy: recipe.createdBy,
-            source: recipe.source,
-            ingredients: recipe.ingredients.map((ri) => ({
-              id: ri.id,
-              recipeId: ri.recipeId,
-              ingredientId: ri.ingredientId,
-              quantity: ri.quantity,
-              unit: ri.unit,
-              notes: ri.notes,
-              ingredient: {
-                id: ri.ingredient.id,
-                name: ri.ingredient.name,
-                categoryId: ri.ingredient.categoryId,
-                category: ri.ingredient.category,
-              },
-              available: isIngredientAvailableSuggestions(ri.ingredientId, ri.ingredient.name),
-              estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
-            })),
-            isFavorite: recipe.favoriteRecipes.length > 0,
-            compatibilityScore: Math.round(score),
-            missingIngredientsCount: missingIngredients,
-            estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
-            costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
-          };
-        });
-
-      const combinedSuggestions = [
-        ...favoriteRecipesPayload,
-        ...suggestions,
-      ].slice(0, 10);
-
-      res.json({
-        success: true,
-        data: {
-          suggestions,
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-/**
- * GET /recipes/favorites
- * Retourne la liste des favoris de l'utilisateur connecté.
- */
-router.get(
-  "/favorites",
-  authenticateToken,
-  async (req: AuthenticatedRequest, res, next) => {
-    try {
-      const favoriteRecipes = await prisma.favoriteRecipe.findMany({
-        where: { userId: req.userId },
-        include: {
-          recipe: {
-            include: {
-              ingredients: {
-                include: {
-                  ingredient: {
-                    include: {
-                      category: true,
-                    },
-                  },
-                },
-              },
-              createdBy: {
-                select: { firstName: true, lastName: true },
-              },
-            },
-          },
-        },
-        orderBy: { addedAt: "desc" },
-      });
-
-      // Récupérer les ingrédients du frigo et les prix connus pour calculer la compatibilité et les coûts
-      const [userFridgeItems, pricedItems] = await Promise.all([
-        prisma.fridgeItem.findMany({
-          where: { userId: req.userId },
-          include: { ingredient: true },
-        }),
-        getUserPricedItems(req.userId!),
-      ]);
-
-      const isIngredientAvailableInFavorites = (
-        recipeIngredientId: string,
-        recipeIngredientName: string
-      ): boolean => {
-        return isIngredientAvailable(
-          recipeIngredientId,
-          recipeIngredientName,
-          userFridgeItems
-        );
-      };
-
-      const formattedFavorites = favoriteRecipes.map((fav) => {
-        const totalIngredients = fav.recipe.ingredients.length;
-        const availableIngredients = fav.recipe.ingredients.filter((ri) =>
-          isIngredientAvailableInFavorites(ri.ingredientId, ri.ingredient.name)
-        ).length;
-        const missingIngredients = totalIngredients - availableIngredients;
-        const score =
-          totalIngredients > 0
-            ? Math.round((availableIngredients / totalIngredients) * 100)
-            : 0;
-
-        const costInfo = estimateRecipeCost(
-          fav.recipe.ingredients,
-          fav.recipe.servings,
-          pricedItems
-        );
-
-        return {
-          id: fav.recipe.id,
-          title: fav.recipe.title,
-          description: fav.recipe.description,
-          instructions: fav.recipe.instructions,
-          prepTime: fav.recipe.prepTime,
-          cookTime: fav.recipe.cookTime,
-          servings: fav.recipe.servings,
-          difficulty: fav.recipe.difficulty,
-          imageUrl: fav.recipe.imageUrl,
-          createdAt: fav.recipe.createdAt,
-          createdById: fav.recipe.createdById,
-          createdBy: fav.recipe.createdBy,
-          source: fav.recipe.source,
-          ingredients: fav.recipe.ingredients.map((ri) => ({
-            id: ri.id,
-            recipeId: ri.recipeId,
-            ingredientId: ri.ingredientId,
-            quantity: ri.quantity,
-            unit: ri.unit,
-            notes: ri.notes,
-            ingredient: {
-              id: ri.ingredient.id,
-              name: ri.ingredient.name,
-              categoryId: ri.ingredient.categoryId,
-              category: ri.ingredient.category,
-            },
-            available: isIngredientAvailableInFavorites(ri.ingredientId, ri.ingredient.name),
-            estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
-          })),
-          isFavorite: true,
-          favoriteAddedAt: fav.addedAt,
           compatibilityScore: score,
           missingIngredientsCount: missingIngredients,
           estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
@@ -757,27 +501,33 @@ router.get(
     try {
       const { id } = req.params;
 
-      const recipe = await prisma.recipe.findUnique({
-        where: { id },
-        include: {
-          ingredients: {
-            include: {
-              ingredient: {
-                include: {
-                  category: true,
+      const [baseRecipes, { userFridgeItems, pricedItems, favoriteIds }] =
+        await Promise.all([
+          getCachedBaseRecipes(),
+          getCachedUserInventory(req.userId!),
+        ]);
+
+      let recipe = baseRecipes.find((r) => r.id === id);
+
+      if (!recipe) {
+        recipe = await prisma.recipe.findUnique({
+          where: { id },
+          include: {
+            ingredients: {
+              include: {
+                ingredient: {
+                  include: {
+                    category: true,
+                  },
                 },
               },
             },
+            createdBy: {
+              select: { firstName: true, lastName: true },
+            },
           },
-          favoriteRecipes: {
-            where: { userId: req.userId },
-            select: { id: true },
-          },
-          createdBy: {
-            select: { firstName: true, lastName: true },
-          },
-        },
-      });
+        });
+      }
 
       if (!recipe) {
         return res.status(404).json({
@@ -785,15 +535,6 @@ router.get(
           message: "Recette non trouvée",
         });
       }
-
-      // Récupérer les ingrédients du frigo et les prix connus pour la disponibilité et l'estimation des coûts
-      const [userFridgeItems, pricedItems] = await Promise.all([
-        prisma.fridgeItem.findMany({
-          where: { userId: req.userId },
-          include: { ingredient: true },
-        }),
-        getUserPricedItems(req.userId!),
-      ]);
 
       const costInfo = estimateRecipeCost(
         recipe.ingredients,
@@ -815,7 +556,7 @@ router.get(
         createdById: recipe.createdById,
         createdBy: recipe.createdBy,
         source: recipe.source,
-        ingredients: recipe.ingredients.map((ri) => ({
+        ingredients: recipe.ingredients.map((ri: any) => ({
           id: ri.id,
           recipeId: ri.recipeId,
           ingredientId: ri.ingredientId,
@@ -835,7 +576,7 @@ router.get(
             category: ri.ingredient.category,
           },
         })),
-        isFavorite: recipe.favoriteRecipes.length > 0,
+        isFavorite: favoriteIds.has(recipe.id),
         estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
         costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
       };
@@ -900,6 +641,8 @@ router.post(
         },
       });
 
+      invalidateUserInventory(req.userId!);
+
       res.json({
         success: true,
         message: "Recette ajoutée aux favoris",
@@ -945,6 +688,8 @@ router.delete(
           },
         },
       });
+
+      invalidateUserInventory(req.userId!);
 
       res.json({
         success: true,
@@ -1087,6 +832,8 @@ router.post(
         })),
         isFavorite: false,
       };
+
+      invalidateRecipeCache();
 
       res.status(201).json({
         success: true,
@@ -1258,13 +1005,9 @@ router.put(
       }
 
       // Récupérer les ingrédients du frigo et prix pour calculer la disponibilité et l'estimation des coûts
-      const [userFridgeItems, pricedItems] = await Promise.all([
-        prisma.fridgeItem.findMany({
-          where: { userId: req.userId },
-          include: { ingredient: true },
-        }),
-        getUserPricedItems(req.userId!),
-      ]);
+      const { userFridgeItems, pricedItems } = await getCachedUserInventory(
+        req.userId!
+      );
 
       const costInfo = estimateRecipeCost(
         recipe.ingredients,
@@ -1310,6 +1053,8 @@ router.put(
         estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
         costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
       };
+
+      invalidateRecipeCache();
 
       res.json({
         success: true,
@@ -1372,6 +1117,8 @@ router.post(
         data: { imageUrl },
       });
 
+      invalidateRecipeCache();
+
       res.json({
         success: true,
         message: "Photo de la recette mise à jour avec succès",
@@ -1423,6 +1170,8 @@ router.delete(
         where: { id },
         data: { imageUrl: null },
       });
+
+      invalidateRecipeCache();
 
       res.json({
         success: true,
@@ -1478,6 +1227,8 @@ router.delete(
       await prisma.recipe.delete({
         where: { id: recipe.id },
       });
+
+      invalidateRecipeCache();
 
       res.json({
         success: true,

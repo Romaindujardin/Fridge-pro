@@ -128,6 +128,7 @@ export function RecipesPage() {
   const { data: shoppingLists = [] } = useQuery({
     queryKey: ["shoppingLists"],
     queryFn: shoppingListService.getShoppingLists,
+    staleTime: 5 * 60 * 1000,
   });
 
   const generateRecipeForm = useForm<z.infer<typeof generateRecipeSchema>>({
@@ -197,24 +198,11 @@ export function RecipesPage() {
   });
 
 
-  // Récupérer les recettes avec filtres
+  // Récupérer les recettes avec mise en cache
   const { data: recipes = [], isLoading } = useQuery({
-    queryKey: [
-      "recipes",
-      {
-        search: searchTerm,
-        difficulty: selectedDifficulty,
-        canMake: showOnlyMakeable,
-        favorites: showOnlyFavorites,
-      },
-    ],
-    queryFn: () =>
-      recipeService.getRecipes({
-        search: searchTerm || undefined,
-        difficulty: selectedDifficulty || undefined,
-        makeable: showOnlyMakeable || undefined,
-        favorites: showOnlyFavorites || undefined,
-      }),
+    queryKey: ["recipes"],
+    queryFn: () => recipeService.getRecipes({ limit: 200 }),
+    staleTime: 60 * 1000,
   });
 
   // Mutation pour toggle favoris
@@ -411,11 +399,21 @@ export function RecipesPage() {
     },
   });
 
-  // Filtrer les recettes côté client pour la recherche instantanée
+  // Filtrer les recettes côté client pour la recherche et les filtres instantanés
   const filteredRecipes = recipes.filter((recipe) => {
     const matchesSearch =
+      !searchTerm ||
       recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      (recipe.description &&
+        recipe.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesDifficulty = selectedDifficulty
+      ? recipe.difficulty === selectedDifficulty
+      : true;
+
+    const matchesMakeable = showOnlyMakeable
+      ? (recipe.missingIngredientsCount ?? 0) === 0
+      : true;
 
     const matchesFavorite = showOnlyFavorites ? recipe.isFavorite : true;
 
@@ -425,7 +423,14 @@ export function RecipesPage() {
       ? recipe.createdById === currentUser?.id
       : true;
 
-    return matchesSearch && matchesFavorite && matchesAI && matchesMyRecipes;
+    return (
+      matchesSearch &&
+      matchesDifficulty &&
+      matchesMakeable &&
+      matchesFavorite &&
+      matchesAI &&
+      matchesMyRecipes
+    );
   });
 
   const handleToggleFavorite = (recipeId: string, event: React.MouseEvent) => {

@@ -3,6 +3,7 @@ import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
+import { invalidateUserInventory } from "../utils/recipeCache";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -230,6 +231,8 @@ router.post(
         });
       }
 
+      invalidateUserInventory(req.userId!);
+
       res.status(existingItem ? 200 : 201).json({
         success: true,
         data: {
@@ -429,6 +432,8 @@ router.post(
         },
       });
 
+      invalidateUserInventory(req.userId!);
+
       return res.status(201).json({
         success: true,
         data: { historyItem },
@@ -471,6 +476,8 @@ router.delete(
       await prisma.purchaseHistory.delete({
         where: { id },
       });
+
+      invalidateUserInventory(req.userId!);
 
       return res.json({
         success: true,
@@ -587,6 +594,8 @@ router.post(
             include: { ingredient: { include: { category: true } } },
           });
         }
+
+        invalidateUserInventory(req.userId!);
 
         return res.json({
           success: true,
@@ -851,6 +860,8 @@ router.put(
         },
       });
 
+      invalidateUserInventory(req.userId!);
+
       res.json({
         success: true,
         data: {
@@ -903,6 +914,8 @@ router.delete(
       await prisma.fridgeItem.delete({
         where: { id },
       });
+
+      invalidateUserInventory(req.userId!);
 
       res.json({
         success: true,
