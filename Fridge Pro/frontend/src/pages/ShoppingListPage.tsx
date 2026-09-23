@@ -29,6 +29,22 @@ import type {
   Ingredient,
 } from "@/types";
 
+// Convertit et normalise un nombre décimal (gère virgule et point)
+const parseDecimalNumber = (val: unknown): number | unknown => {
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed === "") return undefined;
+    const normalized = trimmed.replace(",", ".");
+    if (!/^-?(\d+(\.\d*)?|\.\d+)$/.test(normalized)) {
+      return val;
+    }
+    const num = parseFloat(normalized);
+    return isNaN(num) ? val : num;
+  }
+  return val;
+};
+
 // Schémas de validation
 const createListSchema = z.object({
   name: z.string().min(1, "Le nom de la liste est requis"),
@@ -36,7 +52,11 @@ const createListSchema = z.object({
 
 const addItemSchema = z.object({
   ingredientId: z.string().min(1, "Veuillez sélectionner un ingrédient"),
-  quantity: z.number().min(0.1, "La quantité doit être supérieure à 0"),
+  quantity: z.preprocess(
+    parseDecimalNumber,
+    z.number({ invalid_type_error: "La quantité doit être un nombre valide" })
+      .positive("La quantité doit être supérieure à 0")
+  ),
   unit: z.string().min(1, "Veuillez spécifier une unité"),
   notes: z.string().optional(),
 });
@@ -409,24 +429,19 @@ export function ShoppingListPage() {
                               {item.purchased && <Check className="w-3 h-3" />}
                             </button>
 
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg">
-                                {item.ingredient.category?.icon || "🥬"}
-                              </span>
-                              <div>
-                                <div
-                                  className={`font-medium ${
-                                    item.purchased
-                                      ? "line-through text-gray-500"
-                                      : "text-gray-900"
-                                  }`}
-                                >
-                                  {item.ingredient.name}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {item.quantity} {item.unit}
-                                  {item.notes && ` • ${item.notes}`}
-                                </div>
+                            <div>
+                              <div
+                                className={`font-medium ${
+                                  item.purchased
+                                    ? "line-through text-gray-500"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                {item.ingredient.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {item.quantity} {item.unit}
+                                {item.notes && ` • ${item.notes}`}
                               </div>
                             </div>
                           </div>
@@ -534,11 +549,8 @@ export function ShoppingListPage() {
                       onClick={() => {
                         handleIngredientSelection(ingredient);
                       }}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-3"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100"
                     >
-                      <span className="text-lg">
-                        {ingredient.category?.icon || "🥬"}
-                      </span>
                       <div>
                         <div className="font-medium">{ingredient.name}</div>
                         <div className="text-sm text-gray-500">
@@ -561,12 +573,13 @@ export function ShoppingListPage() {
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Quantité"
-              type="number"
-              step="0.1"
-              min="0.1"
-              placeholder="1"
+              type="text"
+              inputMode="decimal"
+              placeholder="Ex : 1.5 ou 500"
               error={addItemForm.formState.errors.quantity?.message}
-              {...addItemForm.register("quantity", { valueAsNumber: true })}
+              {...addItemForm.register("quantity", {
+                setValueAs: parseDecimalNumber,
+              })}
             />
             <Input
               label="Unité"

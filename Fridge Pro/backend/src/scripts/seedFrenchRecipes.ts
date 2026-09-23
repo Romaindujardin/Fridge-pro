@@ -184,34 +184,39 @@ export async function seedFrenchRecipes() {
     // Créer ou récupérer les catégories
     const categories = await Promise.all([
       prisma.category.upsert({
-        where: { name: "Légumes" },
-        update: {},
-        create: { name: "Légumes", color: "#4ade80", icon: "🥕" },
+        where: { name: "Les fruits & légumes" },
+        update: { color: "#16a34a", icon: "🥬" },
+        create: { name: "Les fruits & légumes", color: "#16a34a", icon: "🥬" },
       }),
       prisma.category.upsert({
-        where: { name: "Viandes" },
-        update: {},
-        create: { name: "Viandes", color: "#dc2626", icon: "🥩" },
+        where: { name: "Les viandes" },
+        update: { color: "#dc2626", icon: "🥩" },
+        create: { name: "Les viandes", color: "#dc2626", icon: "🥩" },
       }),
       prisma.category.upsert({
         where: { name: "Produits laitiers" },
-        update: {},
-        create: { name: "Produits laitiers", color: "#fbbf24", icon: "🧀" },
+        update: { color: "#eab308", icon: "🧀" },
+        create: { name: "Produits laitiers", color: "#eab308", icon: "🧀" },
       }),
       prisma.category.upsert({
-        where: { name: "Épices et condiments" },
-        update: {},
-        create: { name: "Épices et condiments", color: "#f97316", icon: "🌿" },
+        where: { name: "Féculents" },
+        update: { color: "#d97706", icon: "🍝" },
+        create: { name: "Féculents", color: "#d97706", icon: "🍝" },
       }),
       prisma.category.upsert({
-        where: { name: "Fruits" },
-        update: {},
-        create: { name: "Fruits", color: "#f59e0b", icon: "🍎" },
+        where: { name: "Produits secs" },
+        update: { color: "#854d0e", icon: "🌾" },
+        create: { name: "Produits secs", color: "#854d0e", icon: "🌾" },
       }),
       prisma.category.upsert({
-        where: { name: "Céréales et féculents" },
-        update: {},
-        create: { name: "Céréales et féculents", color: "#d97706", icon: "🌾" },
+        where: { name: "Sauces" },
+        update: { color: "#ea580c", icon: "🥣" },
+        create: { name: "Sauces", color: "#ea580c", icon: "🥣" },
+      }),
+      prisma.category.upsert({
+        where: { name: "Boissons" },
+        update: { color: "#06b6d4", icon: "🥤" },
+        create: { name: "Boissons", color: "#06b6d4", icon: "🥤" },
       }),
     ]);
 
@@ -231,18 +236,13 @@ export async function seedFrenchRecipes() {
 
     // Mapper les catégories
     const categoryMap = {
-      Légumes: categories.find((c) => c.name === "Légumes")?.id,
-      Viandes: categories.find((c) => c.name === "Viandes")?.id,
-      "Produits laitiers": categories.find(
-        (c) => c.name === "Produits laitiers"
-      )?.id,
-      "Épices et condiments": categories.find(
-        (c) => c.name === "Épices et condiments"
-      )?.id,
-      Fruits: categories.find((c) => c.name === "Fruits")?.id,
-      "Céréales et féculents": categories.find(
-        (c) => c.name === "Céréales et féculents"
-      )?.id,
+      "Les fruits & légumes": categories.find((c) => c.name === "Les fruits & légumes")?.id,
+      "Les viandes": categories.find((c) => c.name === "Les viandes")?.id,
+      "Produits laitiers": categories.find((c) => c.name === "Produits laitiers")?.id,
+      Féculents: categories.find((c) => c.name === "Féculents")?.id,
+      "Produits secs": categories.find((c) => c.name === "Produits secs")?.id,
+      Sauces: categories.find((c) => c.name === "Sauces")?.id,
+      Boissons: categories.find((c) => c.name === "Boissons")?.id,
     };
 
     // Fonction pour déterminer la catégorie d'un ingrédient
@@ -262,9 +262,11 @@ export async function seedFrenchRecipes() {
         name.includes("céleri") ||
         name.includes("navet") ||
         name.includes("poireau") ||
+        name.includes("pomme") ||
+        name.includes("fruit") ||
         name.includes("ail")
       ) {
-        return categoryMap["Légumes"];
+        return categoryMap["Les fruits & légumes"];
       }
 
       if (
@@ -278,7 +280,7 @@ export async function seedFrenchRecipes() {
         name.includes("lardon") ||
         name.includes("saucisse")
       ) {
-        return categoryMap["Viandes"];
+        return categoryMap["Les viandes"];
       }
 
       if (
@@ -298,26 +300,26 @@ export async function seedFrenchRecipes() {
         name.includes("muscade") ||
         name.includes("cannelle") ||
         name.includes("huile") ||
-        name.includes("vin") ||
-        name.includes("cognac") ||
         name.includes("sel") ||
         name.includes("épice")
       ) {
-        return categoryMap["Épices et condiments"];
+        return categoryMap["Produits secs"];
       }
 
-      if (name.includes("pomme") || name.includes("fruit")) {
-        return categoryMap["Fruits"];
+      if (
+        name.includes("vin") ||
+        name.includes("cognac")
+      ) {
+        return categoryMap["Boissons"];
       }
 
       if (
         name.includes("farine") ||
         name.includes("pâte") ||
-        name.includes("haricot") ||
         name.includes("pomme de terre") ||
         name.includes("riz")
       ) {
-        return categoryMap["Céréales et féculents"];
+        return categoryMap["Féculents"];
       }
 
       return undefined;

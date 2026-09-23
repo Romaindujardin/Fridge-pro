@@ -3,20 +3,69 @@ import toast from "react-hot-toast";
 import type { ApiResponse, ApiError } from "@/types";
 
 // Configuration axios
+const rawApiUrl = (import.meta.env.VITE_API_URL || "").trim();
+const apiBaseUrl = rawApiUrl
+  ? rawApiUrl.endsWith("/api")
+    ? rawApiUrl
+    : `${rawApiUrl.replace(/\/+$/, "")}/api`
+  : "/api";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "/api",
-  timeout: 1000000,
+  baseURL: apiBaseUrl,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Intercepteur pour ajouter le token d'authentification
+// Nettoie tout objet récursivement pour éliminer les structures cycliques ou objets DOM/React
+function sanitizeJsonPayload(data: any, seen = new WeakSet()): any {
+  if (data === null || typeof data !== "object") {
+    return data;
+  }
+  if (data instanceof FormData || data instanceof Blob || data instanceof ArrayBuffer) {
+    return data;
+  }
+  if (seen.has(data)) {
+    return undefined;
+  }
+  seen.add(data);
+  if (Array.isArray(data)) {
+    return data
+      .map((item) => sanitizeJsonPayload(item, seen))
+      .filter((item) => item !== undefined);
+  }
+  const cleanObj: Record<string, any> = {};
+  for (const key of Object.keys(data)) {
+    // Écarter les propriétés internes React, événements ou window
+    if (
+      key.startsWith("_") ||
+      key === "nativeEvent" ||
+      key === "view" ||
+      key === "target" ||
+      key === "currentTarget"
+    ) {
+      continue;
+    }
+    const val = data[key];
+    if (typeof val === "function") continue;
+    const sanitized = sanitizeJsonPayload(val, seen);
+    if (sanitized !== undefined) {
+      cleanObj[key] = sanitized;
+    }
+  }
+  return cleanObj;
+}
+
+// Intercepteur pour ajouter le token d'authentification et assainir les données JSON
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (config.data && !(config.data instanceof FormData)) {
+      config.data = sanitizeJsonPayload(config.data);
     }
     return config;
   },
@@ -39,8 +88,11 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    const rawMessage = error.response?.data?.message || error.message;
     const errorMessage =
-      error.response?.data?.message || "Une erreur est survenue";
+      typeof rawMessage === "string" && !rawMessage.toLowerCase().includes("cyclic")
+        ? rawMessage
+        : "Une erreur est survenue lors de l'opération";
     toast.error(errorMessage);
 
     return Promise.reject(error);

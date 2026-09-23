@@ -60,13 +60,26 @@ router.get(
         });
       }
 
-      // Recherche d'abord dans la base locale
+      // Analyse et extraction des quantités éventuelles (ex: "spaghettis 1kg")
+      const parsed = openFoodFactsService.parseQueryAndQuantity(q);
+
+      const searchTerms = [q.trim()];
+      if (parsed.cleanQuery && !searchTerms.includes(parsed.cleanQuery)) {
+        searchTerms.push(parsed.cleanQuery);
+      }
+      if (parsed.singularQuery && !searchTerms.includes(parsed.singularQuery)) {
+        searchTerms.push(parsed.singularQuery);
+      }
+
+      // Recherche d'abord dans la base locale (avec les variantes nettoyées)
       const localIngredients = await prisma.ingredient.findMany({
         where: {
-          name: {
-            contains: q,
-            mode: "insensitive",
-          },
+          OR: searchTerms.map((term) => ({
+            name: {
+              contains: term,
+              mode: "insensitive" as const,
+            },
+          })),
         },
         include: {
           category: true,
@@ -87,7 +100,11 @@ router.get(
       }
 
       // Combiner les résultats en évitant les doublons
-      const allIngredients = [...localIngredients];
+      const allIngredients = localIngredients.map((ing) => ({
+        ...ing,
+        detectedQuantity: parsed.detectedQuantity,
+        detectedUnit: parsed.detectedUnit,
+      }));
       const localNames = localIngredients.map((ing) => ing.name.toLowerCase());
 
       openFoodFactsResults.forEach((offIngredient) => {
@@ -95,12 +112,16 @@ router.get(
           allIngredients.push({
             id: `off_${offIngredient.sourceId}`,
             name: offIngredient.name,
+            brand: offIngredient.brand,
+            packageQuantity: offIngredient.packageQuantity,
+            detectedQuantity: offIngredient.detectedQuantity,
+            detectedUnit: offIngredient.detectedUnit,
             category: offIngredient.category
               ? {
                   id: "external",
                   name: offIngredient.category,
                   color: "#666666",
-                  icon: "🥄",
+                  icon: "",
                 }
               : null,
             categoryId: null,
@@ -111,14 +132,16 @@ router.get(
             fiber: offIngredient.nutritionalInfo?.fiber || null,
             createdAt: new Date(),
             updatedAt: new Date(),
-          } as any); // Type assertion temporaire pour OpenFoodFacts
+          } as any);
         }
       });
 
       res.json({
         success: true,
         data: {
-          ingredients: allIngredients.slice(0, 20), // Limiter à 20 résultats au total
+          ingredients: allIngredients.slice(0, 20),
+          detectedQuantity: parsed.detectedQuantity,
+          detectedUnit: parsed.detectedUnit,
         },
       });
     } catch (error) {

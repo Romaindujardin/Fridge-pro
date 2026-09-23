@@ -59,18 +59,18 @@ export function Modal({
       {/* Modal */}
       <div
         className={clsx(
-          "relative bg-white rounded-lg shadow-xl w-full mx-4",
+          "relative bg-white rounded-lg shadow-xl w-full mx-4 my-6 flex flex-col max-h-[88vh] overflow-hidden",
           sizes[size],
           className
         )}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between p-6 border-b">
+          <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
             <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
             >
               <X className="w-5 h-5" />
             </button>
@@ -78,7 +78,7 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className={clsx("p-6", title ? "pt-0" : "")}>{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
       </div>
     </div>
   );

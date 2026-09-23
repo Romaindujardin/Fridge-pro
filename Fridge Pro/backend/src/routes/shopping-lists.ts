@@ -24,6 +24,22 @@ const listSelect = {
   },
 };
 
+// Convertit et normalise un nombre décimal (gère virgule et point)
+const parseDecimalNumber = (val: unknown): number | unknown => {
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed === "") return undefined;
+    const normalized = trimmed.replace(",", ".");
+    if (!/^-?(\d+(\.\d*)?|\.\d+)$/.test(normalized)) {
+      return val;
+    }
+    const num = parseFloat(normalized);
+    return isNaN(num) ? val : num;
+  }
+  return val;
+};
+
 // Validation des payloads
 const createListSchema = z.object({
   name: z.string().min(1, "Le nom de la liste est requis"),
@@ -32,10 +48,12 @@ const createListSchema = z.object({
 const addItemSchema = z.object({
   ingredientId: z.string().min(1, "L'ingrédient est requis"),
   quantity: z
-    .number({
-      invalid_type_error: "La quantité doit être un nombre",
-    })
-    .positive("La quantité doit être supérieure à 0"),
+    .preprocess(
+      parseDecimalNumber,
+      z.number({
+        invalid_type_error: "La quantité doit être un nombre",
+      }).positive("La quantité doit être supérieure à 0")
+    ),
   unit: z.string().min(1, "L'unité est requise"),
   notes: z.string().nullable().optional().transform((val) => val ?? undefined),
 });
@@ -242,7 +260,7 @@ router.post(
         item = await prisma.shoppingListItem.update({
           where: { id: existingItem.id },
           data: {
-            quantity: existingItem.quantity + body.quantity,
+            quantity: Math.round((existingItem.quantity + body.quantity) * 1000) / 1000,
             unit: body.unit,
             notes: body.notes,
           },
