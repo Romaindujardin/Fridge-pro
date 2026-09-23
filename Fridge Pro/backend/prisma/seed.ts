@@ -16,49 +16,64 @@ async function main() {
   // Créer les catégories
   const categories = await Promise.all([
     prisma.category.upsert({
-      where: { name: "Légumes" },
-      update: {},
-      create: {
-        name: "Légumes",
-        color: "#22c55e",
-        icon: "🥬",
-      },
+      where: { name: "Les fruits & légumes" },
+      update: { color: "#16a34a", icon: "🥬" },
+      create: { name: "Les fruits & légumes", color: "#16a34a", icon: "🥬" },
     }),
     prisma.category.upsert({
-      where: { name: "Fruits" },
-      update: {},
-      create: {
-        name: "Fruits",
-        color: "#f59e0b",
-        icon: "🍎",
-      },
+      where: { name: "Les viandes" },
+      update: { color: "#dc2626", icon: "🥩" },
+      create: { name: "Les viandes", color: "#dc2626", icon: "🥩" },
     }),
     prisma.category.upsert({
-      where: { name: "Viandes & Poissons" },
-      update: {},
-      create: {
-        name: "Viandes & Poissons",
-        color: "#ef4444",
-        icon: "🥩",
-      },
+      where: { name: "Féculents" },
+      update: { color: "#d97706", icon: "🍝" },
+      create: { name: "Féculents", color: "#d97706", icon: "🍝" },
+    }),
+    prisma.category.upsert({
+      where: { name: "Surgelés" },
+      update: { color: "#0284c7", icon: "❄️" },
+      create: { name: "Surgelés", color: "#0284c7", icon: "❄️" },
     }),
     prisma.category.upsert({
       where: { name: "Produits laitiers" },
-      update: {},
-      create: {
-        name: "Produits laitiers",
-        color: "#3b82f6",
-        icon: "🧀",
-      },
+      update: { color: "#eab308", icon: "🧀" },
+      create: { name: "Produits laitiers", color: "#eab308", icon: "🧀" },
     }),
     prisma.category.upsert({
-      where: { name: "Céréales & Légumineuses" },
-      update: {},
-      create: {
-        name: "Céréales & Légumineuses",
-        color: "#8b5cf6",
-        icon: "🌾",
-      },
+      where: { name: "Conserves" },
+      update: { color: "#64748b", icon: "🥫" },
+      create: { name: "Conserves", color: "#64748b", icon: "🥫" },
+    }),
+    prisma.category.upsert({
+      where: { name: "Boissons" },
+      update: { color: "#06b6d4", icon: "🥤" },
+      create: { name: "Boissons", color: "#06b6d4", icon: "🥤" },
+    }),
+    prisma.category.upsert({
+      where: { name: "Sauces" },
+      update: { color: "#ea580c", icon: "🥣" },
+      create: { name: "Sauces", color: "#ea580c", icon: "🥣" },
+    }),
+    prisma.category.upsert({
+      where: { name: "Produits secs" },
+      update: { color: "#854d0e", icon: "🌾" },
+      create: { name: "Produits secs", color: "#854d0e", icon: "🌾" },
+    }),
+    prisma.category.upsert({
+      where: { name: "Petit déjeuner" },
+      update: { color: "#f59e0b", icon: "☕" },
+      create: { name: "Petit déjeuner", color: "#f59e0b", icon: "☕" },
+    }),
+    prisma.category.upsert({
+      where: { name: "Gâteaux" },
+      update: { color: "#ec4899", icon: "🍪" },
+      create: { name: "Gâteaux", color: "#ec4899", icon: "🍪" },
+    }),
+    prisma.category.upsert({
+      where: { name: "Apéritifs" },
+      update: { color: "#8b5cf6", icon: "🥨" },
+      create: { name: "Apéritifs", color: "#8b5cf6", icon: "🥨" },
     }),
   ]);
 

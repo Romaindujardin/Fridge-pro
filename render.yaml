@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: fridge-pro-backend
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: Fridge Pro/backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false

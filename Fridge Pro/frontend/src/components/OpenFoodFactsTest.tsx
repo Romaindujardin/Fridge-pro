@@ -182,9 +182,6 @@ const OpenFoodFactsTest: React.FC = () => {
 
                     {ingredient.category && (
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">
-                          {ingredient.category.icon}
-                        </span>
                         <span
                           className="text-xs px-2 py-1 rounded text-white"
                           style={{ backgroundColor: ingredient.category.color }}

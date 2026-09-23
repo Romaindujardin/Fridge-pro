@@ -31,12 +31,25 @@ export interface Category {
   id: string;
   name: string;
   color: string;
-  icon: string;
+  icon?: string;
+  _count?: {
+    ingredients: number;
+  };
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  color?: string;
+  icon?: string;
 }
 
 export interface Ingredient {
   id: string;
   name: string;
+  brand?: string;
+  packageQuantity?: string;
+  detectedQuantity?: number;
+  detectedUnit?: string;
   categoryId?: string;
   calories?: number;
   protein?: number;
@@ -51,8 +64,13 @@ export interface FridgeItem {
   id: string;
   userId: string;
   ingredientId: string;
+  itemCount?: number;
+  initialItemCount?: number | null;
   quantity: number;
+  initialQuantity?: number | null;
   unit: string;
+  brand?: string;
+  price?: number | null;
   expiryDate?: string;
   addedDate: string;
   notes?: string;
@@ -61,10 +79,53 @@ export interface FridgeItem {
 
 export interface AddFridgeItemRequest {
   ingredientId: string;
+  itemCount?: number;
+  initialItemCount?: number;
   quantity: number;
+  initialQuantity?: number;
   unit: string;
+  brand?: string;
+  price?: number;
+  categoryId?: string;
   expiryDate?: string;
   notes?: string;
+}
+
+// Types historique d'achat & consommation
+export interface PurchaseHistoryItem {
+  id: string;
+  userId: string;
+  ingredientId: string;
+  itemCount?: number | null;
+  quantity: number;
+  unit: string;
+  brand?: string | null;
+  price?: number | null;
+  status: "consumed" | "expired";
+  boughtDate: string;
+  finishedDate?: string | null;
+  notes?: string | null;
+  ingredient: Ingredient;
+}
+
+export interface HistoryStats {
+  totalSpent: number;
+  spentThisMonth: number;
+  consumedCount: number;
+  expiredCount: number;
+  totalItems: number;
+  averagePrice: number;
+}
+
+export interface GetHistoryResponse {
+  items: PurchaseHistoryItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  stats: HistoryStats;
 }
 
 // Types recettes
@@ -80,6 +141,10 @@ export interface Recipe {
   imageUrl?: string;
   source?: string;
   createdById?: string;
+  createdBy?: {
+    firstName: string;
+    lastName?: string;
+  };
   createdAt: string;
   updatedAt: string;
   ingredients: RecipeIngredient[];
@@ -88,6 +153,8 @@ export interface Recipe {
   missingIngredients?: number;
   compatibilityScore?: number;
   missingIngredientsCount?: number;
+  estimatedCost?: number | null;
+  costPerServing?: number | null;
 }
 
 export interface RecipeIngredient {
@@ -99,6 +166,7 @@ export interface RecipeIngredient {
   notes?: string;
   ingredient: Ingredient;
   available?: boolean;
+  estimatedPrice?: number | null;
 }
 
 export interface CreateRecipeRequest {

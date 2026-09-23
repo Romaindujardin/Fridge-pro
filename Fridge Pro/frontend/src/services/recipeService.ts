@@ -13,6 +13,8 @@ export const recipeService = {
     difficulty?: string;
     makeable?: boolean;
     favorites?: boolean;
+    page?: number;
+    limit?: number;
   }): Promise<Recipe[]> {
     try {
       const queryParams = new URLSearchParams();
@@ -21,6 +23,8 @@ export const recipeService = {
         queryParams.append("difficulty", params.difficulty);
       if (params?.makeable) queryParams.append("makeable", "true");
       if (params?.favorites) queryParams.append("favorites", "true");
+      if (params?.page) queryParams.append("page", String(params.page));
+      queryParams.append("limit", String(params?.limit || 100));
 
       const url = queryParams.toString()
         ? `/recipes?${queryParams}`
@@ -113,10 +117,10 @@ export const recipeService = {
   },
 
   // Récupérer les recettes favorites
-  async getFavoriteRecipes(): Promise<FavoriteRecipe[]> {
+  async getFavoriteRecipes(): Promise<Recipe[]> {
     try {
       const response = await api.get("/recipes/favorites");
-      const data = handleApiResponse<{ favorites: FavoriteRecipe[] }>(response);
+      const data = handleApiResponse<{ favorites: Recipe[] }>(response);
       return data.favorites;
     } catch (error) {
       return handleApiError(error);
@@ -130,6 +134,42 @@ export const recipeService = {
       const response = await api.post("/ai/generate-recipe", payload);
       const data = handleApiResponse<{ recipe: Recipe }>(response);
       return data.recipe;
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // Uploader ou mettre à jour la photo d'une recette (fichier ou URL)
+  async uploadRecipeImage(
+    id: string,
+    fileOrUrl: File | string
+  ): Promise<{ recipe: Recipe; imageUrl: string }> {
+    try {
+      if (typeof fileOrUrl === "string") {
+        const response = await api.post(`/recipes/${id}/image`, {
+          imageUrl: fileOrUrl,
+        });
+        return handleApiResponse<{ recipe: Recipe; imageUrl: string }>(response);
+      } else {
+        const formData = new FormData();
+        formData.append("image", fileOrUrl);
+        const response = await api.post(`/recipes/${id}/image`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        return handleApiResponse<{ recipe: Recipe; imageUrl: string }>(response);
+      }
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // Supprimer la photo d'une recette
+  async deleteRecipeImage(id: string): Promise<{ recipe: Recipe }> {
+    try {
+      const response = await api.delete(`/recipes/${id}/image`);
+      return handleApiResponse<{ recipe: Recipe }>(response);
     } catch (error) {
       return handleApiError(error);
     }

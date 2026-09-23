@@ -12,6 +12,7 @@ import fridgeRoutes from "./routes/fridge";
 import recipeRoutes from "./routes/recipes";
 import shoppingListRoutes from "./routes/shopping-lists";
 import aiRoutes from "./routes/ai";
+import categoryRoutes from "./routes/categories";
 
 // Middleware d'erreur
 import { errorHandler } from "./middleware/errorHandler";
@@ -30,9 +31,26 @@ export const prisma = new PrismaClient();
 app.use(helmet());
 
 // CORS
+const allowedOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((s) => s.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Autoriser les requêtes sans origine (curl, mobile, etc.)
+      if (!origin) return callback(null, true);
+      
+      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+      const isVercel = /\.vercel\.app$/.test(origin);
+      const isExplicitlyAllowed = allowedOrigins.includes(origin.replace(/\/+$/, ""));
+
+      if (isLocalhost || isVercel || isExplicitlyAllowed || process.env.NODE_ENV !== "production") {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissif pour éviter les blocages inopinés sur mobile
+    },
     credentials: true,
   })
 );
@@ -52,6 +70,7 @@ app.use("/uploads", express.static("uploads"));
 // Routes API
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/ingredients", ingredientRoutes);
 app.use("/api/fridge", fridgeRoutes);
 app.use("/api/recipes", recipeRoutes);

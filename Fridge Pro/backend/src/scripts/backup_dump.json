@@ -1,0 +1,4156 @@
+{
+  "exportedAt": "2026-09-23T13:01:07.950Z",
+  "counts": {
+    "users": 4,
+    "categories": 12,
+    "ingredients": 181,
+    "fridgeItems": 22,
+    "recipes": 25,
+    "recipeIngredients": 144,
+    "purchaseHistory": 11,
+    "shoppingLists": 1,
+    "favoriteRecipes": 0
+  },
+  "data": {
+    "users": [
+      {
+        "id": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "email": "demo@fridgepro.com",
+        "password": "$2a$10$qE.fWrXAs7IwoNyqq9r0du.OpSOdjSwPPvfSCSUYggMUtb7Da4IfC",
+        "firstName": "Romain",
+        "lastName": "User",
+        "geminiApiKey": "AIzaSyA5b7SVKTmM61-DKSqUbAVZv_V8N8ZwwrM",
+        "createdAt": "2025-07-09T05:36:38.980Z",
+        "updatedAt": "2025-11-14T08:52:11.659Z"
+      },
+      {
+        "id": "73626ebf-fa3b-4e1f-a109-a1bf5c443b60",
+        "email": "test@fridgepro.com",
+        "password": "$2a$10$ugwQT/65NhmCfRAwrbBhMupoBB1V9q/SoTv2MBPnv0ycaRiZoSy/S",
+        "firstName": "Test",
+        "lastName": "User",
+        "geminiApiKey": null,
+        "createdAt": "2025-07-09T05:36:38.980Z",
+        "updatedAt": "2025-07-09T05:36:38.980Z"
+      },
+      {
+        "id": "a913f4a9-5974-44c7-8e00-b031848f6329",
+        "email": "chef@fridgepro.com",
+        "password": "$2b$10$hashedpassword",
+        "firstName": "Chef",
+        "lastName": "Français",
+        "geminiApiKey": null,
+        "createdAt": "2025-07-09T06:21:02.443Z",
+        "updatedAt": "2025-07-09T06:21:02.443Z"
+      },
+      {
+        "id": "163eaaa3-875b-44ac-a1a4-340ff430cf32",
+        "email": "admin@fridgepro.com",
+        "password": "$2a$10$59ZMbCVTl5buxCEBphZ5l..i3iJXjYTZ/FkcXZhwQeiythdGbjiNC",
+        "firstName": "Admin",
+        "lastName": "User",
+        "geminiApiKey": null,
+        "createdAt": "2025-07-09T05:36:38.980Z",
+        "updatedAt": "2025-07-09T05:36:38.980Z"
+      }
+    ],
+    "categories": [
+      {
+        "id": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "name": "Les fruits & légumes",
+        "color": "#16a34a",
+        "icon": "🥬"
+      },
+      {
+        "id": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "name": "Les viandes",
+        "color": "#dc2626",
+        "icon": "🥩"
+      },
+      {
+        "id": "05117260-0873-43fe-b652-a447dc5ff382",
+        "name": "Féculents",
+        "color": "#d97706",
+        "icon": "🍝"
+      },
+      {
+        "id": "13e99ec5-f06a-4caa-857f-b73204864710",
+        "name": "Surgelés",
+        "color": "#0284c7",
+        "icon": "❄️"
+      },
+      {
+        "id": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "name": "Produits laitiers",
+        "color": "#eab308",
+        "icon": "🧀"
+      },
+      {
+        "id": "fb2dfa69-cbd4-4812-8aaa-f9843e8d18f2",
+        "name": "Conserves",
+        "color": "#64748b",
+        "icon": "🥫"
+      },
+      {
+        "id": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "name": "Boissons",
+        "color": "#06b6d4",
+        "icon": "🥤"
+      },
+      {
+        "id": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "name": "Sauces",
+        "color": "#ea580c",
+        "icon": "🥣"
+      },
+      {
+        "id": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "name": "Produits secs",
+        "color": "#854d0e",
+        "icon": "🌾"
+      },
+      {
+        "id": "2a31ec16-c348-4b5a-8d46-c4df1332f7ae",
+        "name": "Petit déjeuner",
+        "color": "#f59e0b",
+        "icon": "☕"
+      },
+      {
+        "id": "9958256a-d19d-4c3d-a1c6-7da3c312f31a",
+        "name": "Gâteaux",
+        "color": "#ec4899",
+        "icon": "🍪"
+      },
+      {
+        "id": "1e79d5f3-8791-4b0a-81b6-7b983feb69c8",
+        "name": "Apéritifs",
+        "color": "#8b5cf6",
+        "icon": "🥨"
+      }
+    ],
+    "ingredients": [
+      {
+        "id": "eae34c6c-6120-4773-b9b2-cf2dc23f602b",
+        "name": "Tomate",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": 18,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6e1682fd-7431-4956-bdc6-cfff39965834",
+        "name": "Oignon",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": 40,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6486f316-ac0c-45fd-8eb2-7697674bf7b3",
+        "name": "Carotte",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": 41,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "80babd29-e74f-4cdf-b76f-900f55cf1585",
+        "name": "Pomme",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": 52,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ae60fa9e-4f12-49f4-9aea-d12d76b3421f",
+        "name": "Banane",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": 89,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "df80be0b-ee8e-483b-9d63-c59f58d85ac1",
+        "name": "Poulet",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": 165,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d610cef7-4e31-49d8-b187-8da83528f5b5",
+        "name": "Saumon",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": 208,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "7c194097-1c9b-4413-a411-f8db7740ea7c",
+        "name": "Lait",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": 42,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "9398d869-a129-421a-8209-8d43fd7e1520",
+        "name": "Fromage",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": 113,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0f459666-966f-47a5-ad97-043d75858894",
+        "name": "Riz",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": 130,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "43c996a5-e991-4c24-aa86-60e75222e680",
+        "name": "Pâtes",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": 131,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c88a7444-6f90-4534-87f9-2caa444a59b3",
+        "name": "Bœuf à braiser",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "118ba3fc-34bd-4cc6-8522-f9b4cb182ab5",
+        "name": "Vin rouge",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e8d9b340-9511-41e4-bfa9-ffecdb3eee24",
+        "name": "Carottes",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d0f2bed0-3c0b-401a-865a-36310999e573",
+        "name": "Oignons",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "50e4102c-d625-4c7d-9146-c904b9ac45c0",
+        "name": "Lardons",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "8e2edefa-8687-4147-bbfa-cf90d13db101",
+        "name": "Champignons de Paris",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ddda9358-aeb9-46eb-86be-a1cf145b3761",
+        "name": "Bouquet garni",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "8a627fe2-05e4-4a1a-b09b-c57e1b5e7dd8",
+        "name": "Bouillon de bœuf",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e6e8746f-575c-406f-bc2f-3f23286cb49e",
+        "name": "Coq (ou poulet)",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "fceb77af-bddc-4995-b12b-68ca0ec89b4a",
+        "name": "Vin blanc sec",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "77645bf2-47b6-481f-896a-9ee41d81c23d",
+        "name": "Petits oignons",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0b023b45-8958-4c28-a6f4-a16ca33e9125",
+        "name": "Champignons",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "84137760-cec5-4f93-9d9d-0eb474e83144",
+        "name": "Cognac",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "8f0931eb-c631-4894-93c0-8443806a3d09",
+        "name": "Aubergines",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "b68ad5b6-64cb-4a7f-a40d-0568f15f7da9",
+        "name": "Courgettes",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "9dfbf0ab-e24f-452e-863d-ef8da1de697c",
+        "name": "Tomates",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "a7c97ac4-7734-46f8-a022-cbd2efc2d90a",
+        "name": "Poivrons rouges",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e0c89a39-cac3-4040-9d14-6425f1cb6298",
+        "name": "Ail",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "1ae5ebe5-d22d-4a07-9dec-2fec0b99df05",
+        "name": "Herbes de Provence",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c6747e02-d5be-4f0c-8670-f0e8c9886f63",
+        "name": "Huile d'olive",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ac120ab8-8d81-4e5b-b028-36e213096428",
+        "name": "Haricots blancs secs",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f8e05f52-d257-48d0-bcce-482ae74316dc",
+        "name": "Confit de canard",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "4355b6e5-cfab-45a5-b1e8-8e4eb8e420ed",
+        "name": "Saucisse de Toulouse",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "adb9c2ee-2b85-4036-9b91-acbdd759a6b7",
+        "name": "Pâte brisée",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "b49c9ac0-e8ae-44da-af20-ff359effee13",
+        "name": "Œufs",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "4ee57b96-0f64-4551-a129-01d69bb1eddb",
+        "name": "Crème fraîche",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "name": "Gruyère râpé",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "655597c7-ba72-4341-9593-57d51a695ccc",
+        "name": "Muscade",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "52367c40-038d-46fa-84e1-23fd524e889d",
+        "name": "Os à moelle",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "b3557938-5f9d-487f-8c95-2e9f65ea17eb",
+        "name": "Navets",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "3f9d5ff9-0309-4891-8422-385cffcccf82",
+        "name": "Poireaux",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "afcc8b7a-05b6-4b1a-8e78-bb2ab9b522ca",
+        "name": "Céleri-rave",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ab3eb8a6-f1cf-4ec3-8e61-5953215df0a0",
+        "name": "Pommes de terre",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f744ccd0-f13f-4633-b9cc-82f086ede82d",
+        "name": "Pommes Golden",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e1a0c9a6-762a-4ee1-83b6-7639866300ee",
+        "name": "Pâte feuilletée",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "5fb2b065-64a4-4eaa-bcd5-83ade006b68d",
+        "name": "Sucre en poudre",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "153e142c-38df-4ecf-8018-993a921b8e6d",
+        "name": "Beurre",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "59f55d41-b8b1-4d8c-a0dc-1f102043be64",
+        "name": "Cannelle",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "29e879ca-8677-4b40-8690-846566d07a20",
+        "name": "Épaule de veau",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ae957f1b-f16e-4938-b868-792403a559bd",
+        "name": "Farine",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ec194150-9c1c-4f02-bcb1-8238e3bc21b2",
+        "name": "Café Expresso",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "daf6f946-ae01-47a9-993e-e70687e2445f",
+        "name": "San Pellegrino 50CL",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0b5bf872-d59a-4203-bc34-bf8e034fbbed",
+        "name": "Pasteque",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "20458843-cce8-4a95-8382-244cb97cbf09",
+        "name": "San Pellegrino",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "36547fa9-7bac-4b3e-a2fb-2aa2bae53962",
+        "name": "Eau de cuisson des pâtes",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "5118e6ce-5d0d-4831-9d00-f4d82753e8b4",
+        "name": "Tomates cerises",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "199e265c-d507-4585-bc9b-9670ca336bdd",
+        "name": "Basilic frais",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "cb2ebfda-9417-4695-9dda-24b3ec8a0693",
+        "name": "Poivron rouge",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "8d998ee8-533b-47e1-99b5-c0860296c70d",
+        "name": "Sel",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "3fbe192c-89fb-429b-9a33-a4b78d923d0e",
+        "name": "Oignon rouge",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "46e784d5-4499-41a8-a48b-5b483d1b130c",
+        "name": "Parmesan râpé",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6fd824cf-6a1f-40db-a14a-9a5bc48ea6a1",
+        "name": "Brocoli",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "627b9225-27e5-4ea0-8109-56493375070e",
+        "name": "Coriandre fraîche (ou persil)",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "fb79386d-3b25-47e1-969e-08f8ee1e2779",
+        "name": "allumettes de bacon",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f157abe9-f13c-4747-967b-2233840642d7",
+        "name": "Bouillon de volaille",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "396887b8-99be-4920-a935-19530b98940e",
+        "name": "Pâtes penne",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "3f8b84ee-c6f3-4863-9db2-d7b18dc89fd9",
+        "name": "Gorgonzola",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "21dd973a-beee-4937-954a-7127d3092929",
+        "name": "Piment de Cayenne",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c05d8178-c71d-4412-b990-683cddaef61e",
+        "name": "Café Expresso serré",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "a6034d90-8823-4961-8ba1-24c558c57fe3",
+        "name": "Concentré de tomate",
+        "categoryId": "fb2dfa69-cbd4-4812-8aaa-f9843e8d18f2",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "fb35888a-1805-4454-858e-835dd930aa43",
+        "name": "Eau pétillante San Pellegrino",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6c631934-5506-4575-9294-a21e120f69f3",
+        "name": "Cassonade (ou miel)",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "72367648-a4d5-4022-b5bf-3650fe32fc2f",
+        "name": "CAFE EXPRESSO",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ead826aa-f37c-44cd-a6f1-3a888a42bfe6",
+        "name": "Pâtes spaghetti n°5 1kg",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "5fc668c8-9168-47f2-804f-bccc45cca49f",
+        "name": "Crème liquide entière (30%)",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f1de6eae-dd05-4ca3-adbf-426027c6288c",
+        "name": "Pièce de bœuf (faux filet, entrecôte ou bavette)",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "133d758b-7634-4032-8f50-102c4de1e7a1",
+        "name": "Haricots verts",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f0fc21e7-71b9-4344-8048-a213d88dd47e",
+        "name": "Frites ou Tater tots",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6f6a0751-8d2f-477d-a950-990f3f9a50e9",
+        "name": "Beurre doux ramolli",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "100115aa-c2be-4bfe-a9d2-3a883ac49cde",
+        "name": "Sucre cassonade",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c6f6e543-b953-4c01-9b92-e79f9e7f7218",
+        "name": "Lait entier",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c1c45e90-015c-4ea4-bc31-7d4c2f52eb83",
+        "name": "Extrait naturel de vanille",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d936606c-224e-4ac3-bf4a-63f70861d5fb",
+        "name": "Huile de tournesol",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0e8b1822-5a72-40f5-bb78-b415de200eff",
+        "name": "Levure chimique",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e4d85172-c7a0-4f37-8f4c-78dd035c9dec",
+        "name": "Cacao amer en poudre",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "37e0b9ec-2f92-4ad8-887e-7dfa28ddd163",
+        "name": "Petit suisse",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "9a2e5a3a-75ed-4966-8b3a-c240ad8eed6c",
+        "name": "Compote de pommes",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "2874726e-5a5d-4cdb-a92b-60fb4a29da78",
+        "name": "Pépites de chocolat",
+        "categoryId": "9958256a-d19d-4c3d-a1c6-7da3c312f31a",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d2bb6695-0a83-4b50-a6ea-699e2c61e282",
+        "name": "Beurre de cacahuète",
+        "categoryId": "2a31ec16-c348-4b5a-8d46-c4df1332f7ae",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c29b9800-fbec-4651-a7ac-15d6cfbd59fc",
+        "name": "Pommes",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "805288e8-420d-4ee4-8985-4bcd150e8445",
+        "name": "Galettes de wrap",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "811879bb-75b5-4674-9641-6487fa2567d6",
+        "name": "Filets de poulet",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c425cab1-57d4-40eb-85d8-c560c0eca5e9",
+        "name": "Salade romaine",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "32549002-4026-4896-922f-8b3d209acb65",
+        "name": "Yaourt à la grecque",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "77b98dc8-20af-4a6b-9f24-47e929f59cfd",
+        "name": "Mayonnaise",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "4f344978-8881-4e90-a232-c6a34e534d3d",
+        "name": "Oignons crispy",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c2258200-88d6-46f5-957d-a793ed66038d",
+        "name": "Jambon blanc",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f2b857ab-3254-4ee0-b060-567834f52257",
+        "name": "Olives vertes",
+        "categoryId": "1e79d5f3-8791-4b0a-81b6-7b983feb69c8",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d4096e70-4f2d-47cb-9476-b188371bb856",
+        "name": "Galettes de sarrasin",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "bd27b73f-1753-425c-8255-44392cddc401",
+        "name": "Nouilles udon",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ae1f9974-45b6-4a99-b8c5-027032ee8132",
+        "name": "Pousses de soja",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d6258552-f4d6-46da-a122-33d3f2c3052c",
+        "name": "Oignons verts",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "1dc5f526-2809-47f4-86b2-826b1ddd8a2a",
+        "name": "Sauce soja",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "030f757b-266e-4e64-9ade-2e262c86f4b8",
+        "name": "Sauce tikka masala",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "032dd3cd-9b9f-4af4-9687-08f5371ad3e3",
+        "name": "Salade mixte",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "88145d0a-2b5b-4eb4-93c1-3ff4e804c274",
+        "name": "Tenders de poulet",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "39007ae4-e60a-4588-80ae-9922e0c11b5b",
+        "name": "Comté",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "a096dd75-c384-4aa5-9499-5e2f08e9a84b",
+        "name": "Sauce César",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e36330a5-9f90-40a0-8f0a-1ea368cf338a",
+        "name": "Pavés de saumon",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "3a01b48a-aee3-4b9e-8ac0-cbf9d35c8c8c",
+        "name": "Viande hachée de bœuf",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0e824a8a-dd4c-49e9-ad9e-68b86c50f0fe",
+        "name": "Sauce Chili con carne",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "89ecbbab-9adb-46e8-82c9-197bb37d5f92",
+        "name": "Pesto genovese",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "04e22602-4c11-45c9-9911-c66c4118ccf4",
+        "name": "Mascarpone",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6bc396cb-839e-4d1e-9877-77acd923caa9",
+        "name": "Grana Padano râpé",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f842b696-c946-4278-83f0-3758c1a444aa",
+        "name": "Pâtes à lasagnes",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "1c0d4cba-3364-45c7-b3de-96b687674ea5",
+        "name": "Sauce bolognaise",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "bdd6b69b-3e81-427c-8870-6de21eabf18e",
+        "name": "Pâtes courtes",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f7b367e6-be7e-42ec-b7d1-a9395a94ca1d",
+        "name": "Chorizo",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "a072a4d5-3355-4580-aba5-a32a3b9d2c32",
+        "name": "Mozzarella râpée",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "063c1c05-6d38-45f5-aacc-730ea0d65615",
+        "name": "Mélange d'épices mexicaines",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "8276e540-a661-4530-8989-27f83de26061",
+        "name": "Crozets",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "82f1e150-db8e-4859-b418-5f996f7cf12f",
+        "name": "Beaufort",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "9a32844a-507d-4d5d-aa44-d40b5c2a2257",
+        "name": "Pain burger brioché",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "dae1019b-aae7-48cb-a619-ec89792d2155",
+        "name": "Steak haché de bœuf",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "59714f43-d031-40d4-8cf1-15ca5d1c1d40",
+        "name": "Cheddar en tranches",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e8890b9f-43ee-4058-bf23-502ae27dcaa4",
+        "name": "Fromage blanc 3%",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "3e94ce9e-d145-493b-b31e-f6e0f5fba5ed",
+        "name": "Coca Cola Cherry",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "820a1a7e-e631-4382-b94e-4fd6cc589b63",
+        "name": "Wraps",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "2f0b8a22-7479-4c4c-99c6-d080cdaabd5c",
+        "name": "Pomme de terre",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": 77,
+        "protein": 2,
+        "carbs": 17.5,
+        "fat": 0.1,
+        "fiber": null
+      },
+      {
+        "id": "214c20b3-bdd0-47d5-8d40-aae4fc634281",
+        "name": "Pesto bio 190G",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6ca72356-bf44-4541-85fc-3e1978548ce2",
+        "name": "Jarret de bœuf",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "701f0e75-d14e-49e1-95ac-2c31078f5835",
+        "name": "chips saveur barbecue",
+        "categoryId": "1e79d5f3-8791-4b0a-81b6-7b983feb69c8",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c133ba97-fe94-435e-b263-361b2894e2dd",
+        "name": "Creme uht 12% mg liquide 3x20cl",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f9c7078d-e832-44c0-acab-8dda038ec33c",
+        "name": "Pastèque Cube",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "faf4a1a3-a151-498b-abef-36c7817a945e",
+        "name": "Pâtes (type Penne ou Fusilli)",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "b2386c0d-ca31-4e61-869c-3b3bbeb17928",
+        "name": "Fiorini sauce bolognaise 420g",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6fe4424b-44e8-43df-8626-5fe3e0ed1244",
+        "name": "Huile d'olive extra vierge",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0406046a-1674-4e13-9de4-d7e5d30c4e97",
+        "name": "Courgette",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d435d178-9f9b-475c-a9e1-31f24cfc2a5e",
+        "name": "Poivre noir",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "5809f826-a4c5-4019-a051-df86a2946203",
+        "name": "pastèque",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0b64bb1f-9e97-4a81-a879-5a5eab3648d6",
+        "name": "Riz basmati bio 500g",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "b126a863-5d4c-443c-8baa-e2cb568ee31d",
+        "name": "Spaghetti 1 Kg",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "87b3098d-e195-406f-938c-c1e7c34608bf",
+        "name": "Crème FLUIDE",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "47130935-f8ef-466c-822c-099e6eec108b",
+        "name": "Creme légère et fluide 12%",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "b73e4cd6-0279-4947-a50b-ec4ac288b942",
+        "name": "Crème épaisse légère (15 % MG)",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0df66f6e-0a6f-4a73-846b-e37004ceaac4",
+        "name": "Allumettes de bacon Fumées",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "a87430fa-4b4a-4b56-9574-e341e4c8afa0",
+        "name": "Épinards frais",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "16a42abc-85c2-48db-bca6-7ba78cc18f40",
+        "name": "Hauts de cuisse de poulet (avec os et peau)",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e88264c7-7dc4-4ac3-8cd1-0da9dab9accf",
+        "name": "Vinaigre de cidre (ou balsamique)",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ddb47e2a-dd6f-4dab-a2f4-46030a02a056",
+        "name": "Paprika fumé",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6cb70b0b-716e-4977-b321-98d07384402b",
+        "name": "Poivre noir fraîchement moulu",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "065b443a-ec2b-41c0-b36e-3e45085bceb6",
+        "name": "Huile de sésame",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "bf5cfce4-c6c8-49a7-b972-842ebd7abbeb",
+        "name": "Salade",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "ef13dbbe-d2ad-4ee0-823d-02d88d8eedad",
+        "name": "Pain de mie",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "643326c0-018e-4a81-a331-44da7e31eed5",
+        "name": "Poulet croustillant",
+        "categoryId": "c6c7b762-871b-4fd3-a477-c0e2b8e26980",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "b9cdc61b-f8e6-4829-81da-76cf0487ce59",
+        "name": "Tagliatelles",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "5bc5fb88-cf7b-4aa7-828e-06965a8b61f4",
+        "name": "Pesto au basilic frais",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "45da519d-2198-4645-9e5b-7de6d7572358",
+        "name": "Coca-Cola Cherry",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "cb0682f4-7c5a-41cc-94af-3d72fad2c5db",
+        "name": "Sirop de grenadine",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "a0c07d25-d767-4806-9998-cfd9ea142dc6",
+        "name": "Eau pétillante",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "da4ddc67-c5d9-449a-902a-b1e1ab5bdda8",
+        "name": "Spaghetti n°5",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "983e05c4-7bb3-4fc0-b4d4-23ea06a20ded",
+        "name": "Sauce pesto avec basilic",
+        "categoryId": "b9bbce52-5dd4-4427-be82-2078dce3b26f",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "1ac7882f-d8ed-4f3c-973f-ddc54306af3c",
+        "name": "Pâtes coquillettes 1kg",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "6cffd613-1744-4b89-90a9-711d6b253799",
+        "name": "Couscous Grain Moyen",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "aaf92fef-ba62-45f5-83c7-8532416a897a",
+        "name": "Coquillettes 1 kg",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "04e1641e-1f4b-4d13-b60b-02106e345325",
+        "name": "Penne Rigate",
+        "categoryId": "05117260-0873-43fe-b652-a447dc5ff382",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "1598ea49-822a-4af7-9829-fb4dd15e3b42",
+        "name": "Creme légère et fluide",
+        "categoryId": "4628e676-1235-4a0b-aa97-12cddc5210de",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "4c6cd427-2a44-45ed-b5eb-6ec257209268",
+        "name": "Sucre sachet Poudre 1 Kg",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "a525d4f2-6137-416b-8033-b513fdde7c69",
+        "name": "Brioche",
+        "categoryId": "2a31ec16-c348-4b5a-8d46-c4df1332f7ae",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c93ff155-4a18-45b3-baa3-72216ac0c453",
+        "name": "Brioche nature",
+        "categoryId": "2a31ec16-c348-4b5a-8d46-c4df1332f7ae",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "f90ae096-b2f9-4d09-9f59-ba3c8687b736",
+        "name": "Thé vert menthe",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c4670b7d-4c40-4873-bc2e-34aacd29a129",
+        "name": "Chocolat noir Equateur Bio",
+        "categoryId": "9958256a-d19d-4c3d-a1c6-7da3c312f31a",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "0a311190-11ca-4a40-8d6b-30b903847620",
+        "name": "Chocolat noir",
+        "categoryId": "9958256a-d19d-4c3d-a1c6-7da3c312f31a",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "332f2810-f68b-4b2a-9e6c-8599df31f254",
+        "name": "Nocciolata",
+        "categoryId": "2a31ec16-c348-4b5a-8d46-c4df1332f7ae",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d991e69f-1bda-4d13-89af-7bb16af6bb6f",
+        "name": "Be Nuts ! - Pâte à tartiner Cacahuète",
+        "categoryId": "2a31ec16-c348-4b5a-8d46-c4df1332f7ae",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "c6c697b1-bd79-4df5-977d-6d71bdf28763",
+        "name": "Sel fin",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e7bb0a15-7dc7-4783-b10d-b050c67be8f6",
+        "name": "raisin",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "d542bd30-2855-466b-b4ed-e01963aa1c8f",
+        "name": "concombre",
+        "categoryId": "48bb47e7-6a1d-43c7-a818-2c96f0d49470",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "fa1e2adc-5791-4ab4-902e-decb46ed71a7",
+        "name": "Farine de blé",
+        "categoryId": "1680bb69-a2c6-4125-9bb0-8525b9243b32",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      },
+      {
+        "id": "e4802ecb-1362-4ef7-abe0-2f092dfb8ed1",
+        "name": "Cherry Coca-Cola",
+        "categoryId": "646963ae-a4e7-458b-9ed5-80fed180f26b",
+        "calories": null,
+        "protein": null,
+        "carbs": null,
+        "fat": null,
+        "fiber": null
+      }
+    ],
+    "fridgeItems": [
+      {
+        "id": "142677e4-68a6-4818-93f0-407db8651128",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "b73e4cd6-0279-4947-a50b-ec4ac288b942",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 250,
+        "initialQuantity": 500,
+        "unit": "g",
+        "brand": null,
+        "price": 0.95,
+        "expiryDate": "2026-10-24T00:00:00.000Z",
+        "addedDate": "2026-09-22T14:20:54.560Z",
+        "notes": null
+      },
+      {
+        "id": "1fbf9349-e6cd-4e63-9133-459d55aa2753",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "e8890b9f-43ee-4058-bf23-502ae27dcaa4",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 1,
+        "initialQuantity": 1,
+        "unit": "kg",
+        "brand": null,
+        "price": 1.8,
+        "expiryDate": "2026-10-16T00:00:00.000Z",
+        "addedDate": "2026-09-22T14:23:26.298Z",
+        "notes": null
+      },
+      {
+        "id": "d683c04f-0b0c-4db0-80c6-6f9cb8b36817",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "e4802ecb-1362-4ef7-abe0-2f092dfb8ed1",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 1.25,
+        "initialQuantity": 1.25,
+        "unit": "L",
+        "brand": "Coca-Cola",
+        "price": 1.84,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:15:30.398Z",
+        "notes": null
+      },
+      {
+        "id": "0bef5b3d-0465-4a9c-bff6-a446a4385712",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "d542bd30-2855-466b-b4ed-e01963aa1c8f",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 1,
+        "initialQuantity": 1,
+        "unit": "pièce",
+        "brand": null,
+        "price": 1.19,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:16:28.231Z",
+        "notes": null
+      },
+      {
+        "id": "036ca890-f08a-4109-a10b-100d844cb681",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "0b64bb1f-9e97-4a81-a879-5a5eab3648d6",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 500,
+        "initialQuantity": 500,
+        "unit": "g",
+        "brand": "Saint Eloi",
+        "price": 1.42,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:31:28.677Z",
+        "notes": null
+      },
+      {
+        "id": "8ac44fb4-0404-4c36-bc26-82f838f42bdf",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "6cffd613-1744-4b89-90a9-711d6b253799",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 1000,
+        "initialQuantity": 1000,
+        "unit": "g",
+        "brand": "Saint Eloi",
+        "price": null,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:31:08.953Z",
+        "notes": null
+      },
+      {
+        "id": "18185e6a-8e13-49a0-ab24-37fbfa6fc66c",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "820a1a7e-e631-4382-b94e-4fd6cc589b63",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 6,
+        "initialQuantity": 6,
+        "unit": "pièce",
+        "brand": "Old El Paso",
+        "price": 2.28,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:33:37.478Z",
+        "notes": null
+      },
+      {
+        "id": "bbdc9e70-9126-4ae6-8d18-25d3b6377999",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "aaf92fef-ba62-45f5-83c7-8532416a897a",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 1000,
+        "initialQuantity": 1000,
+        "unit": "g",
+        "brand": "Fiorini",
+        "price": 1.36,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:32:04.541Z",
+        "notes": null
+      },
+      {
+        "id": "5b661bc7-95d6-4ab7-877a-aae1ae3fbf15",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "b126a863-5d4c-443c-8baa-e2cb568ee31d",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 500,
+        "initialQuantity": 1000,
+        "unit": "g",
+        "brand": "Fiorini",
+        "price": 1.04,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:32:32.021Z",
+        "notes": null
+      },
+      {
+        "id": "01a56b2d-cbfb-4485-9e36-1c0c917c8561",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "5bc5fb88-cf7b-4aa7-828e-06965a8b61f4",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 95,
+        "initialQuantity": 190,
+        "unit": "g",
+        "brand": null,
+        "price": 0.72,
+        "expiryDate": "2029-06-23T00:00:00.000Z",
+        "addedDate": "2026-09-22T16:35:04.995Z",
+        "notes": null
+      },
+      {
+        "id": "562ceeee-e874-46c8-b5b6-c81ac9ea2084",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "04e1641e-1f4b-4d13-b60b-02106e345325",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 800,
+        "initialQuantity": 1000,
+        "unit": "g",
+        "brand": "Fiorini",
+        "price": 0.98,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:33:02.476Z",
+        "notes": null
+      },
+      {
+        "id": "8479981f-e004-41d0-b2d9-820bd607de69",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "c93ff155-4a18-45b3-baa3-72216ac0c453",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 1,
+        "initialQuantity": 1,
+        "unit": "pièce",
+        "brand": null,
+        "price": null,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:39:45.570Z",
+        "notes": null
+      },
+      {
+        "id": "cdb95afb-93cd-4ef4-a7b7-ace91cdcf336",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "fa1e2adc-5791-4ab4-902e-decb46ed71a7",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 1,
+        "initialQuantity": 1,
+        "unit": "kg",
+        "brand": null,
+        "price": 0.54,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:37:22.624Z",
+        "notes": null
+      },
+      {
+        "id": "a4989cdd-088b-449d-87c1-4a328af1d993",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "47130935-f8ef-466c-822c-099e6eec108b",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 600,
+        "initialQuantity": 600,
+        "unit": "ml",
+        "brand": "Paturages",
+        "price": 1.86,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:36:43.838Z",
+        "notes": null
+      },
+      {
+        "id": "09674825-83a8-4a60-b69d-e22a90fe8143",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "4c6cd427-2a44-45ed-b5eb-6ec257209268",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 1000,
+        "initialQuantity": 1000,
+        "unit": "g",
+        "brand": "Top budget",
+        "price": 0.85,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:37:50.013Z",
+        "notes": null
+      },
+      {
+        "id": "04f58cc7-9c75-4701-ba2b-159f79d45fe6",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "87b3098d-e195-406f-938c-c1e7c34608bf",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 20,
+        "initialQuantity": 60,
+        "unit": "cl",
+        "brand": null,
+        "price": 0.88,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:39:06.730Z",
+        "notes": "entière & fluide 30%"
+      },
+      {
+        "id": "61191af0-8043-46d1-ba71-ea0acb243e10",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "f90ae096-b2f9-4d09-9f59-ba3c8687b736",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 30,
+        "initialQuantity": 100,
+        "unit": "pièce",
+        "brand": null,
+        "price": null,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:40:58.239Z",
+        "notes": null
+      },
+      {
+        "id": "1dd3a790-9d8f-4329-89e2-f7a39539aac7",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "0a311190-11ca-4a40-8d6b-30b903847620",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 100,
+        "initialQuantity": 100,
+        "unit": "g",
+        "brand": "J.D. Gross",
+        "price": null,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:42:14.152Z",
+        "notes": null
+      },
+      {
+        "id": "b5c61c2c-912b-4b72-a87c-487ff8ebe3b2",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "332f2810-f68b-4b2a-9e6c-8599df31f254",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 250,
+        "initialQuantity": 250,
+        "unit": "g",
+        "brand": "Rigoni Di Asiago",
+        "price": null,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:44:12.626Z",
+        "notes": null
+      },
+      {
+        "id": "7a9ab796-c131-44f1-a4b3-5ca34a569d6b",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "d991e69f-1bda-4d13-89af-7bb16af6bb6f",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 325,
+        "initialQuantity": 325,
+        "unit": "g",
+        "brand": "Andros",
+        "price": null,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:44:39.828Z",
+        "notes": null
+      },
+      {
+        "id": "150ccf1b-a817-4a3a-a447-850f624930df",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "b2386c0d-ca31-4e61-869c-3b3bbeb17928",
+        "itemCount": 1,
+        "initialItemCount": 1,
+        "quantity": 420,
+        "initialQuantity": 420,
+        "unit": "g",
+        "brand": "Fiorini",
+        "price": 1.47,
+        "expiryDate": null,
+        "addedDate": "2026-09-22T16:47:09.595Z",
+        "notes": null
+      },
+      {
+        "id": "c714c6f2-8a62-4c0b-85e7-0da006899f08",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "0df66f6e-0a6f-4a73-846b-e37004ceaac4",
+        "itemCount": 1,
+        "initialItemCount": 2,
+        "quantity": 200,
+        "initialQuantity": 400,
+        "unit": "g",
+        "brand": "Marque Repère",
+        "price": 0.87,
+        "expiryDate": null,
+        "addedDate": "2026-09-23T11:32:00.529Z",
+        "notes": null
+      }
+    ],
+    "recipes": [
+      {
+        "id": "d82a3bb7-cd60-48a2-9d4a-ba52fd76446c",
+        "title": "Pièce de bœuf sauce gorgonzola",
+        "description": "Pièce de bœuf savoureuse arrosée de beurre mousseux et servie avec une sauce onctueuse au gorgonzola, accompagnée de haricots verts et frites ou tater tots.",
+        "instructions": [
+          "Sortir les pièces de bœuf du frigo 15 à 20 minutes avant la cuisson.",
+          "Couper le gorgonzola en petits morceaux.",
+          "Mettre la crème liquide entière dans une petite casserole à feu doux.",
+          "Ajouter le gorgonzola et mélanger doucement jusqu'à ce qu'il soit complètement fondu et lisse.",
+          "Saler et poivrer la viande des 2 côtés.",
+          "Faire chauffer une poêle à feu vif avec un peu d'huile d'olive et de beurre.",
+          "Faire cuire la viande environ 2 minutes par face pour une cuisson saignante (selon l'épaisseur).",
+          "Ajouter une noix de beurre en fin de cuisson et arroser la viande avec le beurre moussant.",
+          "Servir aussitôt la viande nappée de sauce gorgonzola, accompagnée de haricots verts et de frites ou tater tots."
+        ],
+        "prepTime": 15,
+        "cookTime": 10,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": "/beef_gorgonzola.jpg",
+        "source": "user",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:07:37.790Z",
+        "updatedAt": "2026-09-22T15:08:22.611Z"
+      },
+      {
+        "id": "88052e58-e266-45af-a760-41fe56df7981",
+        "title": "Gâteau marbré vanille et chocolat",
+        "description": "Un gâteau marbré ultra moelleux avec un superbe marbrage zébré vanille et cacao amer.",
+        "instructions": [
+          "Préchauffer le four à 175°C en chaleur traditionnelle. Beurrer et chemiser de papier cuisson un moule à cake (environ 27x10cm).",
+          "Dans un grand récipient, fouetter le beurre ramolli avec le sucre en poudre et la cassonade pour obtenir une texture crémeuse. Ajouter les œufs et mélanger pour homogénéiser.",
+          "À part, mélanger les ingrédients secs : farine, levure chimique et sel.",
+          "À part, mélanger les ingrédients humides : lait, huile neutre, crème liquide et extrait naturel de vanille.",
+          "Incorporer ensuite, dans le grand récipient, la moitié des ingrédients humides, puis la moitié des ingrédients secs. Terminer par le reste sans trop mélanger pour préserver le moelleux.",
+          "Diviser la pâte en deux parts égales. Dans l'une d'elles, incorporer le cacao amer tamisé et bien mélanger.",
+          "Pour créer l'effet marbré : alterner dans le moule 1/3 de pâte nature, 1/2 pâte chocolat, 1/3 pâte nature, 1/2 pâte chocolat et terminer par le reste de pâte nature.",
+          "Enfourner pour 45 à 55 minutes. Le dessus doit être bien doré et la lame d'un pic doit ressortir sèche. Laisser tiédir avant de démouler."
+        ],
+        "prepTime": 20,
+        "cookTime": 50,
+        "servings": 8,
+        "difficulty": "medium",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.254Z",
+        "updatedAt": "2026-09-22T15:14:41.254Z"
+      },
+      {
+        "id": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "title": "Banana bread au beurre de cacahuète",
+        "description": "Banana bread ultra moelleux aux pépites de chocolat et cœur crémeux de peanut butter.",
+        "instructions": [
+          "Préchauffer le four à 180°C.",
+          "Dans un saladier, écraser 2,5 bananes mûres à la fourchette.",
+          "Ajouter les œufs, le petit suisse, la compote de pommes et les 3 cuillères à soupe de lait. Conserver le pot de compote.",
+          "Ajouter 3 pots de compote de farine et bien mélanger.",
+          "Incorporer la vanille, la levure et les 200g de pépites de chocolat.",
+          "Dans un moule à cake, verser la moitié de la pâte. Ajouter le beurre de cacahuète au centre, puis recouvrir du reste de pâte.",
+          "Déposer la demi-banane restante coupée en deux sur le dessus en topping, avec quelques pépites de chocolat et une touche de peanut butter.",
+          "Cuire 40 à 50 minutes au four à 180-200°C."
+        ],
+        "prepTime": 15,
+        "cookTime": 45,
+        "servings": 6,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.270Z",
+        "updatedAt": "2026-09-22T15:14:41.270Z"
+      },
+      {
+        "id": "bbd30df8-c748-4396-ad1b-1fffdfede276",
+        "title": "Crêpes légères maison",
+        "description": "La recette traditionnelle de crêpes légères, fines et fondantes.",
+        "instructions": [
+          "Mettre la farine dans un saladier avec une pincée de sel et une cuillère de sucre.",
+          "Faire un puits au milieu et y casser les œufs.",
+          "Commencer à mélanger au fouet doucement. Quand le mélange épaissit, verser le lait froid petit à petit.",
+          "Quand tout le lait est incorporé, la pâte doit être bien fluide. Ajouter le beurre fondu refroidi et mélanger.",
+          "Faire chauffer une poêle à crêpes légèrement beurrée ou huilée.",
+          "Verser une petite louche de pâte, répartir sur toute la surface. Quand les bords se colorent, retourner la crêpe et cuire 1 minute de l'autre côté."
+        ],
+        "prepTime": 10,
+        "cookTime": 20,
+        "servings": 4,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.277Z",
+        "updatedAt": "2026-09-22T15:14:41.277Z"
+      },
+      {
+        "id": "5a356ff6-a481-4108-91af-a78c1b53bdb7",
+        "title": "Pancakes américains moelleux",
+        "description": "Pancakes épais et aérés grâce aux blancs d'œufs montés en neige.",
+        "instructions": [
+          "Dans un saladier, mélanger les ingrédients secs : farine, levure, sucre, pincée de sel et sucre vanillé.",
+          "Dans un autre bol, mélanger les jaunes d'œufs avec le lait, puis les incorporer aux ingrédients secs en fouettant.",
+          "Laisser reposer la pâte pendant 15 à 30 minutes.",
+          "Monter les blancs d'œufs en neige ferme et les incorporer délicatement à la spatule.",
+          "Faire cuire les pancakes à feu moyen dans une poêle légèrement beurrée jusqu'à apparition de bulles, puis retourner."
+        ],
+        "prepTime": 15,
+        "cookTime": 10,
+        "servings": 4,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.280Z",
+        "updatedAt": "2026-09-22T15:14:41.280Z"
+      },
+      {
+        "id": "35944d54-53ad-407c-94c4-a0536a123552",
+        "title": "Crumble croustillant pommes cannelle",
+        "description": "Pommes fondantes à la cannelle sous un crumble sablé croustillant au beurre doux.",
+        "instructions": [
+          "Préchauffer le four à 180°C.",
+          "Éplucher les 5 pommes et les couper en dés moyens. Les mélanger dans un saladier avec 30g de cassonade et 1 c. à soupe de cannelle.",
+          "Dans un autre saladier, mélanger 125g de farine, 125g de cassonade et 1 c. à soupe de cannelle.",
+          "Ajouter 125g de beurre bien froid coupé en petits dés. Sabler du bout des doigts pour former de grosses miettes.",
+          "Disposer les pommes au fond d'un plat à gratin, recouvrir de pâte à crumble.",
+          "Enfourner pendant 45 minutes à 180°C jusqu'à ce que le crumble soit bien doré et croustillant."
+        ],
+        "prepTime": 20,
+        "cookTime": 45,
+        "servings": 6,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.285Z",
+        "updatedAt": "2026-09-22T15:14:41.285Z"
+      },
+      {
+        "id": "6bc8c1ac-941a-47a4-85b9-8ce6a8c9b7f8",
+        "title": "Œufs brouillés au jambon et champignons",
+        "description": "Œufs brouillés bien crémeux au beurre, dés de jambon blanc, champignons dorés et fromage fondu.",
+        "instructions": [
+          "Émincer les champignons et découper les tranches de jambon en lanières.",
+          "Faire revenir les champignons dans une noisette de beurre jusqu'à ce qu'ils soient dorés.",
+          "Battre les 6 œufs dans un bol avec une pincée de sel et de poivre.",
+          "Faire fondre une noisette de beurre à feu doux dans une poêle, verser les œufs et remuer continuellement à la spatule.",
+          "Quand les œufs sont presque crémeux, incorporer le jambon, les champignons et le gruyère râpé. Laisser fondre et servir chaud."
+        ],
+        "prepTime": 10,
+        "cookTime": 10,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.337Z",
+        "updatedAt": "2026-09-22T15:14:41.337Z"
+      },
+      {
+        "id": "50d90aba-7887-4e81-b841-473ea13fdc50",
+        "title": "Pâtes au pesto verde et mascarpone",
+        "description": "Penne enrobées d'une sauce riche au pesto genovese, mascarpone fondant, crème et Grana Padano.",
+        "instructions": [
+          "Faire cuire les penne dans un grand volume d'eau bouillante salée.",
+          "Dans une poêle à feu doux, mélanger la crème liquide et le mascarpone jusqu'à parfaite homogénéisation.",
+          "Ajouter le pot de pesto genovese et bien remuer pour obtenir une belle sauce verte onctueuse.",
+          "Égoutter les pâtes et les verser directement dans la sauce.",
+          "Ajouter une belle poignée de Grana Padano râpé (et quelques tomates séchées si souhaité), bien mélanger et servir."
+        ],
+        "prepTime": 10,
+        "cookTime": 12,
+        "servings": 6,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.342Z",
+        "updatedAt": "2026-09-22T15:14:41.342Z"
+      },
+      {
+        "id": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "title": "Wraps froids au poulet César",
+        "description": "Wraps frais et croquants au poulet poêlé, tomates cerises, salade romaine et sauce César maison.",
+        "instructions": [
+          "Découper les filets de poulet en dés, saupoudrer d'un peu de paprika et faire dorer à la poêle.",
+          "Laver la salade romaine et l'émincer en lamelles. Couper les tomates cerises en deux.",
+          "Préparer la sauce : mélanger 2 c. à soupe de mayonnaise, 4 c. à soupe de yaourt à la grecque, 4 c. à soupe de parmesan râpé, sel et poivre.",
+          "Étaler généreusement la sauce César sur chaque galette de wrap.",
+          "Garnir de salade romaine, tomates cerises, morceaux de poulet tiédi et oignons frits croustillants.",
+          "Saupoudrer de parmesan, rouler fermement les wraps et servir frais."
+        ],
+        "prepTime": 15,
+        "cookTime": 10,
+        "servings": 4,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.292Z",
+        "updatedAt": "2026-09-22T15:14:41.292Z"
+      },
+      {
+        "id": "793fcbee-cae4-49d7-bfde-d9f8cc218e03",
+        "title": "Tagliatelles de poireaux façon carbonara",
+        "description": "Poireaux effilochés en spaghettis cuisinés façon carbonara avec allumettes de bacon et crème.",
+        "instructions": [
+          "Enlever les feuilles extérieures et bien rincer les poireaux.",
+          "À l'aide d'une fourchette, effilocher les poireaux dans la longueur pour obtenir des lanières façon spaghettis.",
+          "Mettre les poireaux dans une poêle avec un petit verre d'eau et laisser cuire à feu moyen jusqu'à ce qu'ils soient tendres.",
+          "Parallèlement, faire dorer les allumettes de bacon dans une autre poêle.",
+          "Une fois les poireaux cuits, ajouter la crème liquide, les allumettes de bacon, du sel, du poivre et le gruyère râpé.",
+          "Laisser épaissir 2 minutes à feu doux et servir bien chaud."
+        ],
+        "prepTime": 15,
+        "cookTime": 15,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.298Z",
+        "updatedAt": "2026-09-22T15:14:41.298Z"
+      },
+      {
+        "id": "ff403b18-87c1-4f45-a964-aba66fa8a5f6",
+        "title": "Cake salé jambon et olives vertes",
+        "description": "Le classique cake apéritif ou pique-nique aux dés de jambon, olives dénoyautées et gruyère.",
+        "instructions": [
+          "Préchauffer le four à 180°C.",
+          "Découper 200g de jambon en dés et recouper les 100g d'olives vertes en rondelles.",
+          "Dans un saladier, fouetter les œufs avec la farine et le sachet de levure chimique, puis assaisonner de sel et de poivre.",
+          "Incorporer petit à petit le lait entier tiédi tout en fouettant.",
+          "Ajouter 100g de gruyère râpé, les dés de jambon et les rondelles d'olives.",
+          "Verser la pâte dans un moule à cake préalablement beurré.",
+          "Enfourner à 180°C pendant 45 minutes. Vérifier la cuisson au couteau."
+        ],
+        "prepTime": 15,
+        "cookTime": 45,
+        "servings": 6,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.303Z",
+        "updatedAt": "2026-09-22T15:14:41.303Z"
+      },
+      {
+        "id": "c02101dd-0d31-4d54-b39c-316f4cfeac8d",
+        "title": "Crêpes de sarrasin complètes",
+        "description": "Galettes bretonnes de sarrasin garnies de jambon, fromage fondu et champignons poêlés.",
+        "instructions": [
+          "Faire revenir les champignons émincés dans une noisette de beurre jusqu'à dorure.",
+          "Faire fondre une noisette de beurre dans une crêpière et déposer une galette de sarrasin.",
+          "Garnir avec une tranche de jambon, des champignons, une touche de crème fraîche et une bonne poignée de gruyère.",
+          "Rabattre les quatre bords pour former un carré.",
+          "Laisser dorer 2 à 3 minutes jusqu'à ce que le gruyère soit bien fondu."
+        ],
+        "prepTime": 10,
+        "cookTime": 10,
+        "servings": 4,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.307Z",
+        "updatedAt": "2026-09-22T15:14:41.307Z"
+      },
+      {
+        "id": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "title": "Ramen udon au poulet mariné",
+        "description": "Bouillon réconfortant japonais, nouilles udon épaisses, lamelles de poulet doré et œufs mollets.",
+        "instructions": [
+          "Couper les filets de poulet en lamelles et faire mariner 15 minutes avec 1 c. à soupe de sauce soja et 1 c. à café d'huile de sésame.",
+          "Faire revenir le poulet dans une poêle bien chaude pendant 4 à 5 minutes, réserver.",
+          "Préparer les œufs mollets : plonger 2 œufs dans l'eau bouillante pendant 6 minutes, puis refroidir immédiatement dans de l'eau glacée et écaler.",
+          "Dans une casserole, faire chauffer 1 c. à café d'huile de sésame, ajouter 1L d'eau, le cube de bouillon de volaille, 2 c. à soupe de sauce soja salée et 1 c. à soupe de sauce soja sucrée. Laisser frémir 10 à 15 minutes.",
+          "Faire cuire les nouilles udon séparément selon le temps indiqué (3 à 5 minutes), égoutter.",
+          "Assemblage : disposer les nouilles udon dans les bols, verser le bouillon très chaud, ajouter le poulet, les pousses de soja, les oignons verts émincés et les demi-œufs mollets."
+        ],
+        "prepTime": 20,
+        "cookTime": 20,
+        "servings": 2,
+        "difficulty": "medium",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.312Z",
+        "updatedAt": "2026-09-22T15:14:41.312Z"
+      },
+      {
+        "id": "5fe00808-b974-41fb-a482-c8799de6464b",
+        "title": "Poulet tikka masala crémeux",
+        "description": "Émincé de poulet mijoté dans une sauce tikka masala parfumée, poivrons rouges et crème.",
+        "instructions": [
+          "Couper les filets de poulet en cubes et les mélanger dans la sauce tikka masala. Laisser mariner au moins 30 minutes.",
+          "Couper le poivron rouge en petits dés.",
+          "Faire cuire les pâtes penne dans de l'eau bouillante salée.",
+          "Dans une sauteuse, faire suer les dés de poivron pendant 2 minutes puis ajouter le poulet mariné.",
+          "Une fois le poulet et les poivrons cuits, verser 20cl de crème liquide semi-épaisse et laisser mijoter quelques minutes à feu doux.",
+          "Mélanger les pâtes égouttées dans la sauce bien chaude et parsemer d'un peu de gruyère."
+        ],
+        "prepTime": 20,
+        "cookTime": 15,
+        "servings": 4,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.319Z",
+        "updatedAt": "2026-09-22T15:14:41.319Z"
+      },
+      {
+        "id": "0111b8cc-37ca-46da-a48f-3de5cb6fca61",
+        "title": "Salade César aux tenders croustillants",
+        "description": "Salade complète fraîche et gourmande avec tenders de poulet dorés, dés de comté et copeaux de parmesan.",
+        "instructions": [
+          "Préchauffer le four et enfourner les tenders de poulet pour qu'ils soient bien croustillants.",
+          "Laver la salade mixte et couper les tomates en rondelles.",
+          "Couper le comté en petits cubes et découper les tenders chauds en morceaux.",
+          "Dans les assiettes, disposer le lit de salade mixte et les rondelles de tomate.",
+          "Napper de sauce salade César, disposer les morceaux de tenders croustillants et les dés de comté.",
+          "Saupoudrer généreusement de parmesan râpé."
+        ],
+        "prepTime": 15,
+        "cookTime": 10,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.327Z",
+        "updatedAt": "2026-09-22T15:14:41.327Z"
+      },
+      {
+        "id": "f64f3d3a-889f-40ed-9598-ba0159301653",
+        "title": "Pavés de saumon, riz et épinards",
+        "description": "Un repas sain et équilibré : saumon poêlé ou en papillote, riz parfumé au beurre et épinards frais.",
+        "instructions": [
+          "Faire cuire les pavés de saumon à la poêle ou en papillote au four avec un filet de citron, sel et poivre.",
+          "Faire cuire le riz blanc dans une casserole d'eau bouillante salée, puis égoutter et mélanger avec une noix de beurre.",
+          "Dans une poêle, faire tomber les feuilles d'épinards avec une noisette de beurre jusqu'à ce qu'elles soient tendres.",
+          "Dresser dans les assiettes le riz beurré, les épinards fondants et le pavé de saumon."
+        ],
+        "prepTime": 10,
+        "cookTime": 15,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.331Z",
+        "updatedAt": "2026-09-22T15:14:41.331Z"
+      },
+      {
+        "id": "c0144cf9-7681-4d69-856b-cbb9f7030752",
+        "title": "Chili con carne express",
+        "description": "Chili mexicain à la viande hachée, oignons fondants et sauce épicée mijotée sur un lit de riz.",
+        "instructions": [
+          "Émincer l'oignon et le faire revenir dans une sauteuse avec un filet d'huile d'olive.",
+          "Ajouter la viande hachée 5% et la faire dorer en l'écrasant à la spatule.",
+          "Verser la sauce chili con carne, remuer et laisser mijoter à feu doux pendant 15 minutes.",
+          "Pendant ce temps, faire cuire le riz dans de l'eau bouillante salée.",
+          "Servir le chili bien chaud sur le riz blanc."
+        ],
+        "prepTime": 15,
+        "cookTime": 20,
+        "servings": 4,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.334Z",
+        "updatedAt": "2026-09-22T15:14:41.334Z"
+      },
+      {
+        "id": "5365a1aa-8307-46ce-914b-678c5bcf87ed",
+        "title": "Lasagnes traditionnelles à la bolognaise",
+        "description": "Couches gourmandes de bolognaise mijotée, béchamel onctueuse maison et fromage gratiné.",
+        "instructions": [
+          "Faire revenir la viande hachée dans une poêle, puis ajouter la sauce bolognaise et laisser mijoter à feu moyen.",
+          "Préparer la béchamel : faire fondre 60g de beurre à feu vif, ajouter 1 c. à soupe de farine et fouetter. Ajouter progressivement les 50cl de lait sans cesser de fouetter jusqu'à épaississement.",
+          "Montage dans un plat à gratin : étaler une fine couche de béchamel, une couche de pâtes à lasagnes, de la béchamel, de la sauce bolognaise et répéter.",
+          "Terminer par une couche de béchamel et couvrir de gruyère râpé.",
+          "Enfourner à 190°C pendant environ 30 à 35 minutes jusqu'à ce que le dessus soit bien gratiné."
+        ],
+        "prepTime": 25,
+        "cookTime": 35,
+        "servings": 4,
+        "difficulty": "medium",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.347Z",
+        "updatedAt": "2026-09-22T15:14:41.347Z"
+      },
+      {
+        "id": "4ec3f7cf-aae8-4f8b-8741-ff6376a9d1bf",
+        "title": "Pâtes au chorizo et crème fraîche",
+        "description": "Pâtes courtes généreuses au chorizo poêlé, crème fraîche épaisse et gruyère fondu.",
+        "instructions": [
+          "Faire cuire les pâtes dans un grand volume d'eau bouillante salée.",
+          "Couper le chorizo en rondelles ou dés et le faire revenir dans une poêle sans matière grasse pour qu'il libère ses saveurs.",
+          "Ajouter la crème fraîche dans la poêle et bien remuer pour lier la sauce.",
+          "Égoutter les pâtes, les incorporer à la poêle avec le chorizo et la crème.",
+          "Ajouter une dose de gruyère râpé, saler, poivrer et mélanger jusqu'à ce que le fromage file."
+        ],
+        "prepTime": 10,
+        "cookTime": 15,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.353Z",
+        "updatedAt": "2026-09-22T15:14:41.353Z"
+      },
+      {
+        "id": "bdf096eb-7c05-4775-8fcf-63a5c06a3b1d",
+        "title": "Quesadillas mexicaines au bœuf et poivrons",
+        "description": "Wraps toastés et croustillants garnis de viande hachée épicée, poivrons fondants et mozzarella coulante.",
+        "instructions": [
+          "Couper l'oignon rouge et le poivron en petits dés. Les faire revenir à la poêle avec un filet d'huile.",
+          "Ajouter la viande hachée avec le mélange d'épices mexicaines et faire dorer le tout.",
+          "Dans une poêle propre légèrement huilée, déposer une galette de wrap à plat.",
+          "Saupoudrer de mozzarella râpée, ajouter la viande épicée aux poivrons, une cuillère de crème et recouvrir de mozzarella.",
+          "Laisser dorer le dessous puis plier la galette en deux pour former une demi-lune.",
+          "Découper chaque quesadilla en trois triangles et servir chaud."
+        ],
+        "prepTime": 15,
+        "cookTime": 15,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.357Z",
+        "updatedAt": "2026-09-22T15:14:41.357Z"
+      },
+      {
+        "id": "02e5ed89-e8f9-4346-a460-370caf8b6c8f",
+        "title": "Croziflette savoyarde au beaufort",
+        "description": "Le gratin montagnard par excellence : crozets fondants, lardons dorés, crème et beaufort gratiné.",
+        "instructions": [
+          "Faire cuire les crozets dans une casserole d'eau bouillante salée selon le temps indiqué sur le paquet.",
+          "Faire dorer les lardons dans une poêle sans matière grasse.",
+          "Découper le beaufort en fines lamelles.",
+          "Dans un plat à gratin, mélanger les crozets égouttés, les lardons dorés et la crème fraîche.",
+          "Recouvrir toute la surface avec les lamelles de beaufort.",
+          "Enfourner sous le grill à 220-250°C pendant 10 à 15 minutes jusqu'à ce que le beaufort soit magnifiquement gratiné et doré."
+        ],
+        "prepTime": 15,
+        "cookTime": 25,
+        "servings": 4,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.362Z",
+        "updatedAt": "2026-09-22T15:14:41.362Z"
+      },
+      {
+        "id": "15b70d5e-b93c-4574-bd75-50c5e8d046c2",
+        "title": "Burger Maison brioché au cheddar",
+        "description": "Burger gourmand au steak haché pur bœuf à l'oignon, cheddar fondant, tomate fraîche et salade.",
+        "instructions": [
+          "Toaster légèrement les pains burgers briochés à la poêle ou au grille-pain.",
+          "Dans une poêle bien chaude, faire cuire les steaks hachés selon la cuisson souhaitée.",
+          "Déposer une tranche de cheddar sur chaque steak en fin de cuisson et couvrir 1 minute pour que le fromage fonde parfaitement.",
+          "Tartiner les bases des pains avec de la sauce mayonnaise.",
+          "Ajouter les feuilles de salade lavées, les rondelles de tomate, puis déposer le steak avec son cheddar fondu.",
+          "Refermer les burgers et servir chaud avec des frites ou potatoes."
+        ],
+        "prepTime": 15,
+        "cookTime": 10,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.368Z",
+        "updatedAt": "2026-09-22T15:14:41.368Z"
+      },
+      {
+        "id": "c4a7e38c-cb4e-403c-94a9-7553ac2aac4f",
+        "title": "Croque-monsieur fondant au gruyère",
+        "description": "Le classique croque-monsieur de bistrot : pain de mie beurré, jambon blanc et double couche de gruyère.",
+        "instructions": [
+          "Tartiner de beurre les faces intérieures des tranches de pain de mie.",
+          "Déposer une première couche de gruyère râpé sur la tranche du bas.",
+          "Ajouter la tranche de jambon blanc pliée.",
+          "Remettre une généreuse couche de gruyère râpé par-dessus.",
+          "Refermer avec la seconde tranche de pain de mie et cuire dans l'appareil à croque ou à la poêle jusqu'à ce que le pain soit bien doré et le fromage fondant."
+        ],
+        "prepTime": 10,
+        "cookTime": 10,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.371Z",
+        "updatedAt": "2026-09-22T15:14:41.371Z"
+      },
+      {
+        "id": "fb4d5799-5b60-4891-ac52-26f10fe79365",
+        "title": "Wrap TikTok croustillant",
+        "description": "Wrap plié en quatre façon TikTok : poulet croustillant, cheddar fondu, salade, tomate et sauce mayo toasté.",
+        "instructions": [
+          "Faire cuire les morceaux de poulet croustillant au four.",
+          "Couper les tomates en rondelles et laver la salade.",
+          "Inciser la galette de wrap du centre jusqu'au bord inférieur.",
+          "Tartiner de mayonnaise toute la surface du wrap.",
+          "Garnir les quatre quadrants : salade et tomates sur la gauche, poulet croustillant et cheddar sur la droite.",
+          "Plier le wrap en commençant par le quadrant inférieur gauche, puis en tournant dans le sens des aiguilles d'une montre.",
+          "Faire griller dans l'appareil à croque ou à panini pendant 3 minutes jusqu'à ce que le wrap soit croustillant et le fromage fondu."
+        ],
+        "prepTime": 15,
+        "cookTime": 5,
+        "servings": 2,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.376Z",
+        "updatedAt": "2026-09-22T15:14:41.376Z"
+      },
+      {
+        "id": "00ab5e01-d9e9-4915-93f5-fd5681cac4fb",
+        "title": "Tagliatelles carbonara façon soso",
+        "description": "Une version crémeuse et gourmande des tagliatelles carbonara avec crème fraîche et lardons.",
+        "instructions": [
+          "Faire cuire les tagliatelles al dente.",
+          "Faire dorer les lardons à sec dans une poêle.",
+          "Mélanger la crème et le jaune d'œuf.",
+          "Ajouter les pâtes aux lardons, verser la crème hors du feu et mélanger."
+        ],
+        "prepTime": 10,
+        "cookTime": 15,
+        "servings": 4,
+        "difficulty": "easy",
+        "imageUrl": null,
+        "source": "notes",
+        "createdById": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "createdAt": "2026-09-22T15:14:41.380Z",
+        "updatedAt": "2026-09-22T20:09:24.000Z"
+      }
+    ],
+    "recipeIngredients": [
+      {
+        "id": "7d7fe7d7-5378-4dd5-acef-d1f418ae071d",
+        "recipeId": "00ab5e01-d9e9-4915-93f5-fd5681cac4fb",
+        "ingredientId": "43c996a5-e991-4c24-aa86-60e75222e680",
+        "quantity": 400,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "883368ca-2303-4b3a-b793-0281e70f58a8",
+        "recipeId": "00ab5e01-d9e9-4915-93f5-fd5681cac4fb",
+        "ingredientId": "50e4102c-d625-4c7d-9146-c904b9ac45c0",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "6936768f-7e87-4f7f-9691-5586a7f5968e",
+        "recipeId": "00ab5e01-d9e9-4915-93f5-fd5681cac4fb",
+        "ingredientId": "4ee57b96-0f64-4551-a129-01d69bb1eddb",
+        "quantity": 20,
+        "unit": "cl",
+        "notes": null
+      },
+      {
+        "id": "2b072046-14f3-4525-b45e-14e8c42c425d",
+        "recipeId": "d82a3bb7-cd60-48a2-9d4a-ba52fd76446c",
+        "ingredientId": "f1de6eae-dd05-4ca3-adbf-426027c6288c",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": "Faux filet, entrecôte ou bavette"
+      },
+      {
+        "id": "27a2ca80-bf4c-4661-9bd4-8c8e600e162c",
+        "recipeId": "d82a3bb7-cd60-48a2-9d4a-ba52fd76446c",
+        "ingredientId": "3f8b84ee-c6f3-4863-9db2-d7b18dc89fd9",
+        "quantity": 90,
+        "unit": "g",
+        "notes": "80-100g gorgonzola"
+      },
+      {
+        "id": "44b35e58-cef8-4be8-ad99-90f73994dd5b",
+        "recipeId": "d82a3bb7-cd60-48a2-9d4a-ba52fd76446c",
+        "ingredientId": "5fc668c8-9168-47f2-804f-bccc45cca49f",
+        "quantity": 20,
+        "unit": "cl",
+        "notes": "Crème liquide entière 30%"
+      },
+      {
+        "id": "7d0ff481-0752-4ed1-b35d-2e56cbb06b08",
+        "recipeId": "d82a3bb7-cd60-48a2-9d4a-ba52fd76446c",
+        "ingredientId": "153e142c-38df-4ecf-8018-993a921b8e6d",
+        "quantity": 25,
+        "unit": "g",
+        "notes": "Pour la cuisson et arrosage"
+      },
+      {
+        "id": "5f3736ea-24f1-4930-b25b-25363de56c06",
+        "recipeId": "d82a3bb7-cd60-48a2-9d4a-ba52fd76446c",
+        "ingredientId": "c6747e02-d5be-4f0c-8670-f0e8c9886f63",
+        "quantity": 1,
+        "unit": "c. à soupe",
+        "notes": "Pour la cuisson"
+      },
+      {
+        "id": "0c42318d-4a86-4291-9c88-1bf145d3f209",
+        "recipeId": "d82a3bb7-cd60-48a2-9d4a-ba52fd76446c",
+        "ingredientId": "133d758b-7634-4032-8f50-102c4de1e7a1",
+        "quantity": 300,
+        "unit": "g",
+        "notes": "Haricots verts"
+      },
+      {
+        "id": "e4858170-8439-4815-bead-55fc991f20f7",
+        "recipeId": "d82a3bb7-cd60-48a2-9d4a-ba52fd76446c",
+        "ingredientId": "f0fc21e7-71b9-4344-8048-a213d88dd47e",
+        "quantity": 300,
+        "unit": "g",
+        "notes": "Tater tots, frites au choix"
+      },
+      {
+        "id": "d3baec0e-8f85-4bc5-b37e-ceca945bfe68",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "6f6a0751-8d2f-477d-a950-990f3f9a50e9",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "8fca0848-1622-4318-9527-d73397d52ffa",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "5fb2b065-64a4-4eaa-bcd5-83ade006b68d",
+        "quantity": 120,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "eaf6b801-b26f-4eb6-a30e-ea39f99fd2cf",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "100115aa-c2be-4bfe-a9d2-3a883ac49cde",
+        "quantity": 80,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "3bb81734-e764-4bf2-bd54-b146093847ae",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "b49c9ac0-e8ae-44da-af20-ff359effee13",
+        "quantity": 3,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "34461696-2ea2-4aa3-8083-fd161a48cc62",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "c6f6e543-b953-4c01-9b92-e79f9e7f7218",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "53c9a7ad-b0f3-44ec-98aa-a9cb247ba070",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "c1c45e90-015c-4ea4-bc31-7d4c2f52eb83",
+        "quantity": 1,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "e9e4adbb-bc00-41ce-a51b-f4375b8c3d63",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "d936606c-224e-4ac3-bf4a-63f70861d5fb",
+        "quantity": 50,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "26d790e8-4d25-4949-86fd-c4851870eed8",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "5fc668c8-9168-47f2-804f-bccc45cca49f",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "d08c49eb-3658-42be-b0b9-8dcaf68dca3e",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "ae957f1b-f16e-4938-b868-792403a559bd",
+        "quantity": 270,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "dc678943-b0e0-4914-baf1-3129bf43c16a",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "0e8b1822-5a72-40f5-bb78-b415de200eff",
+        "quantity": 2,
+        "unit": "c. à café",
+        "notes": null
+      },
+      {
+        "id": "9f8f55ce-fe5e-41c5-b34d-cf1e2a6fbb57",
+        "recipeId": "88052e58-e266-45af-a760-41fe56df7981",
+        "ingredientId": "e4d85172-c7a0-4f37-8f4c-78dd035c9dec",
+        "quantity": 22,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "c76968dc-16e9-4091-8d13-e6fa047ce2ee",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "ae60fa9e-4f12-49f4-9aea-d12d76b3421f",
+        "quantity": 3,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "e9fff9d2-102c-407f-b0bf-d00648fbe37f",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "b49c9ac0-e8ae-44da-af20-ff359effee13",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "bd7fed6e-cb75-4f64-bfc1-0f447871eee4",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "c6f6e543-b953-4c01-9b92-e79f9e7f7218",
+        "quantity": 3,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "9c3b153c-370d-466e-855a-2b460ca1620c",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "37e0b9ec-2f92-4ad8-887e-7dfa28ddd163",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "fceef543-b75e-44b0-8102-49f978a2176a",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "9a2e5a3a-75ed-4966-8b3a-c240ad8eed6c",
+        "quantity": 1,
+        "unit": "pot",
+        "notes": null
+      },
+      {
+        "id": "9111ee60-1811-4206-b375-d0e2e0852c0e",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "ae957f1b-f16e-4938-b868-792403a559bd",
+        "quantity": 300,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "20c95a86-3157-4373-aba5-6d79c93f0d1b",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "2874726e-5a5d-4cdb-a92b-60fb4a29da78",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "6a234a44-f234-4100-8d85-c9bee9ab76e4",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "d2bb6695-0a83-4b50-a6ea-699e2c61e282",
+        "quantity": 3,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "858ba4af-6770-4416-85de-f4e15d253ac7",
+        "recipeId": "748bcc7d-b556-46a7-ad3d-467586dc487c",
+        "ingredientId": "0e8b1822-5a72-40f5-bb78-b415de200eff",
+        "quantity": 1,
+        "unit": "sachet",
+        "notes": null
+      },
+      {
+        "id": "bdb4b220-0214-4ed2-b008-92cfb6e3634d",
+        "recipeId": "bbd30df8-c748-4396-ad1b-1fffdfede276",
+        "ingredientId": "ae957f1b-f16e-4938-b868-792403a559bd",
+        "quantity": 250,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "30e03b36-d400-4436-a8fc-2ab4a48acc43",
+        "recipeId": "bbd30df8-c748-4396-ad1b-1fffdfede276",
+        "ingredientId": "b49c9ac0-e8ae-44da-af20-ff359effee13",
+        "quantity": 4,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "a06eb1ee-69b0-4566-8a6c-f4bfd32fcd15",
+        "recipeId": "bbd30df8-c748-4396-ad1b-1fffdfede276",
+        "ingredientId": "c6f6e543-b953-4c01-9b92-e79f9e7f7218",
+        "quantity": 50,
+        "unit": "cl",
+        "notes": null
+      },
+      {
+        "id": "129ea530-4c25-4c19-b067-8423b2d59658",
+        "recipeId": "bbd30df8-c748-4396-ad1b-1fffdfede276",
+        "ingredientId": "153e142c-38df-4ecf-8018-993a921b8e6d",
+        "quantity": 50,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "fff99b14-7dbe-4216-a6fe-b732a8aa4bb1",
+        "recipeId": "5a356ff6-a481-4108-91af-a78c1b53bdb7",
+        "ingredientId": "ae957f1b-f16e-4938-b868-792403a559bd",
+        "quantity": 125,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "e3cb3b08-b947-405d-8bcb-de280514fbca",
+        "recipeId": "5a356ff6-a481-4108-91af-a78c1b53bdb7",
+        "ingredientId": "b49c9ac0-e8ae-44da-af20-ff359effee13",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "e89d28cf-a0fb-4db1-a181-d25369f308c9",
+        "recipeId": "5a356ff6-a481-4108-91af-a78c1b53bdb7",
+        "ingredientId": "c6f6e543-b953-4c01-9b92-e79f9e7f7218",
+        "quantity": 150,
+        "unit": "ml",
+        "notes": null
+      },
+      {
+        "id": "1521c492-4fda-43a7-bd12-7047e6065963",
+        "recipeId": "5a356ff6-a481-4108-91af-a78c1b53bdb7",
+        "ingredientId": "5fb2b065-64a4-4eaa-bcd5-83ade006b68d",
+        "quantity": 2,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "e92fcfae-5a0e-433c-86ef-9fea2005e2f5",
+        "recipeId": "5a356ff6-a481-4108-91af-a78c1b53bdb7",
+        "ingredientId": "0e8b1822-5a72-40f5-bb78-b415de200eff",
+        "quantity": 1,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "369b005e-9e3b-4558-9f21-6630a1f1e341",
+        "recipeId": "35944d54-53ad-407c-94c4-a0536a123552",
+        "ingredientId": "c29b9800-fbec-4651-a7ac-15d6cfbd59fc",
+        "quantity": 5,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "eb652020-9a03-48d9-9473-66227c942c3e",
+        "recipeId": "35944d54-53ad-407c-94c4-a0536a123552",
+        "ingredientId": "ae957f1b-f16e-4938-b868-792403a559bd",
+        "quantity": 125,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "5732a2c4-0fa2-4143-aead-47e566395eef",
+        "recipeId": "35944d54-53ad-407c-94c4-a0536a123552",
+        "ingredientId": "100115aa-c2be-4bfe-a9d2-3a883ac49cde",
+        "quantity": 155,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "6b4fb0ed-f266-4582-ba1b-96c3588f7fee",
+        "recipeId": "35944d54-53ad-407c-94c4-a0536a123552",
+        "ingredientId": "153e142c-38df-4ecf-8018-993a921b8e6d",
+        "quantity": 125,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "dfb6b4df-b628-4e32-8183-bc08785ab9dd",
+        "recipeId": "35944d54-53ad-407c-94c4-a0536a123552",
+        "ingredientId": "59f55d41-b8b1-4d8c-a0dc-1f102043be64",
+        "quantity": 2,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "27bfb481-14d6-4468-8891-6f72c4170aae",
+        "recipeId": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "ingredientId": "805288e8-420d-4ee4-8985-4bcd150e8445",
+        "quantity": 4,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "93846bae-3880-4564-b97b-1894e1f6f09f",
+        "recipeId": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "ingredientId": "811879bb-75b5-4674-9641-6487fa2567d6",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "231bdf90-e0cc-4d95-99aa-29eea251e185",
+        "recipeId": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "ingredientId": "5118e6ce-5d0d-4831-9d00-f4d82753e8b4",
+        "quantity": 150,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "6ece1083-f02f-41a2-8cdb-4ae1e1f02bee",
+        "recipeId": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "ingredientId": "c425cab1-57d4-40eb-85d8-c560c0eca5e9",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "c4ce2b69-82ab-4959-abaa-758d6e24fc2f",
+        "recipeId": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "ingredientId": "46e784d5-4499-41a8-a48b-5b483d1b130c",
+        "quantity": 50,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "4687eebe-2980-479c-8552-9489669e6d54",
+        "recipeId": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "ingredientId": "32549002-4026-4896-922f-8b3d209acb65",
+        "quantity": 125,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "86f911b1-fa0b-4ee1-b769-0a94e692622c",
+        "recipeId": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "ingredientId": "77b98dc8-20af-4a6b-9f24-47e929f59cfd",
+        "quantity": 2,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "e1e43929-188a-458a-8ef6-3cfcfb55e506",
+        "recipeId": "10adde8a-911b-4437-898a-7d4e54b7d505",
+        "ingredientId": "4f344978-8881-4e90-a232-c6a34e534d3d",
+        "quantity": 30,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "9d1f1a04-0eed-4e52-a085-64902ad54dea",
+        "recipeId": "793fcbee-cae4-49d7-bfde-d9f8cc218e03",
+        "ingredientId": "3f9d5ff9-0309-4891-8422-385cffcccf82",
+        "quantity": 3,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "47b75b3b-26af-47c6-858e-518b7fd8e468",
+        "recipeId": "793fcbee-cae4-49d7-bfde-d9f8cc218e03",
+        "ingredientId": "fb79386d-3b25-47e1-969e-08f8ee1e2779",
+        "quantity": 150,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "69f70617-e195-4cb9-a0c9-2b7a33a28f4a",
+        "recipeId": "793fcbee-cae4-49d7-bfde-d9f8cc218e03",
+        "ingredientId": "5fc668c8-9168-47f2-804f-bccc45cca49f",
+        "quantity": 20,
+        "unit": "cl",
+        "notes": null
+      },
+      {
+        "id": "da1d8f01-f01d-407a-93fe-390ae5225c2e",
+        "recipeId": "793fcbee-cae4-49d7-bfde-d9f8cc218e03",
+        "ingredientId": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "quantity": 80,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "15116e35-206b-4e24-bff7-82cf36b1dc5c",
+        "recipeId": "ff403b18-87c1-4f45-a964-aba66fa8a5f6",
+        "ingredientId": "c2258200-88d6-46f5-957d-a793ed66038d",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "0a5475de-ad05-462a-9762-497e09af488f",
+        "recipeId": "ff403b18-87c1-4f45-a964-aba66fa8a5f6",
+        "ingredientId": "f2b857ab-3254-4ee0-b060-567834f52257",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "8840c832-5e6c-428a-bb19-7c705dd7261a",
+        "recipeId": "ff403b18-87c1-4f45-a964-aba66fa8a5f6",
+        "ingredientId": "b49c9ac0-e8ae-44da-af20-ff359effee13",
+        "quantity": 4,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "b72988be-6501-4f7f-a973-dea3cfb29932",
+        "recipeId": "ff403b18-87c1-4f45-a964-aba66fa8a5f6",
+        "ingredientId": "ae957f1b-f16e-4938-b868-792403a559bd",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "1b7afa5c-897c-4ca5-bb19-4c37f133f282",
+        "recipeId": "ff403b18-87c1-4f45-a964-aba66fa8a5f6",
+        "ingredientId": "c6f6e543-b953-4c01-9b92-e79f9e7f7218",
+        "quantity": 150,
+        "unit": "ml",
+        "notes": null
+      },
+      {
+        "id": "8a3d59b3-9bda-4ffb-a2bc-d7c088f55d9f",
+        "recipeId": "ff403b18-87c1-4f45-a964-aba66fa8a5f6",
+        "ingredientId": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "332f6ca9-1449-4ae5-b5b9-0b289ae401f0",
+        "recipeId": "ff403b18-87c1-4f45-a964-aba66fa8a5f6",
+        "ingredientId": "0e8b1822-5a72-40f5-bb78-b415de200eff",
+        "quantity": 1,
+        "unit": "sachet",
+        "notes": null
+      },
+      {
+        "id": "9c089d0c-3b66-43e6-94d0-638c89449cfb",
+        "recipeId": "c02101dd-0d31-4d54-b39c-316f4cfeac8d",
+        "ingredientId": "d4096e70-4f2d-47cb-9476-b188371bb856",
+        "quantity": 4,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "6df67aea-3825-4337-a506-c5da39ba7bf3",
+        "recipeId": "c02101dd-0d31-4d54-b39c-316f4cfeac8d",
+        "ingredientId": "c2258200-88d6-46f5-957d-a793ed66038d",
+        "quantity": 4,
+        "unit": "tranche",
+        "notes": null
+      },
+      {
+        "id": "a39e60b0-2ee5-4076-8ce1-9918d22beafc",
+        "recipeId": "c02101dd-0d31-4d54-b39c-316f4cfeac8d",
+        "ingredientId": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "quantity": 120,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "322f214f-761f-4e4a-a76b-71986bb5afdf",
+        "recipeId": "c02101dd-0d31-4d54-b39c-316f4cfeac8d",
+        "ingredientId": "8e2edefa-8687-4147-bbfa-cf90d13db101",
+        "quantity": 150,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "9a811af6-e4fe-41de-9f20-686a2d1f6e97",
+        "recipeId": "c02101dd-0d31-4d54-b39c-316f4cfeac8d",
+        "ingredientId": "4ee57b96-0f64-4551-a129-01d69bb1eddb",
+        "quantity": 4,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "08e76564-0280-41f0-aa43-eea97d058a63",
+        "recipeId": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "ingredientId": "811879bb-75b5-4674-9641-6487fa2567d6",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "061816b5-99db-4f72-a2bb-db370bf1760a",
+        "recipeId": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "ingredientId": "bd27b73f-1753-425c-8255-44392cddc401",
+        "quantity": 2,
+        "unit": "portion",
+        "notes": null
+      },
+      {
+        "id": "12754e97-2dcd-4fd0-b5d6-d6d37cc3fc8b",
+        "recipeId": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "ingredientId": "b49c9ac0-e8ae-44da-af20-ff359effee13",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "b71c772e-36ce-4c10-9035-deb20b31b993",
+        "recipeId": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "ingredientId": "ae1f9974-45b6-4a99-b8c5-027032ee8132",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "c5914eb4-087c-4bfc-862b-de2105b7b9f4",
+        "recipeId": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "ingredientId": "d6258552-f4d6-46da-a122-33d3f2c3052c",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "2bb21bc6-1458-48c8-844e-c7d273dc0648",
+        "recipeId": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "ingredientId": "f157abe9-f13c-4747-967b-2233840642d7",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "99f4f403-c040-4d6a-b571-dcc0934dbdac",
+        "recipeId": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "ingredientId": "1dc5f526-2809-47f4-86b2-826b1ddd8a2a",
+        "quantity": 3,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "46fda53e-b00c-4eea-84ae-3029daa18e12",
+        "recipeId": "43013451-9df9-4d05-b3e0-c3207207baa1",
+        "ingredientId": "065b443a-ec2b-41c0-b36e-3e45085bceb6",
+        "quantity": 1,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "3d39b986-b36a-496f-b8e4-a812e3fe69ef",
+        "recipeId": "5fe00808-b974-41fb-a482-c8799de6464b",
+        "ingredientId": "811879bb-75b5-4674-9641-6487fa2567d6",
+        "quantity": 500,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "8e91a6ef-820a-40bc-81e8-eadc479e8c9c",
+        "recipeId": "5fe00808-b974-41fb-a482-c8799de6464b",
+        "ingredientId": "030f757b-266e-4e64-9ade-2e262c86f4b8",
+        "quantity": 150,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "3cb44a49-ee4b-4c9c-85c7-13f361e524ee",
+        "recipeId": "5fe00808-b974-41fb-a482-c8799de6464b",
+        "ingredientId": "cb2ebfda-9417-4695-9dda-24b3ec8a0693",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "fd2604b2-a521-4ba3-80f2-19fd321d27ea",
+        "recipeId": "5fe00808-b974-41fb-a482-c8799de6464b",
+        "ingredientId": "396887b8-99be-4920-a935-19530b98940e",
+        "quantity": 250,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "5773c425-c597-4f18-b1ca-a1c2aed4b634",
+        "recipeId": "5fe00808-b974-41fb-a482-c8799de6464b",
+        "ingredientId": "5fc668c8-9168-47f2-804f-bccc45cca49f",
+        "quantity": 20,
+        "unit": "cl",
+        "notes": null
+      },
+      {
+        "id": "f8717c37-8e94-46db-a36b-fa0934d39fb0",
+        "recipeId": "5fe00808-b974-41fb-a482-c8799de6464b",
+        "ingredientId": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "quantity": 50,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "6dd30fdd-b664-4b36-aab7-189843db4fd6",
+        "recipeId": "0111b8cc-37ca-46da-a48f-3de5cb6fca61",
+        "ingredientId": "032dd3cd-9b9f-4af4-9687-08f5371ad3e3",
+        "quantity": 150,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "bc06b60a-e24f-4c0b-85fd-70b212b0e7ef",
+        "recipeId": "0111b8cc-37ca-46da-a48f-3de5cb6fca61",
+        "ingredientId": "eae34c6c-6120-4773-b9b2-cf2dc23f602b",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "f75a5ba0-abf3-4a0c-9e86-31ce61784ba4",
+        "recipeId": "0111b8cc-37ca-46da-a48f-3de5cb6fca61",
+        "ingredientId": "88145d0a-2b5b-4eb4-93c1-3ff4e804c274",
+        "quantity": 4,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "805bf611-fec6-4923-9f5d-19c5ee78f195",
+        "recipeId": "0111b8cc-37ca-46da-a48f-3de5cb6fca61",
+        "ingredientId": "39007ae4-e60a-4588-80ae-9922e0c11b5b",
+        "quantity": 80,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "b8a7cd7c-74c4-4fc9-9d37-556acd2dc120",
+        "recipeId": "0111b8cc-37ca-46da-a48f-3de5cb6fca61",
+        "ingredientId": "46e784d5-4499-41a8-a48b-5b483d1b130c",
+        "quantity": 30,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "1b228e4a-7471-4a75-b733-0ae6f8c08ccd",
+        "recipeId": "0111b8cc-37ca-46da-a48f-3de5cb6fca61",
+        "ingredientId": "a096dd75-c384-4aa5-9499-5e2f08e9a84b",
+        "quantity": 4,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "bf7aeffe-dbf4-4c8c-94d4-aa7934ee5084",
+        "recipeId": "f64f3d3a-889f-40ed-9598-ba0159301653",
+        "ingredientId": "e36330a5-9f90-40a0-8f0a-1ea368cf338a",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "faaba280-048a-4ec5-a588-f7b66ac479c0",
+        "recipeId": "f64f3d3a-889f-40ed-9598-ba0159301653",
+        "ingredientId": "0f459666-966f-47a5-ad97-043d75858894",
+        "quantity": 150,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "ad767546-9504-445c-a731-081f16190822",
+        "recipeId": "f64f3d3a-889f-40ed-9598-ba0159301653",
+        "ingredientId": "a87430fa-4b4a-4b56-9574-e341e4c8afa0",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "e2d448fa-1933-408a-bfa3-ef15c4ad9512",
+        "recipeId": "f64f3d3a-889f-40ed-9598-ba0159301653",
+        "ingredientId": "153e142c-38df-4ecf-8018-993a921b8e6d",
+        "quantity": 20,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "eef6b9ec-cada-4bfd-8a1b-3d851d3825d1",
+        "recipeId": "c0144cf9-7681-4d69-856b-cbb9f7030752",
+        "ingredientId": "3a01b48a-aee3-4b9e-8ac0-cbf9d35c8c8c",
+        "quantity": 400,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "f6fc8125-baf1-472f-aa59-7a3d992893c8",
+        "recipeId": "c0144cf9-7681-4d69-856b-cbb9f7030752",
+        "ingredientId": "0f459666-966f-47a5-ad97-043d75858894",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "9e1d8d43-9ccd-4277-bdfb-fcb882aa39a5",
+        "recipeId": "c0144cf9-7681-4d69-856b-cbb9f7030752",
+        "ingredientId": "d0f2bed0-3c0b-401a-865a-36310999e573",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "cbd486ba-d7e7-44e8-b997-fccd77765bbf",
+        "recipeId": "c0144cf9-7681-4d69-856b-cbb9f7030752",
+        "ingredientId": "0e824a8a-dd4c-49e9-ad9e-68b86c50f0fe",
+        "quantity": 350,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "19a738a0-d9f4-4285-9bad-6043dc079eb3",
+        "recipeId": "6bc8c1ac-941a-47a4-85b9-8ce6a8c9b7f8",
+        "ingredientId": "b49c9ac0-e8ae-44da-af20-ff359effee13",
+        "quantity": 6,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "f1ae3098-32c5-492a-b1c8-5194b2da18d4",
+        "recipeId": "6bc8c1ac-941a-47a4-85b9-8ce6a8c9b7f8",
+        "ingredientId": "c2258200-88d6-46f5-957d-a793ed66038d",
+        "quantity": 4,
+        "unit": "tranche",
+        "notes": null
+      },
+      {
+        "id": "61d67013-92d8-484e-b97c-45d0659ff945",
+        "recipeId": "6bc8c1ac-941a-47a4-85b9-8ce6a8c9b7f8",
+        "ingredientId": "8e2edefa-8687-4147-bbfa-cf90d13db101",
+        "quantity": 150,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "692b539e-adef-4e15-93c7-0c6138a8eff3",
+        "recipeId": "6bc8c1ac-941a-47a4-85b9-8ce6a8c9b7f8",
+        "ingredientId": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "quantity": 60,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "036314bb-cb1b-4d94-912a-cd1ec9a15f6a",
+        "recipeId": "6bc8c1ac-941a-47a4-85b9-8ce6a8c9b7f8",
+        "ingredientId": "153e142c-38df-4ecf-8018-993a921b8e6d",
+        "quantity": 15,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "2cf5eb4c-9375-48f2-86ad-beea1d9bbdff",
+        "recipeId": "50d90aba-7887-4e81-b841-473ea13fdc50",
+        "ingredientId": "396887b8-99be-4920-a935-19530b98940e",
+        "quantity": 600,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "360d4390-83e2-4772-b831-2ab5f6a469d9",
+        "recipeId": "50d90aba-7887-4e81-b841-473ea13fdc50",
+        "ingredientId": "89ecbbab-9adb-46e8-82c9-197bb37d5f92",
+        "quantity": 190,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "1c420549-2474-467a-bf7f-92bf4f4287d1",
+        "recipeId": "50d90aba-7887-4e81-b841-473ea13fdc50",
+        "ingredientId": "5fc668c8-9168-47f2-804f-bccc45cca49f",
+        "quantity": 25,
+        "unit": "cl",
+        "notes": null
+      },
+      {
+        "id": "205ce672-09f8-403f-a799-4e91a1cf66af",
+        "recipeId": "50d90aba-7887-4e81-b841-473ea13fdc50",
+        "ingredientId": "04e22602-4c11-45c9-9911-c66c4118ccf4",
+        "quantity": 180,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "1df0216b-2c46-4c49-bea9-54ee9ecdc822",
+        "recipeId": "50d90aba-7887-4e81-b841-473ea13fdc50",
+        "ingredientId": "6bc396cb-839e-4d1e-9877-77acd923caa9",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "db597858-2aed-43b6-b8ca-e9fec2bae62f",
+        "recipeId": "5365a1aa-8307-46ce-914b-678c5bcf87ed",
+        "ingredientId": "f842b696-c946-4278-83f0-3758c1a444aa",
+        "quantity": 250,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "b37c4fa6-0b77-4e24-a2f8-f1380a7d249f",
+        "recipeId": "5365a1aa-8307-46ce-914b-678c5bcf87ed",
+        "ingredientId": "3a01b48a-aee3-4b9e-8ac0-cbf9d35c8c8c",
+        "quantity": 300,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "d6416227-1f7a-454a-b9f1-7b0fbfdd7d8f",
+        "recipeId": "5365a1aa-8307-46ce-914b-678c5bcf87ed",
+        "ingredientId": "1c0d4cba-3364-45c7-b3de-96b687674ea5",
+        "quantity": 350,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "3a59a93c-dc8e-4922-bf7b-39d669384528",
+        "recipeId": "5365a1aa-8307-46ce-914b-678c5bcf87ed",
+        "ingredientId": "c6f6e543-b953-4c01-9b92-e79f9e7f7218",
+        "quantity": 50,
+        "unit": "cl",
+        "notes": null
+      },
+      {
+        "id": "97ca2326-1c6d-4b24-870e-5eb740e90c02",
+        "recipeId": "5365a1aa-8307-46ce-914b-678c5bcf87ed",
+        "ingredientId": "153e142c-38df-4ecf-8018-993a921b8e6d",
+        "quantity": 60,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "224943b8-f629-40eb-8391-acc56e27fcfe",
+        "recipeId": "5365a1aa-8307-46ce-914b-678c5bcf87ed",
+        "ingredientId": "ae957f1b-f16e-4938-b868-792403a559bd",
+        "quantity": 30,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "a053c092-a5e0-43fe-b28a-bf6ce8b4e5ac",
+        "recipeId": "5365a1aa-8307-46ce-914b-678c5bcf87ed",
+        "ingredientId": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "quantity": 150,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "0525f289-9aca-4b1c-b188-862d907da82c",
+        "recipeId": "4ec3f7cf-aae8-4f8b-8741-ff6376a9d1bf",
+        "ingredientId": "bdd6b69b-3e81-427c-8870-6de21eabf18e",
+        "quantity": 250,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "5effbfe1-bf8d-4e1b-9531-b59ca5141175",
+        "recipeId": "4ec3f7cf-aae8-4f8b-8741-ff6376a9d1bf",
+        "ingredientId": "f7b367e6-be7e-42ec-b7d1-a9395a94ca1d",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "9f0521e5-dbed-4453-9066-d76b4fff8a41",
+        "recipeId": "4ec3f7cf-aae8-4f8b-8741-ff6376a9d1bf",
+        "ingredientId": "4ee57b96-0f64-4551-a129-01d69bb1eddb",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "085e20a8-d362-4ce4-87e6-02a168bec9c9",
+        "recipeId": "4ec3f7cf-aae8-4f8b-8741-ff6376a9d1bf",
+        "ingredientId": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "quantity": 80,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "eda5dbc6-4ad2-477e-acca-6d7ddae3af20",
+        "recipeId": "bdf096eb-7c05-4775-8fcf-63a5c06a3b1d",
+        "ingredientId": "805288e8-420d-4ee4-8985-4bcd150e8445",
+        "quantity": 4,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "5a7d55c0-0135-4de5-b18e-a8a0d045e110",
+        "recipeId": "bdf096eb-7c05-4775-8fcf-63a5c06a3b1d",
+        "ingredientId": "3a01b48a-aee3-4b9e-8ac0-cbf9d35c8c8c",
+        "quantity": 375,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "6ef71ef1-180a-424f-8231-07554b7ec178",
+        "recipeId": "bdf096eb-7c05-4775-8fcf-63a5c06a3b1d",
+        "ingredientId": "cb2ebfda-9417-4695-9dda-24b3ec8a0693",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "2f8c9b40-708e-4b1a-98e7-862dadbfe3fe",
+        "recipeId": "bdf096eb-7c05-4775-8fcf-63a5c06a3b1d",
+        "ingredientId": "3fbe192c-89fb-429b-9a33-a4b78d923d0e",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "6fb1581e-5bb3-49ac-a660-49dfa34b20df",
+        "recipeId": "bdf096eb-7c05-4775-8fcf-63a5c06a3b1d",
+        "ingredientId": "a072a4d5-3355-4580-aba5-a32a3b9d2c32",
+        "quantity": 250,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "a87063b6-a942-463d-a83e-7bd4095ad1f0",
+        "recipeId": "bdf096eb-7c05-4775-8fcf-63a5c06a3b1d",
+        "ingredientId": "4ee57b96-0f64-4551-a129-01d69bb1eddb",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "f23111a4-ea8a-4482-b9b0-75f6ead38ce4",
+        "recipeId": "bdf096eb-7c05-4775-8fcf-63a5c06a3b1d",
+        "ingredientId": "063c1c05-6d38-45f5-aacc-730ea0d65615",
+        "quantity": 1,
+        "unit": "sachet",
+        "notes": null
+      },
+      {
+        "id": "a9bff051-3068-4a76-9685-50539807c30a",
+        "recipeId": "02e5ed89-e8f9-4346-a460-370caf8b6c8f",
+        "ingredientId": "8276e540-a661-4530-8989-27f83de26061",
+        "quantity": 250,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "2a83826a-6966-4463-8558-4df363f116a8",
+        "recipeId": "02e5ed89-e8f9-4346-a460-370caf8b6c8f",
+        "ingredientId": "50e4102c-d625-4c7d-9146-c904b9ac45c0",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "2237d6f4-4d8d-44fb-a9d9-bbcf24cedb4a",
+        "recipeId": "02e5ed89-e8f9-4346-a460-370caf8b6c8f",
+        "ingredientId": "82f1e150-db8e-4859-b418-5f996f7cf12f",
+        "quantity": 200,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "20bd613d-8f3a-4ad4-aa66-07dcbc07a9b6",
+        "recipeId": "02e5ed89-e8f9-4346-a460-370caf8b6c8f",
+        "ingredientId": "4ee57b96-0f64-4551-a129-01d69bb1eddb",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "79a624df-855c-4575-8f40-5644ad363493",
+        "recipeId": "15b70d5e-b93c-4574-bd75-50c5e8d046c2",
+        "ingredientId": "9a32844a-507d-4d5d-aa44-d40b5c2a2257",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "474b17fd-d72b-477a-abcf-72352852b909",
+        "recipeId": "15b70d5e-b93c-4574-bd75-50c5e8d046c2",
+        "ingredientId": "dae1019b-aae7-48cb-a619-ec89792d2155",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "373c4ec0-1942-4573-bfbc-1b4988e2d200",
+        "recipeId": "15b70d5e-b93c-4574-bd75-50c5e8d046c2",
+        "ingredientId": "59714f43-d031-40d4-8cf1-15ca5d1c1d40",
+        "quantity": 2,
+        "unit": "tranche",
+        "notes": null
+      },
+      {
+        "id": "cc7803b3-f153-40bb-992e-d6a7bb623365",
+        "recipeId": "15b70d5e-b93c-4574-bd75-50c5e8d046c2",
+        "ingredientId": "eae34c6c-6120-4773-b9b2-cf2dc23f602b",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "b3664f59-42c8-49fd-852e-323d25d12e5a",
+        "recipeId": "15b70d5e-b93c-4574-bd75-50c5e8d046c2",
+        "ingredientId": "bf5cfce4-c6c8-49a7-b972-842ebd7abbeb",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "34636866-cdf0-4375-bc01-14ce92dac8bc",
+        "recipeId": "15b70d5e-b93c-4574-bd75-50c5e8d046c2",
+        "ingredientId": "77b98dc8-20af-4a6b-9f24-47e929f59cfd",
+        "quantity": 2,
+        "unit": "c. à soupe",
+        "notes": null
+      },
+      {
+        "id": "08655866-7cd2-4131-bab0-65deeda02e6d",
+        "recipeId": "c4a7e38c-cb4e-403c-94a9-7553ac2aac4f",
+        "ingredientId": "ef13dbbe-d2ad-4ee0-823d-02d88d8eedad",
+        "quantity": 4,
+        "unit": "tranche",
+        "notes": null
+      },
+      {
+        "id": "067bc687-50bd-4593-99e3-f94f914391fb",
+        "recipeId": "c4a7e38c-cb4e-403c-94a9-7553ac2aac4f",
+        "ingredientId": "153e142c-38df-4ecf-8018-993a921b8e6d",
+        "quantity": 20,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "e7b4b340-b2e7-4495-8bac-c24b04d7e0b4",
+        "recipeId": "c4a7e38c-cb4e-403c-94a9-7553ac2aac4f",
+        "ingredientId": "c2258200-88d6-46f5-957d-a793ed66038d",
+        "quantity": 2,
+        "unit": "tranche",
+        "notes": null
+      },
+      {
+        "id": "3dbf10de-d70f-4b5c-9478-5c74f685e7ca",
+        "recipeId": "c4a7e38c-cb4e-403c-94a9-7553ac2aac4f",
+        "ingredientId": "c5e86acc-65da-4a5d-88ac-482c41314092",
+        "quantity": 100,
+        "unit": "g",
+        "notes": null
+      },
+      {
+        "id": "deb4244f-e9ea-4778-b74e-aa5a2263f9e4",
+        "recipeId": "fb4d5799-5b60-4891-ac52-26f10fe79365",
+        "ingredientId": "805288e8-420d-4ee4-8985-4bcd150e8445",
+        "quantity": 4,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "2a3504c8-954d-45d8-871a-1a182abeda85",
+        "recipeId": "fb4d5799-5b60-4891-ac52-26f10fe79365",
+        "ingredientId": "eae34c6c-6120-4773-b9b2-cf2dc23f602b",
+        "quantity": 2,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "321c1ab4-0d1b-42b3-943b-42af70f5d2ed",
+        "recipeId": "fb4d5799-5b60-4891-ac52-26f10fe79365",
+        "ingredientId": "bf5cfce4-c6c8-49a7-b972-842ebd7abbeb",
+        "quantity": 1,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "129bd23b-a693-454a-8071-87b97e9543bd",
+        "recipeId": "fb4d5799-5b60-4891-ac52-26f10fe79365",
+        "ingredientId": "59714f43-d031-40d4-8cf1-15ca5d1c1d40",
+        "quantity": 4,
+        "unit": "tranche",
+        "notes": null
+      },
+      {
+        "id": "1d8cdd7d-0fcd-4091-99b0-83c0425cf99d",
+        "recipeId": "fb4d5799-5b60-4891-ac52-26f10fe79365",
+        "ingredientId": "643326c0-018e-4a81-a331-44da7e31eed5",
+        "quantity": 4,
+        "unit": "pièce",
+        "notes": null
+      },
+      {
+        "id": "b143e143-647e-4321-a828-ca46441151c2",
+        "recipeId": "fb4d5799-5b60-4891-ac52-26f10fe79365",
+        "ingredientId": "77b98dc8-20af-4a6b-9f24-47e929f59cfd",
+        "quantity": 3,
+        "unit": "c. à soupe",
+        "notes": null
+      }
+    ],
+    "purchaseHistory": [
+      {
+        "id": "6ff94127-7fca-4f6a-8729-eee65f6b969c",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "e7bb0a15-7dc7-4783-b10d-b050c67be8f6",
+        "itemCount": 1,
+        "quantity": 345,
+        "unit": "g",
+        "brand": null,
+        "price": 1.27,
+        "status": "consumed",
+        "boughtDate": "2026-09-23T12:00:44.388Z",
+        "finishedDate": "2026-09-23T12:05:48.573Z",
+        "notes": null
+      },
+      {
+        "id": "cf955d39-f6ed-4d59-abde-ce8abcabbfc3",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "0df66f6e-0a6f-4a73-846b-e37004ceaac4",
+        "itemCount": 1,
+        "quantity": 150,
+        "unit": "g",
+        "brand": "Marque Repère",
+        "price": 0.65,
+        "status": "consumed",
+        "boughtDate": "2026-09-23T11:32:00.529Z",
+        "finishedDate": "2026-09-23T12:27:56.085Z",
+        "notes": null
+      },
+      {
+        "id": "ca3c8c20-2c38-4cfd-8897-b480138de7b8",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "b126a863-5d4c-443c-8baa-e2cb568ee31d",
+        "itemCount": 1,
+        "quantity": 500,
+        "unit": "g",
+        "brand": "Fiorini",
+        "price": 1.04,
+        "status": "consumed",
+        "boughtDate": "2026-09-22T16:32:32.021Z",
+        "finishedDate": "2026-09-23T12:29:04.630Z",
+        "notes": null
+      },
+      {
+        "id": "0454f478-4955-4579-a195-b19d6983cb00",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "87b3098d-e195-406f-938c-c1e7c34608bf",
+        "itemCount": 1,
+        "quantity": 40,
+        "unit": "cl",
+        "brand": null,
+        "price": 1.77,
+        "status": "consumed",
+        "boughtDate": "2026-09-22T16:39:06.730Z",
+        "finishedDate": "2026-09-23T12:29:35.810Z",
+        "notes": "entière & fluide 30%"
+      },
+      {
+        "id": "3b780e4d-9677-4148-9029-2b86eef9df6d",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "b73e4cd6-0279-4947-a50b-ec4ac288b942",
+        "itemCount": 1,
+        "quantity": 250,
+        "unit": "g",
+        "brand": null,
+        "price": 0.95,
+        "status": "consumed",
+        "boughtDate": "2026-09-22T14:20:54.560Z",
+        "finishedDate": "2026-09-23T12:30:03.643Z",
+        "notes": null
+      },
+      {
+        "id": "d2e90ad7-093c-438b-ab5f-800aade49162",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "0df66f6e-0a6f-4a73-846b-e37004ceaac4",
+        "itemCount": 1,
+        "quantity": 50,
+        "unit": "g",
+        "brand": "Marque Repère",
+        "price": 0.22,
+        "status": "consumed",
+        "boughtDate": "2026-09-23T11:32:00.529Z",
+        "finishedDate": "2026-09-23T12:30:16.144Z",
+        "notes": null
+      },
+      {
+        "id": "4a09c7ea-858b-46be-bfdb-839b210c8661",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "5bc5fb88-cf7b-4aa7-828e-06965a8b61f4",
+        "itemCount": 1,
+        "quantity": 95,
+        "unit": "g",
+        "brand": null,
+        "price": 0.72,
+        "status": "consumed",
+        "boughtDate": "2026-09-22T16:35:04.995Z",
+        "finishedDate": "2026-09-23T12:30:26.096Z",
+        "notes": null
+      },
+      {
+        "id": "425c9e7c-57ee-49cb-ac73-487c439df2c8",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "f90ae096-b2f9-4d09-9f59-ba3c8687b736",
+        "itemCount": 1,
+        "quantity": 70,
+        "unit": "pièce",
+        "brand": null,
+        "price": null,
+        "status": "consumed",
+        "boughtDate": "2026-09-22T16:40:58.239Z",
+        "finishedDate": "2026-09-23T12:30:45.606Z",
+        "notes": null
+      },
+      {
+        "id": "c6dd33c3-5b73-4a35-bdbd-6cf554c3175d",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "f90ae096-b2f9-4d09-9f59-ba3c8687b736",
+        "itemCount": 1,
+        "quantity": 30,
+        "unit": "pièce",
+        "brand": null,
+        "price": null,
+        "status": "consumed",
+        "boughtDate": "2026-09-22T16:40:58.239Z",
+        "finishedDate": "2026-09-23T12:31:10.554Z",
+        "notes": null
+      },
+      {
+        "id": "1825f707-12de-4aa4-8e0c-3f203746324e",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "f90ae096-b2f9-4d09-9f59-ba3c8687b736",
+        "itemCount": 1,
+        "quantity": 30,
+        "unit": "pièce",
+        "brand": null,
+        "price": null,
+        "status": "consumed",
+        "boughtDate": "2026-09-22T16:40:58.239Z",
+        "finishedDate": "2026-09-23T12:31:17.373Z",
+        "notes": null
+      },
+      {
+        "id": "371f3931-d317-4a28-b565-37b4949e6159",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "ingredientId": "04e1641e-1f4b-4d13-b60b-02106e345325",
+        "itemCount": 1,
+        "quantity": 200,
+        "unit": "g",
+        "brand": "Fiorini",
+        "price": 0.25,
+        "status": "consumed",
+        "boughtDate": "2026-09-22T16:33:02.476Z",
+        "finishedDate": "2026-09-23T12:31:34.293Z",
+        "notes": null
+      }
+    ],
+    "shoppingLists": [
+      {
+        "id": "bc1fceab-113f-4179-bf8e-403de45dab37",
+        "userId": "fe15efd1-8666-4e50-9074-b4a8567d8504",
+        "name": "Courses de la semaine",
+        "createdAt": "2025-07-09T05:36:39.046Z",
+        "updatedAt": "2025-07-09T05:36:39.046Z",
+        "items": [
+          {
+            "id": "cff69a47-fab0-4785-a39f-3462cea56e5e",
+            "shoppingListId": "bc1fceab-113f-4179-bf8e-403de45dab37",
+            "ingredientId": "0df66f6e-0a6f-4a73-846b-e37004ceaac4",
+            "quantity": 200,
+            "unit": "g",
+            "purchased": false,
+            "notes": "Marque: Marque Repère"
+          }
+        ]
+      }
+    ],
+    "favoriteRecipes": []
+  }
+}

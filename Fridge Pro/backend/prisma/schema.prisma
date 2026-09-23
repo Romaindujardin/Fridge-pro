@@ -25,10 +25,11 @@ model User {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  fridgeItems    FridgeItem[]
-  recipes        Recipe[]
+  fridgeItems     FridgeItem[]
+  purchaseHistory PurchaseHistory[]
+  recipes         Recipe[]
   favoriteRecipes FavoriteRecipe[]
-  shoppingLists  ShoppingList[]
+  shoppingLists   ShoppingList[]
 
   @@map("users") // table physique dans Postgres
 }
@@ -59,8 +60,9 @@ model Ingredient {
   fiber      Float?
 
   // Relations
-  category         Category?        @relation(fields: [categoryId], references: [id])
-  fridgeItems      FridgeItem[]
+  category          Category?          @relation(fields: [categoryId], references: [id])
+  fridgeItems       FridgeItem[]
+  purchaseHistory   PurchaseHistory[]
   recipeIngredients RecipeIngredient[]
   shoppingListItems ShoppingListItem[]
 
@@ -72,11 +74,16 @@ model FridgeItem {
   id           String    @id @default(uuid())
   userId       String
   ingredientId String
-  quantity     Float // quantité disponible dans le frigo
-  unit         String // unité: g, ml, pièces...
-  expiryDate   DateTime? // date limite de consommation
-  addedDate    DateTime  @default(now()) // suivi pour FIFO
-  notes        String? // commentaire utilisateur
+  itemCount        Int?      @default(1) // nombre d'exemplaires (ex: 2 paquets)
+  initialItemCount Int?      // nombre d'exemplaires initialement achetés
+  quantity         Float     // quantité disponible dans le frigo (poids/volume)
+  initialQuantity  Float?    // quantité initiale achetée (ex: 1000g)
+  unit             String    // unité: g, ml, pièces...
+  brand            String?   // marque (ex: Barilla, Danone)
+  price            Float?    // prix payé en euros pour cet aliment/lot
+  expiryDate       DateTime? // date limite de consommation
+  addedDate        DateTime  @default(now()) // suivi pour FIFO
+  notes            String?   // commentaire utilisateur
 
   // Relations
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -173,4 +180,27 @@ model ShoppingListItem {
 
   @@unique([shoppingListId, ingredientId])
   @@map("shopping_list_items")
-} 
+}
+
+/// Historique des achats et des ingrédients consommés/terminés
+model PurchaseHistory {
+  id           String    @id @default(uuid())
+  userId       String
+  ingredientId String
+  itemCount    Int?      @default(1)
+  quantity     Float
+  unit         String
+  brand        String?
+  price        Float?    // Prix d'achat total en euros
+  status       String    @default("consumed") // "consumed" (terminé) ou "expired" (périmé)
+  boughtDate   DateTime  @default(now())
+  finishedDate DateTime? @default(now())
+  notes        String?
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@index([userId, boughtDate])
+  @@map("purchase_history")
+}
