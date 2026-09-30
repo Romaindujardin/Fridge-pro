@@ -4,7 +4,7 @@ import {
   ReactElement,
   cloneElement,
 } from "react";
-import { clsx } from "clsx";
+import { cn } from "@/utils/cn";
 import { Loader2 } from "lucide-react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -46,7 +46,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       lg: "h-12 px-6 text-lg",
     };
 
-    const combinedClassName = clsx(
+    const combinedClassName = cn(
       baseStyles,
       variants[variant],
       sizes[size],
@@ -62,7 +62,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       const child = children as ReactElement;
       return cloneElement(child, {
         ...child.props,
-        className: clsx(combinedClassName, child.props.className),
+        className: cn(combinedClassName, child.props.className),
         ref,
       });
     }

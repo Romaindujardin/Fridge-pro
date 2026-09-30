@@ -1,5 +1,5 @@
 import { HTMLAttributes, forwardRef } from "react";
-import { clsx } from "clsx";
+import { cn } from "@/utils/cn";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={clsx(
+        className={cn(
           "rounded-lg border border-gray-200 bg-white shadow-sm",
           hover && "transition-shadow hover:shadow-md",
           className
@@ -28,7 +28,7 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={clsx("flex flex-col space-y-1.5 p-6", className)}
+      className={cn("flex flex-col space-y-1.5 p-6", className)}
       {...props}
     />
   )
@@ -40,7 +40,7 @@ const CardTitle = forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={clsx(
+    className={cn(
       "text-lg font-semibold leading-none tracking-tight",
       className
     )}
@@ -54,14 +54,14 @@ const CardDescription = forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={clsx("text-sm text-gray-600", className)}
+    className={cn("text-sm text-gray-600", className)}
     {...props}
   />
 ));
 
 const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={clsx("p-6 pt-0", className)} {...props} />
+    <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
   )
 );
 
@@ -69,7 +69,7 @@ const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={clsx("flex items-center p-6 pt-0", className)}
+      className={cn("flex items-center p-6 pt-0", className)}
       {...props}
     />
   )

@@ -99,79 +99,82 @@ export function HomePage() {
       </div>
 
       {/* Statistiques rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-0">
-        <Card hover>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mt-0">
+        <Card hover className="flex flex-col justify-center">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <h3 className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-1">
                 {stats.fridgeItemsCount}
               </h3>
-              <p className="text-sm text-gray-600">Ingrédients disponibles</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Ingrédients disponibles</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card hover>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+        <Card hover className="flex flex-col justify-center">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <h3 className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-1">
                 {stats.recipesCount}
               </h3>
-              <p className="text-sm text-gray-600">Recettes réalisables</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Recettes réalisables</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card hover>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+        <Card hover className="flex flex-col justify-center">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <h3 className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-1">
                 {stats.favoritesCount}
               </h3>
-              <p className="text-sm text-gray-600">Recettes favorites</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Recettes favorites</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card hover>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+        <Card hover className="flex flex-col justify-center">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <h3 className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-1">
                 {stats.shoppingListItemsCount}
               </h3>
-              <p className="text-sm text-gray-600">Articles en liste</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Articles en liste</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Actions rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-0">
-        <Card hover>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-2 text-gray-900">
-              Ajouter des ingrédients
-            </h3>
-            <p className="text-gray-600 mb-4 text-sm">
-              Scannez votre ticket de caisse ou ajoutez manuellement
-            </p>
-            <div className="flex space-x-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-0">
+        <Card hover className="flex flex-col justify-between">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full space-y-4">
+            <div>
+              <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 text-gray-900">
+                Ajouter des ingrédients
+              </h3>
+              <p className="text-gray-600 text-xs sm:text-sm">
+                Scannez votre ticket de caisse ou ajoutez manuellement
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2.5 sm:gap-3 pt-1">
               <Button
                 asChild
                 variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
               >
                 <Link to="/fridge">
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 mr-1.5" />
                   Ajouter manuellement
                 </Link>
               </Button>
               <Button
+                asChild
                 variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
               >
                 <Link to="/fridge">
-                  <ScanLine className="w-4 h-4 mr-2" />
+                  <ScanLine className="w-4 h-4 mr-1.5" />
                   Scanner ticket
                 </Link>
               </Button>
@@ -179,21 +182,30 @@ export function HomePage() {
           </CardContent>
         </Card>
 
-        <Card hover>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-2 text-gray-900">
-              <Link to="/recipes">Générer une recette</Link>
-            </h3>
-            <p className="text-gray-600 mb-4 text-sm">
-              Laissez l'IA créer une recette avec vos ingrédients
-            </p>
-            <Button
-              variant="outline"
-              className="border-blue-600 text-blue-600 hover:bg-blue-50"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Générer avec IA
-            </Button>
+        <Card hover className="flex flex-col justify-between">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between h-full space-y-4">
+            <div>
+              <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 text-gray-900">
+                <Link to="/recipes" className="hover:text-emerald-600 transition-colors">
+                  Générer une recette
+                </Link>
+              </h3>
+              <p className="text-gray-600 text-xs sm:text-sm">
+                Laissez l'IA créer une recette avec vos ingrédients
+              </p>
+            </div>
+            <div className="flex pt-1">
+              <Button
+                asChild
+                variant="outline"
+                className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs sm:text-sm w-full sm:w-auto justify-center"
+              >
+                <Link to="/recipes">
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  Générer avec IA
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
