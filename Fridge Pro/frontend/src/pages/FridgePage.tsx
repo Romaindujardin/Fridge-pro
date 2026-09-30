@@ -288,6 +288,7 @@ const fridgeItemSchema = z.object({
     ),
   categoryId: z.string().optional(),
   expiryDate: z.string().optional(),
+  isExpiryEstimated: z.boolean().optional(),
   notes: z.string().optional(),
 });
 
@@ -632,6 +633,7 @@ export function FridgePage() {
       price: undefined,
       categoryId: initialCatId,
       expiryDate: "",
+      isExpiryEstimated: false,
       notes: "",
     });
     setIngredientInputValue("");
@@ -916,6 +918,7 @@ export function FridgePage() {
       price: item.price !== null && item.price !== undefined ? item.price : undefined,
       categoryId: item.ingredient.categoryId || item.ingredient.category?.id || "",
       expiryDate: item.expiryDate ? item.expiryDate.split("T")[0] : "",
+      isExpiryEstimated: item.isExpiryEstimated ?? false,
       notes: item.notes || "",
     });
     setIngredientInputValue(item.ingredient.name);
@@ -1054,10 +1057,20 @@ export function FridgePage() {
             )}
 
             {item.expiryDate && (
-              <div className="flex justify-between text-sm py-1">
-                <span className="text-gray-600">Expire le :</span>
-                <span className="font-medium">
-                  {new Date(item.expiryDate).toLocaleDateString("fr-FR")}
+              <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100">
+                <span className="text-gray-600 flex items-center gap-1.5">
+                  <span>{item.isExpiryEstimated ? "Date estimée :" : "Expire le :"}</span>
+                  {item.isExpiryEstimated && (
+                    <span
+                      title="Date estimée automatiquement par l'IA lors du scan du ticket"
+                      className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 px-1.5 py-0.5 rounded font-medium"
+                    >
+                      Estimée (IA)
+                    </span>
+                  )}
+                </span>
+                <span className="font-medium text-gray-900">
+                  {item.isExpiryEstimated ? "~ " : ""}{new Date(item.expiryDate).toLocaleDateString("fr-FR")}
                 </span>
               </div>
             )}
@@ -1073,6 +1086,7 @@ export function FridgePage() {
             <div className="mt-3 flex justify-center">
               <FreshnessBadge
                 expiryDate={item.expiryDate}
+                isEstimated={item.isExpiryEstimated}
                 showDays={true}
                 className="w-full justify-center py-1 text-xs font-medium"
               />
@@ -1817,7 +1831,7 @@ export function FridgePage() {
                         </div>
                       </button>
                     )}
-                    {/* Suggestions existantes / OpenFoodFacts */}
+                    {/* Suggestions d'ingrédients */}
                     {!isFetchingIngredients &&
                       ingredients.map((ingredient) => (
                         <button
@@ -1845,11 +1859,6 @@ export function FridgePage() {
                             <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
                               {ingredient.category?.name && (
                                 <span>{ingredient.category.name}</span>
-                              )}
-                              {ingredient.id.startsWith("off_") && (
-                                <span className="text-blue-600 font-medium">
-                                  • OpenFoodFacts
-                                </span>
                               )}
                             </div>
                           </div>
@@ -1980,12 +1989,19 @@ export function FridgePage() {
 
           {/* Date d'expiration et Prix d'achat */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="Date d'expiration (optionnel)"
-              type="date"
-              error={form.formState.errors.expiryDate?.message}
-              {...form.register("expiryDate")}
-            />
+            <div>
+              <Input
+                label="Date d'expiration (optionnel)"
+                type="date"
+                error={form.formState.errors.expiryDate?.message}
+                {...form.register("expiryDate")}
+              />
+              {editingItem?.isExpiryEstimated && (
+                <p className="text-[11px] text-purple-700 mt-1 flex items-center gap-1 font-medium bg-purple-50/80 p-1.5 rounded border border-purple-200/60">
+                  <span>✨ Date estimée automatiquement par l'IA. Modifiez-la pour renseigner la DLC officielle.</span>
+                </p>
+              )}
+            </div>
 
             <Input
               label="Prix d'achat (€, optionnel)"

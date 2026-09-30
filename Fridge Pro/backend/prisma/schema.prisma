@@ -82,6 +82,7 @@ model FridgeItem {
   brand            String?   // marque (ex: Barilla, Danone)
   price            Float?    // prix payé en euros pour cet aliment/lot
   expiryDate       DateTime? // date limite de consommation
+  isExpiryEstimated Boolean?  @default(false) // true si la date est estimée (IA/ticket), false si officielle/confirmée
   addedDate        DateTime  @default(now()) // suivi pour FIFO
   notes            String?   // commentaire utilisateur
 

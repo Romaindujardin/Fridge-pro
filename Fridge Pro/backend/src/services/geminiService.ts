@@ -9,8 +9,11 @@ const RECEIPT_SCHEMA = z.object({
     .array(
       z.object({
         name: z.string().min(1),
+        category: z.string().nullish(),
         quantity: z.union([z.number(), z.string()]).nullish(),
         unit: z.string().nullish(),
+        price: z.union([z.number(), z.string()]).nullish(),
+        estimatedDaysToExpire: z.union([z.number(), z.string()]).nullish(),
         notes: z.string().nullish(),
       })
     )
@@ -19,20 +22,20 @@ const RECEIPT_SCHEMA = z.object({
 
 export type ReceiptAnalysis = z.infer<typeof RECEIPT_SCHEMA>;
 
-const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-
 // Instancie le client Gemini en vérifiant la présence de la clé API.
-const getModel = (apiKey: string) => {
-  if (!apiKey) {
+const getModel = (apiKey?: string) => {
+  const key = (apiKey || process.env.GEMINI_API_KEY || "").trim();
+  if (!key) {
     throw new Error(
-      "Aucune clé Gemini n'a été fournie. Merci de configurer votre clé dans votre profil."
+      "Aucune clé Gemini n'a été fournie. Merci de configurer votre clé dans votre profil ou dans le fichier .env."
     );
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const modelName = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite").trim();
+  const genAI = new GoogleGenerativeAI(key);
 
   return genAI.getGenerativeModel({
-    model: MODEL_NAME,
+    model: modelName,
   });
 };
 
@@ -53,17 +56,17 @@ const extractJson = (content: string) => {
 };
 
 /**
- * Analyse une image de ticket et renvoie les lignes produits.
+ * Analyse une image de ticket et renvoie les lignes produits avec catégorie, prix et péremption estimée.
  */
 export const analyzeReceiptImage = async (params: {
   base64Image: string;
   mimeType: string;
-  apiKey: string;
+  apiKey?: string;
 }): Promise<ReceiptAnalysis> => {
   const model = getModel(params.apiKey);
 
   const prompt = `
-Tu es un assistant expert en extraction de données de tickets de caisse.
+Tu es un assistant expert en extraction de données de tickets de caisse de supermarché.
 
 Objectif :
 1. Vérifie si l'image fournie est réellement un ticket de caisse.
@@ -72,21 +75,42 @@ Objectif :
   "isReceipt": false,
   "items": []
 }
-3. Si c'est un ticket de caisse, détecte les lignes correspondant aux produits achetés.
-   - Chaque ingrédient doit avoir un nom clair (en français si possible).
-   - Tente d'inférer la quantité (nombre) si elle est indiquée, sinon mets 1.
-   - Tente d'inférer l'unité (pièce, kg, g, L, cl, paquet, etc.) si elle est indiquée, sinon laisse null.
-   - Ajoute des notes éventuelles (bio, promotion, etc.) si pertinent, sinon null.
-4. Répond STRICTEMENT avec un JSON valide, sans texte additionnel ni commentaire.
+3. Si c'est un ticket de caisse, détecte les lignes correspondant aux produits alimentaires achetés (ignore les produits non alimentaires ou sacs).
+   - Chaque ingrédient doit avoir un nom clair et explicite en français (ex: "Lardons fumés", "Crème fraîche", "Pâtes Penne").
+   - Assigne obligatoirement la catégorie appropriée (category) parmi cette liste exacte :
+     * "Les fruits & légumes" (légumes, fruits frais, herbes aromatiques)
+     * "Les viandes" (viandes, volailles, charcuteries, poissons, crustacés)
+     * "Produits laitiers" (laits, fromages, yaourts, beurres, crèmes, œufs)
+     * "Féculents" (pâtes, riz, semoule, pommes de terre, pain de mie, pâtes à tarte)
+     * "Conserves" (boîtes de conserve, bocaux)
+     * "Boissons" (jus, eau, sodas, bières, vins)
+     * "Sauces" (vinaigrettes, mayonnaise, moutarde, coulis de tomate)
+     * "Produits secs" (farine, sucre, épices, huiles, sel, légumineuses)
+     * "Petit déjeuner" (céréales, café, thé, confitures, pâtes à tartiner)
+     * "Gâteaux" (biscuits, pâtisseries, viennoiseries)
+     * "Apéritifs" (chips, gâteaux apéritifs, olives)
+     * "Surgelés" (glaces, plats surgelés)
+   - RÈGLE ESSENTIELLE SUR LE POIDS / VOLUME :
+     * Si le produit mentionne un poids ou volume (ex: "320G", "500g", "1KG", "450ML", "50CL", "1L", "2X100G", "4X150G"):
+       Tu DOIS impérativement mettre la valeur numérique du poids ou volume dans 'quantity' (ex: 320, 500, 1, 450, 200, 600) et l'unité correspondante dans 'unit' ("g", "kg", "ml", "cl", "L").
+       Ne place JAMAIS le poids ou volume dans les 'notes' !
+     * Si aucun grammage/volume n'est précisé et que c'est un produit unitaire (ex: 2 bavettes, 1 pizza, 6 oeufs, 1 concombre): mets le nombre dans 'quantity' et "pièce" dans 'unit'.
+   - Tente d'extraire le prix en euros (nombre positif) s'il figure sur le ticket, sinon null.
+   - Estime une durée de conservation réaliste en jours (estimatedDaysToExpire, entier positif) pour cet aliment non entamé stocké adéquatement (ex: poisson/viande fraîche: 3, volaille: 4, charcuterie: 14, crème/lait: 10, légumes frais/salade: 7, fruits: 10, yaourts/fromage: 21, oeufs: 21, conserves/pâtes/sec: 180).
+   - Ajoute des notes éventuelles pour la marque ou variante (bio, marque, etc.) si pertinent, sinon null (sans répéter le poids).
+4. Répond STRICTEMENT avec un JSON valide, sans texte additionnel ni commentaire markdown.
 
 Format attendu:
 {
   "isReceipt": boolean,
   "items": [
     {
-      "name": "Nom du produit",
+      "name": "Nom de l'ingrédient",
+      "category": "Nom de la catégorie parmi la liste exacte",
       "quantity": nombre ou null,
       "unit": "unité" ou null,
+      "price": nombre ou null,
+      "estimatedDaysToExpire": nombre de jours ou null,
       "notes": "commentaire" ou null
     }
   ]
@@ -162,7 +186,7 @@ export type GeneratedRecipe = {
  */
 export const generateRecipeFromPrompt = async (params: {
   prompt: string;
-  apiKey: string;
+  apiKey?: string;
   fridgeItems?: {
     name: string;
     quantity?: number | null;

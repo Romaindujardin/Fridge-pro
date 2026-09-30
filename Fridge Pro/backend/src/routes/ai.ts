@@ -50,11 +50,13 @@ router.post(
         select: { geminiApiKey: true },
       });
 
-      if (!userWithKey?.geminiApiKey) {
+      const apiKey = userWithKey?.geminiApiKey || process.env.GEMINI_API_KEY;
+
+      if (!apiKey) {
         return res.status(400).json({
           success: false,
           message:
-            "Veuillez renseigner votre clé Gemini API dans votre profil avant d'utiliser cette fonctionnalité.",
+            "Veuillez renseigner votre clé Gemini API dans votre profil ou les variables d'environnement avant d'utiliser cette fonctionnalité.",
         });
       }
 
@@ -62,7 +64,7 @@ router.post(
       const analysis = await analyzeReceiptImage({
         base64Image,
         mimeType: req.file.mimetype,
-        apiKey: userWithKey.geminiApiKey,
+        apiKey,
       });
 
       if (!analysis.isReceipt) {
@@ -80,6 +82,7 @@ router.post(
       }
 
       const userId = req.userId!;
+      const allCategories = await prisma.category.findMany();
       const itemsMap = new Map<
         string,
         Awaited<ReturnType<typeof prisma.fridgeItem.upsert>>
@@ -108,6 +111,94 @@ router.post(
         const unit = item.unit?.trim() || "pièce";
         const notes = item.notes?.trim() || undefined;
 
+        // Extraction intelligente du poids/volume depuis les notes ou le nom
+        let finalQuantity = quantity;
+        let finalUnit = unit;
+        let finalItemCount = 1;
+        let finalNotes = notes;
+
+        const isStandardUnit = ["g", "kg", "mg", "ml", "cl", "l"].includes(unit.toLowerCase());
+        const textToScan = `${notes || ""} ${name}`;
+
+        const multiMatch = textToScan.match(/(\d+)\s*[xX*]\s*(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i);
+        if (multiMatch) {
+          const packs = parseInt(multiMatch[1], 10);
+          const each = parseFloat(multiMatch[2].replace(",", "."));
+          const u = multiMatch[3].toLowerCase();
+          finalItemCount = packs;
+          finalQuantity = packs * each;
+          finalUnit = u === "l" ? "L" : u;
+          if (finalNotes) {
+            finalNotes = finalNotes.replace(multiMatch[0], "").replace(/^[,\s-]+|[,\s-]+$/g, "").trim() || undefined;
+          }
+        } else if (!isStandardUnit) {
+          const singleMatch = textToScan.match(/(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i);
+          if (singleMatch) {
+            const val = parseFloat(singleMatch[1].replace(",", "."));
+            const u = singleMatch[2].toLowerCase();
+            if (quantity > 1 && ["paquet", "bouteille", "boîte", "pot", "barquette", "pièce"].includes(unit.toLowerCase())) {
+              finalQuantity = quantity * val;
+              finalItemCount = quantity;
+            } else {
+              finalQuantity = val;
+            }
+            finalUnit = u === "l" ? "L" : u;
+            if (finalNotes) {
+              finalNotes = finalNotes.replace(singleMatch[0], "").replace(/^[,\s-]+|[,\s-]+$/g, "").trim() || undefined;
+            }
+          }
+        }
+
+        const countMatch = textToScan.match(/(?:[xX](\d+)|\b(\d+)[xX]\b)/);
+        if (countMatch && finalItemCount === 1) {
+          finalItemCount = parseInt(countMatch[1] || countMatch[2], 10);
+          if (finalNotes) {
+            finalNotes = finalNotes.replace(countMatch[0], "").replace(/^[,\s-]+|[,\s-]+$/g, "").trim() || undefined;
+          }
+        }
+
+        if (finalNotes && ["null", "undefined"].includes(finalNotes.trim().toLowerCase())) {
+          finalNotes = undefined;
+        }
+
+        const daysToExpire =
+          typeof item.estimatedDaysToExpire === "number"
+            ? item.estimatedDaysToExpire
+            : parseInt(String(item.estimatedDaysToExpire ?? ""), 10);
+
+        const expiryDate =
+          Number.isFinite(daysToExpire) && daysToExpire > 0
+            ? new Date(Date.now() + daysToExpire * 24 * 60 * 60 * 1000)
+            : undefined;
+
+        const priceValue =
+          typeof item.price === "number"
+            ? item.price
+            : parseFloat(
+                String(item.price ?? "")
+                  .replace(",", ".")
+                  .replace(/[^0-9.]/g, "")
+              );
+        const price =
+          Number.isFinite(priceValue) && priceValue > 0 ? priceValue : undefined;
+
+        // Détection de la catégorie la plus adaptée
+        let matchedCategoryId: string | undefined = undefined;
+        if (item.category) {
+          const rawCat = item.category.trim().toLowerCase();
+          const found = allCategories.find((cat) => {
+            const cName = cat.name.toLowerCase();
+            return (
+              cName === rawCat ||
+              rawCat.includes(cName) ||
+              cName.includes(rawCat)
+            );
+          });
+          if (found) {
+            matchedCategoryId = found.id;
+          }
+        }
+
         let ingredient = await prisma.ingredient.findFirst({
           where: {
             name: {
@@ -121,9 +212,19 @@ router.post(
           ingredient = await prisma.ingredient.create({
             data: {
               name,
+              categoryId: matchedCategoryId,
+            },
+          });
+        } else if (!ingredient.categoryId && matchedCategoryId) {
+          ingredient = await prisma.ingredient.update({
+            where: { id: ingredient.id },
+            data: {
+              categoryId: matchedCategoryId,
             },
           });
         }
+
+        const isExpiryEstimated = expiryDate !== undefined;
 
         const fridgeItem = await prisma.fridgeItem.upsert({
           where: {
@@ -135,16 +236,27 @@ router.post(
           create: {
             userId,
             ingredientId: ingredient.id,
-            quantity,
-            unit,
-            notes,
+            itemCount: finalItemCount,
+            initialItemCount: finalItemCount,
+            quantity: finalQuantity,
+            initialQuantity: finalQuantity,
+            unit: finalUnit,
+            price,
+            expiryDate,
+            isExpiryEstimated,
+            notes: finalNotes,
           },
           update: {
             quantity: {
-              increment: quantity,
+              increment: finalQuantity,
             },
-            unit,
-            ...(notes ? { notes } : {}),
+            unit: finalUnit,
+            ...(finalItemCount > 1 ? { itemCount: { increment: finalItemCount } } : {}),
+            ...(price !== undefined ? { price } : {}),
+            ...(expiryDate !== undefined
+              ? { expiryDate, isExpiryEstimated: true }
+              : {}),
+            ...(finalNotes ? { notes: finalNotes } : {}),
           },
           include: {
             ingredient: {
@@ -238,11 +350,13 @@ router.post(
         select: { geminiApiKey: true },
       });
 
-      if (!userWithKey?.geminiApiKey) {
+      const apiKey = userWithKey?.geminiApiKey || process.env.GEMINI_API_KEY;
+
+      if (!apiKey) {
         return res.status(400).json({
           success: false,
           message:
-            "Veuillez renseigner votre clé Gemini API dans votre profil avant d'utiliser cette fonctionnalité.",
+            "Veuillez renseigner votre clé Gemini API dans votre profil ou les variables d'environnement avant d'utiliser cette fonctionnalité.",
         });
       }
 
@@ -270,7 +384,7 @@ router.post(
       const aiRecipe = await generateRecipeFromPrompt({
         prompt,
         fridgeItems,
-        apiKey: userWithKey.geminiApiKey,
+        apiKey,
       });
 
       const ingredientRecords = await Promise.all(
