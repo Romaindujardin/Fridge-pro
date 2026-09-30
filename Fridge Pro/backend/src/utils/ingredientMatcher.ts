@@ -364,6 +364,37 @@ const CONCEPTS: Array<{ id: string; aliases: string[] }> = [
   },
 ];
 
+const GENERIC_TOKENS = new Set([
+  "sauce",
+  "pain",
+  "huile",
+  "fromage",
+  "viande",
+  "pate",
+  "blanc",
+  "noir",
+  "rouge",
+  "vert",
+]);
+
+interface CompiledConcept {
+  id: string;
+  normAliases: string[];
+  regexes: RegExp[];
+}
+
+const COMPILED_CONCEPTS: CompiledConcept[] = CONCEPTS.map((c) => {
+  const normAliases = c.aliases.map((a) => normalizeIngredient(a));
+  const regexes = normAliases.map(
+    (na) =>
+      new RegExp(
+        "(^|\\s)" + na.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(\\s|$)",
+        "i"
+      )
+  );
+  return { id: c.id, normAliases, regexes };
+});
+
 const PASTA_SPECIFIC = [
   "spaghetti",
   "coquillette",
@@ -400,7 +431,7 @@ function matchesPasta(recipeName: string, fridgeName: string): boolean {
   return false;
 }
 
-function getMatchingConcepts(normText: string): Set<string> {
+export function getMatchingConcepts(normText: string): Set<string> {
   const matches = new Set<string>();
 
   // Si le texte est un burger ("pain burger brioché"), ne pas l'associer au concept de brioche sucrée
@@ -409,11 +440,9 @@ function getMatchingConcepts(normText: string): Set<string> {
     return matches;
   }
 
-  for (const c of CONCEPTS) {
-    for (const alias of c.aliases) {
-      const normAlias = normalizeIngredient(alias);
-      const regex = new RegExp(`(^|\\s)${normAlias}(\\s|$)`, "i");
-      if (regex.test(normText) || normText === normAlias) {
+  for (const c of COMPILED_CONCEPTS) {
+    for (let i = 0; i < c.normAliases.length; i++) {
+      if (normText === c.normAliases[i] || c.regexes[i].test(normText)) {
         matches.add(c.id);
         break;
       }
@@ -440,8 +469,8 @@ export function matchIngredientNames(recipeName: string, fridgeItemName: string)
   if (rSingular === fSingular) return true;
 
   // 3. Correspondance de sous-chaîne avec délimiteur de mot
-  const rRegex = new RegExp(`(^|\\s)${rSingular}(\\s|$)`, "i");
-  const fRegex = new RegExp(`(^|\\s)${fSingular}(\\s|$)`, "i");
+  const rRegex = new RegExp(`(^|\\s)${rSingular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`, "i");
+  const fRegex = new RegExp(`(^|\\s)${fSingular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`, "i");
   if (rRegex.test(fSingular) || fRegex.test(rSingular)) return true;
 
   // 4. Concepts et synonymes culinaires
@@ -454,21 +483,9 @@ export function matchIngredientNames(recipeName: string, fridgeItemName: string)
   // 5. Comparaison des tokens signifiants (exclusion des mots trop génériques)
   const rTokens = getTokens(recipeName);
   const fTokens = getTokens(fridgeItemName);
-  const genericTokens = new Set([
-    "sauce",
-    "pain",
-    "huile",
-    "fromage",
-    "viande",
-    "pate",
-    "blanc",
-    "noir",
-    "rouge",
-    "vert",
-  ]);
 
-  const rMeaningful = rTokens.filter((t) => !genericTokens.has(t));
-  const fMeaningful = fTokens.filter((t) => !genericTokens.has(t));
+  const rMeaningful = rTokens.filter((t) => !GENERIC_TOKENS.has(t));
+  const fMeaningful = fTokens.filter((t) => !GENERIC_TOKENS.has(t));
 
   if (rMeaningful.length > 0 && fMeaningful.length > 0) {
     // Si tous les tokens signifiants de la recette sont présents dans l'ingrédient du frigo
@@ -480,38 +497,219 @@ export function matchIngredientNames(recipeName: string, fridgeItemName: string)
   return false;
 }
 
+export interface IndexedItem<T extends FridgeItemForMatching> {
+  raw: T;
+  id: string;
+  name: string;
+  brand?: string | null;
+  norm: string;
+  singular: string;
+  combined?: string;
+  tokens: string[];
+  meaningfulTokens: string[];
+  concepts: Set<string>;
+  isPasta: boolean;
+}
+
+/**
+ * Index ultra-rapide en mémoire pour les ingrédients de l'utilisateur.
+ * Transforme le matching coûteux O(N*M) avec regexes en requêtes O(1) indexées et mémoïsées.
+ */
+export class FridgeIndex<T extends FridgeItemForMatching = FridgeItemForMatching> {
+  public readonly items: IndexedItem<T>[] = [];
+  public readonly byId = new Map<string, T>();
+  public readonly byNorm = new Map<string, T>();
+  public readonly bySingular = new Map<string, T>();
+  public readonly byConcept = new Map<string, T>();
+  public readonly byMeaningfulToken = new Map<string, IndexedItem<T>[]>();
+  public readonly pastaItems: IndexedItem<T>[] = [];
+  private readonly memo = new Map<string, T | null>();
+
+  constructor(fridgeItems: T[]) {
+    for (const raw of fridgeItems) {
+      const id = raw.ingredientId || raw.ingredient?.id || "";
+      const name = raw.ingredient?.name || "";
+      const brand = raw.brand || null;
+      const norm = normalizeIngredient(name);
+      const singular = norm.split(" ").map(singularizeFr).join(" ");
+      const combined = brand ? normalizeIngredient(`${name} ${brand}`) : undefined;
+      const tokens = getTokens(name);
+      const meaningfulTokens = tokens.filter((t) => !GENERIC_TOKENS.has(t));
+      const concepts = getMatchingConcepts(norm);
+      if (combined) {
+        for (const c of getMatchingConcepts(combined)) {
+          concepts.add(c);
+        }
+      }
+      const isPasta =
+        PASTA_SPECIFIC.some((p) => norm.includes(p) || tokens.includes(p)) ||
+        norm.includes("pate");
+
+      const indexed: IndexedItem<T> = {
+        raw,
+        id,
+        name,
+        brand,
+        norm,
+        singular,
+        combined,
+        tokens,
+        meaningfulTokens,
+        concepts,
+        isPasta,
+      };
+
+      this.items.push(indexed);
+
+      if (id) this.byId.set(id, raw);
+      if (raw.ingredient?.id) this.byId.set(raw.ingredient.id, raw);
+
+      if (norm && !this.byNorm.has(norm)) this.byNorm.set(norm, raw);
+      if (singular && !this.bySingular.has(singular)) this.bySingular.set(singular, raw);
+      if (combined && !this.byNorm.has(combined)) this.byNorm.set(combined, raw);
+
+      for (const c of concepts) {
+        if (!this.byConcept.has(c)) this.byConcept.set(c, raw);
+      }
+      for (const t of meaningfulTokens) {
+        if (!this.byMeaningfulToken.has(t)) this.byMeaningfulToken.set(t, []);
+        this.byMeaningfulToken.get(t)!.push(indexed);
+      }
+      if (isPasta) {
+        this.pastaItems.push(indexed);
+      }
+    }
+  }
+
+  public match(recipeIngredientId?: string, recipeIngredientName?: string): T | null {
+    const memoKey = `${recipeIngredientId || ""}:${recipeIngredientName || ""}`;
+    if (this.memo.has(memoKey)) {
+      return this.memo.get(memoKey)!;
+    }
+
+    // 1. Par ID direct (O(1))
+    if (recipeIngredientId && this.byId.has(recipeIngredientId)) {
+      const found = this.byId.get(recipeIngredientId)!;
+      this.memo.set(memoKey, found);
+      return found;
+    }
+
+    if (!recipeIngredientName) {
+      this.memo.set(memoKey, null);
+      return null;
+    }
+
+    const rNorm = normalizeIngredient(recipeIngredientName);
+
+    // Gestion intelligente des pâtes
+    const isRecipeGenericPasta =
+      rNorm === "pates" || rNorm === "pate" || rNorm === "pates courtes";
+    if (isRecipeGenericPasta && this.pastaItems.length > 0) {
+      const found = this.pastaItems[0].raw;
+      this.memo.set(memoKey, found);
+      return found;
+    }
+    for (const pasta of PASTA_SPECIFIC) {
+      if (rNorm.includes(pasta)) {
+        const found = this.pastaItems.find((p) => p.norm.includes(pasta));
+        if (found) {
+          this.memo.set(memoKey, found.raw);
+          return found.raw;
+        }
+      }
+    }
+
+    // 2. Égalité exacte normalisée (O(1))
+    if (this.byNorm.has(rNorm)) {
+      const found = this.byNorm.get(rNorm)!;
+      this.memo.set(memoKey, found);
+      return found;
+    }
+
+    // 3. Égalité exacte au singulier (O(1))
+    const rSingular = rNorm.split(" ").map(singularizeFr).join(" ");
+    if (this.bySingular.has(rSingular)) {
+      const found = this.bySingular.get(rSingular)!;
+      this.memo.set(memoKey, found);
+      return found;
+    }
+
+    // 4. Concepts et synonymes culinaires (O(1) lookup par concept)
+    const rConcepts = getMatchingConcepts(rNorm);
+    for (const c of rConcepts) {
+      if (this.byConcept.has(c)) {
+        const found = this.byConcept.get(c)!;
+        this.memo.set(memoKey, found);
+        return found;
+      }
+    }
+
+    // 5. Tokens signifiants (intersection de tokens)
+    const rTokens = getTokens(recipeIngredientName);
+    const rMeaningful = rTokens.filter((t) => !GENERIC_TOKENS.has(t));
+    if (rMeaningful.length > 0) {
+      for (const t of rMeaningful) {
+        const candidates = this.byMeaningfulToken.get(t);
+        if (candidates) {
+          for (const cand of candidates) {
+            if (rMeaningful.every((rmt) => cand.meaningfulTokens.includes(rmt))) {
+              this.memo.set(memoKey, cand.raw);
+              return cand.raw;
+            }
+            if (
+              cand.meaningfulTokens.length === 1 &&
+              cand.meaningfulTokens[0] === t
+            ) {
+              this.memo.set(memoKey, cand.raw);
+              return cand.raw;
+            }
+          }
+        }
+      }
+    }
+
+    // 6. Correspondance de sous-chaîne (fallback)
+    const rEscaped = rSingular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const rRegex = new RegExp(`(^|\\s)${rEscaped}(\\s|$)`, "i");
+    for (const item of this.items) {
+      if (rRegex.test(item.singular)) {
+        this.memo.set(memoKey, item.raw);
+        return item.raw;
+      }
+      const itemEscaped = item.singular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const itemRegex = new RegExp(`(^|\\s)${itemEscaped}(\\s|$)`, "i");
+      if (itemRegex.test(rSingular)) {
+        this.memo.set(memoKey, item.raw);
+        return item.raw;
+      }
+    }
+
+    this.memo.set(memoKey, null);
+    return null;
+  }
+
+  public isAvailable(recipeIngredientId?: string, recipeIngredientName?: string): boolean {
+    return this.match(recipeIngredientId, recipeIngredientName) !== null;
+  }
+}
+
+export function buildFridgeIndex<T extends FridgeItemForMatching>(items: T[]): FridgeIndex<T> {
+  return new FridgeIndex(items);
+}
+
 /**
  * Détermine si un ingrédient de recette est disponible dans la liste des ingrédients du frigo
  */
 export function isIngredientAvailable(
   recipeIngredientId: string,
   recipeIngredientName: string,
-  fridgeItems: FridgeItemForMatching[]
+  fridgeItems: FridgeItemForMatching[] | FridgeIndex
 ): boolean {
-  for (const item of fridgeItems) {
-    // 1. Vérification exacte par ID
-    if (item.ingredientId === recipeIngredientId || item.ingredient?.id === recipeIngredientId) {
-      return true;
-    }
-
-    const fridgeName = item.ingredient?.name;
-    if (!fridgeName) continue;
-
-    // 2. Vérification par nom d'ingrédient
-    if (matchIngredientNames(recipeIngredientName, fridgeName)) {
-      return true;
-    }
-
-    // 3. Vérification combinée avec la marque si présente
-    if (item.brand) {
-      const combined = `${fridgeName} ${item.brand}`;
-      if (matchIngredientNames(recipeIngredientName, combined)) {
-        return true;
-      }
-    }
+  if (fridgeItems instanceof FridgeIndex) {
+    return fridgeItems.isAvailable(recipeIngredientId, recipeIngredientName);
   }
-
-  return false;
+  const index = new FridgeIndex(fridgeItems);
+  return index.isAvailable(recipeIngredientId, recipeIngredientName);
 }
 
 /**
@@ -520,31 +718,13 @@ export function isIngredientAvailable(
 export function findMatchingItem<T extends FridgeItemForMatching>(
   recipeIngredientId: string,
   recipeIngredientName: string,
-  items: T[]
+  items: T[] | FridgeIndex<T>
 ): T | undefined {
-  for (const item of items) {
-    if (
-      item.ingredientId === recipeIngredientId ||
-      item.ingredient?.id === recipeIngredientId
-    ) {
-      return item;
-    }
-
-    const itemName = item.ingredient?.name;
-    if (!itemName) continue;
-
-    if (matchIngredientNames(recipeIngredientName, itemName)) {
-      return item;
-    }
-
-    if (item.brand) {
-      const combined = `${itemName} ${item.brand}`;
-      if (matchIngredientNames(recipeIngredientName, combined)) {
-        return item;
-      }
-    }
+  if (items instanceof FridgeIndex) {
+    return items.match(recipeIngredientId, recipeIngredientName) || undefined;
   }
-
-  return undefined;
+  const index = new FridgeIndex(items);
+  return index.match(recipeIngredientId, recipeIngredientName) || undefined;
 }
+
 

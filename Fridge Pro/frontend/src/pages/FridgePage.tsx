@@ -1098,17 +1098,39 @@ export function FridgePage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
+      {/* Mobile Floating Action Button (FAB) pour scanner ou ajouter instantanément */}
+      <div className="sm:hidden fixed bottom-18 right-3.5 z-30 flex items-center gap-2 shadow-2xl">
+        <button
+          type="button"
+          onClick={handleScanTicketClick}
+          disabled={isScanning}
+          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 active:from-emerald-700 active:to-teal-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg shadow-emerald-700/30 active:scale-95 transition-all text-sm"
+        >
+          <ScanLine className="w-4 h-4 animate-pulse" />
+          <span>{isScanning ? "Analyse..." : "Scanner ticket"}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => openAddModal()}
+          className="flex items-center justify-center w-11 h-11 bg-white text-emerald-700 border border-emerald-200 rounded-full shadow-lg active:scale-95 transition-all"
+          title="Ajouter un ingrédient"
+          aria-label="Ajouter un ingrédient"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
+
       {/* Header & Boutons d'action */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mon Frigo</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mon Frigo</h1>
+          <p className="text-xs sm:text-sm text-gray-600">
             Gérez vos ingrédients et suivez leurs dates d'expiration
           </p>
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap gap-3">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
           <input
             ref={fileInputRef}
             type="file"
@@ -1120,9 +1142,9 @@ export function FridgePage() {
           <Button
             variant="outline"
             onClick={() => setIsCategoryModalOpen(true)}
-            className="flex items-center"
+            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2"
           >
-            <Tags className="w-4 h-4 mr-2 text-primary-600" />
+            <Tags className="w-4 h-4 mr-1.5 text-primary-600" />
             Catégories
           </Button>
 
@@ -1131,36 +1153,36 @@ export function FridgePage() {
             variant="outline"
             onClick={handleScanTicketClick}
             loading={isScanning}
-            className="flex items-center"
+            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
           >
-            <ScanLine className="w-4 h-4 mr-2" />
+            <ScanLine className="w-4 h-4 mr-1.5" />
             Scanner ticket
           </Button>
 
           {/* Bouton Ajouter ingrédient */}
-          <Button onClick={() => openAddModal()} className="flex items-center">
-            <Plus className="w-4 h-4 mr-2" />
-            Ajouter ingrédient
+          <Button onClick={() => openAddModal()} className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2">
+            <Plus className="w-4 h-4 mr-1.5" />
+            Ajouter
           </Button>
         </div>
       </div>
 
       {/* Sélecteur d'onglets : Mon Frigo / Historique & Dépenses */}
-      <div className="flex border-b border-gray-200 gap-6">
+      <div className="flex border-b border-gray-200 gap-4 sm:gap-6">
         <button
           type="button"
           onClick={() => setActiveTab("fridge")}
-          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-2.5 sm:pb-3 text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 border-b-2 transition-all ${
             activeTab === "fridge"
-              ? "border-primary-600 text-primary-600"
+              ? "border-emerald-600 text-emerald-600"
               : "border-transparent text-gray-500 hover:text-gray-800"
           }`}
         >
           <span>🧊 En stock</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-xs ${
+            className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[11px] sm:text-xs ${
               activeTab === "fridge"
-                ? "bg-primary-50 text-primary-700 font-bold"
+                ? "bg-emerald-50 text-emerald-700 font-bold"
                 : "bg-gray-100 text-gray-600"
             }`}
           >
@@ -1171,9 +1193,9 @@ export function FridgePage() {
         <button
           type="button"
           onClick={() => setActiveTab("history")}
-          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-2.5 sm:pb-3 text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 border-b-2 transition-all ${
             activeTab === "history"
-              ? "border-primary-600 text-primary-600"
+              ? "border-emerald-600 text-emerald-600"
               : "border-transparent text-gray-500 hover:text-gray-800"
           }`}
         >
@@ -1181,9 +1203,9 @@ export function FridgePage() {
           <span>Historique & Dépenses</span>
           {historyData?.stats.totalItems ? (
             <span
-              className={`px-2 py-0.5 rounded-full text-xs ${
+              className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[11px] sm:text-xs ${
                 activeTab === "history"
-                  ? "bg-primary-50 text-primary-700 font-bold"
+                  ? "bg-emerald-50 text-emerald-700 font-bold"
                   : "bg-gray-100 text-gray-600"
               }`}
             >
@@ -1194,105 +1216,116 @@ export function FridgePage() {
       </div>
 
       {activeTab === "fridge" ? (
-        <div className="space-y-8">
-          {/* Statistiques */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-0">
-        <Card>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
-                {stats.total}
-              </h3>
-              <p className="text-sm text-gray-600">Ingrédients total</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6 sm:space-y-8">
+          {/* Statistiques compactes et responsives */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-0">
+            <Card>
+              <CardContent className="px-2 sm:px-6 py-3 sm:py-6">
+                <div className="flex flex-col items-center text-center">
+                  <h3 className="text-lg sm:text-2xl font-bold text-emerald-600 mb-0.5">
+                    {stats.total}
+                  </h3>
+                  <p className="text-[11px] sm:text-sm text-gray-600 line-clamp-1">En stock</p>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
-                {stats.expiringSoon}
-              </h3>
-              <p className="text-sm text-gray-600">Expirent bientôt</p>
-            </div>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardContent className="px-2 sm:px-6 py-3 sm:py-6">
+                <div className="flex flex-col items-center text-center">
+                  <h3 className="text-lg sm:text-2xl font-bold text-amber-600 mb-0.5">
+                    {stats.expiringSoon}
+                  </h3>
+                  <p className="text-[11px] sm:text-sm text-gray-600 line-clamp-1">Bientôt expirés</p>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
-                {stats.expired}
-              </h3>
-              <p className="text-sm text-gray-600">Expirés</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardContent className="px-2 sm:px-6 py-3 sm:py-6">
+                <div className="flex flex-col items-center text-center">
+                  <h3 className="text-lg sm:text-2xl font-bold text-red-600 mb-0.5">
+                    {stats.expired}
+                  </h3>
+                  <p className="text-[11px] sm:text-sm text-gray-600 line-clamp-1">Expirés</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Barre de filtre par Catégories */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          <button
-            type="button"
-            onClick={() => setSelectedCategory(null)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedCategory === null
-                ? "bg-gray-900 text-white shadow-sm"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Tous ({fridgeItems.length})
-          </button>
-          {sortedCategories.map((cat) => {
-            const count = fridgeItems.filter(
-              (i) =>
-                i.ingredient.category?.id === cat.id ||
-                i.ingredient.category?.name === cat.name
-            ).length;
-            const isSelected = selectedCategory === cat.name;
-
-            return (
+          {/* Barre de filtre par Catégories */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1 select-none">
               <button
-                key={cat.id}
                 type="button"
-                onClick={() =>
-                  setSelectedCategory(isSelected ? null : cat.name)
-                }
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                  isSelected
-                    ? "text-white shadow-sm ring-2 ring-offset-1"
+                onClick={() => setSelectedCategory(null)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
+                  selectedCategory === null
+                    ? "bg-gray-900 text-white shadow-xs"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
-                style={{
-                  backgroundColor: isSelected ? cat.color || "#3b82f6" : undefined,
-                }}
               >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    backgroundColor: isSelected ? "#ffffff" : cat.color || "#3b82f6",
-                  }}
-                />
-                {cat.name} ({count})
+                Tous ({fridgeItems.length})
               </button>
-            );
-          })}
-        </div>
+              {sortedCategories.map((cat) => {
+                const count = fridgeItems.filter(
+                  (i) =>
+                    i.ingredient.category?.id === cat.id ||
+                    i.ingredient.category?.name === cat.name
+                ).length;
+                const isSelected = selectedCategory === cat.name;
 
-        {/* Recherche textuelle */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Rechercher par nom, marque ou catégorie..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-        </div>
-      </div>
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedCategory(isSelected ? null : cat.name)
+                    }
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                      isSelected
+                        ? "text-white shadow-xs ring-2 ring-offset-1"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                    style={{
+                      backgroundColor: isSelected ? cat.color || "#3b82f6" : undefined,
+                    }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{
+                        backgroundColor: isSelected ? "#ffffff" : cat.color || "#3b82f6",
+                      }}
+                    />
+                    {cat.name} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Recherche textuelle avec bouton de suppression */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+              <input
+                type="text"
+                placeholder="Rechercher par nom, marque ou catégorie..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 sm:pl-10 pr-9 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white shadow-2xs"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                  aria-label="Effacer la recherche"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
 
       {/* Liste des ingrédients */}
       {isLoading ? (
