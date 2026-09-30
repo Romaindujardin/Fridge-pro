@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { ItemWithPrice } from "./costEstimator";
+import { FridgeIndex, buildFridgeIndex } from "./ingredientMatcher";
 
 const prisma = new PrismaClient();
 
@@ -51,6 +52,8 @@ interface UserInventoryCache {
   userFridgeItems: any[];
   pricedItems: ItemWithPrice[];
   favoriteIds: Set<string>;
+  fridgeIndex: FridgeIndex;
+  pricedIndex: FridgeIndex<ItemWithPrice>;
   timestamp: number;
 }
 const userInventoryCacheMap = new Map<string, UserInventoryCache>();
@@ -68,6 +71,8 @@ export async function getCachedUserInventory(userId: string): Promise<{
   userFridgeItems: any[];
   pricedItems: ItemWithPrice[];
   favoriteIds: Set<string>;
+  fridgeIndex: FridgeIndex;
+  pricedIndex: FridgeIndex<ItemWithPrice>;
 }> {
   const now = Date.now();
   const cached = userInventoryCacheMap.get(userId);
@@ -76,6 +81,8 @@ export async function getCachedUserInventory(userId: string): Promise<{
       userFridgeItems: cached.userFridgeItems,
       pricedItems: cached.pricedItems,
       favoriteIds: cached.favoriteIds,
+      fridgeIndex: cached.fridgeIndex,
+      pricedIndex: cached.pricedIndex,
     };
   }
 
@@ -122,11 +129,15 @@ export async function getCachedUserInventory(userId: string): Promise<{
   ];
 
   const favoriteIds = new Set(favorites.map((fav) => fav.recipeId));
+  const fridgeIndex = buildFridgeIndex(fridgeItems);
+  const pricedIndex = buildFridgeIndex(pricedItems);
 
-  const result = {
+  const result: UserInventoryCache = {
     userFridgeItems: fridgeItems,
     pricedItems,
     favoriteIds,
+    fridgeIndex,
+    pricedIndex,
     timestamp: now,
   };
 
@@ -135,5 +146,8 @@ export async function getCachedUserInventory(userId: string): Promise<{
     userFridgeItems: result.userFridgeItems,
     pricedItems: result.pricedItems,
     favoriteIds: result.favoriteIds,
+    fridgeIndex: result.fridgeIndex,
+    pricedIndex: result.pricedIndex,
   };
 }
+

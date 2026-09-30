@@ -1,4 +1,4 @@
-import { findMatchingItem, FridgeItemForMatching } from "./ingredientMatcher";
+import { findMatchingItem, FridgeItemForMatching, FridgeIndex } from "./ingredientMatcher";
 
 export interface ItemWithPrice extends FridgeItemForMatching {
   quantity: number;
@@ -90,17 +90,21 @@ export function calculateIngredientCost(
 export function estimateRecipeCost(
   ingredients: RecipeIngredientForCost[],
   servings: number = 4,
-  userItemsWithPrice: ItemWithPrice[]
+  userItemsWithPrice: ItemWithPrice[] | FridgeIndex<ItemWithPrice>
 ): EstimatedRecipeCost {
   let total = 0;
   let pricedCount = 0;
   const ingredientCosts: Record<string, number | null> = {};
 
+  const index =
+    userItemsWithPrice instanceof FridgeIndex
+      ? userItemsWithPrice
+      : new FridgeIndex(userItemsWithPrice);
+
   for (const ri of ingredients) {
-    const match = findMatchingItem(
+    const match = index.match(
       ri.ingredientId,
-      ri.ingredient?.name || "",
-      userItemsWithPrice
+      ri.ingredient?.name || ""
     );
 
     if (match && match.price && match.price > 0 && match.quantity > 0) {
@@ -131,3 +135,4 @@ export function estimateRecipeCost(
     ingredientCosts,
   };
 }
+

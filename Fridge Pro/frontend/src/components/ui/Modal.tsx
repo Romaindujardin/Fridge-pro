@@ -49,28 +49,34 @@ export function Modal({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Overlay with backdrop blur */}
       <div
-        className="fixed inset-0 bg-black/50 transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
       />
 
-      {/* Modal */}
+      {/* Modal / Bottom Sheet */}
       <div
         className={clsx(
-          "relative bg-white rounded-lg shadow-xl w-full mx-4 my-6 flex flex-col max-h-[88vh] overflow-hidden",
+          "relative bg-white w-full rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-250 sm:slide-in-from-bottom-0 sm:zoom-in-95",
           sizes[size],
           className
         )}
       >
+        {/* Mobile drag handle indicator */}
+        <div className="sm:hidden pt-3 pb-1 flex justify-center shrink-0">
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+        </div>
+
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 shrink-0">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-1">{title}</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+              className="min-w-[40px] min-h-[40px] -mr-2 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100"
+              aria-label="Fermer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -78,10 +84,11 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
+        <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain flex-1 min-h-0">{children}</div>
       </div>
     </div>
   );
 
   return createPortal(modalContent, document.body);
 }
+

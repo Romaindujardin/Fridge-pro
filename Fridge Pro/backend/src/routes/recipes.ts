@@ -140,6 +140,75 @@ const filterSchema = z.object({
   limit: z.coerce.number().int().positive().max(500).default(100),
 });
 
+function formatRecipeWithUserData(
+  recipe: any,
+  fridgeIndex: any,
+  pricedIndex: any,
+  favoriteIds: Set<string>
+) {
+  let availableIngredients = 0;
+  const totalIngredients = recipe.ingredients.length;
+
+  const costInfo = estimateRecipeCost(
+    recipe.ingredients,
+    recipe.servings,
+    pricedIndex
+  );
+
+  const formattedIngredients = recipe.ingredients.map((ri: any) => {
+    const isAvail = fridgeIndex.isAvailable(
+      ri.ingredientId,
+      ri.ingredient?.name
+    );
+    if (isAvail) availableIngredients++;
+
+    return {
+      id: ri.id,
+      recipeId: ri.recipeId,
+      ingredientId: ri.ingredientId,
+      quantity: ri.quantity,
+      unit: ri.unit,
+      notes: ri.notes,
+      ingredient: {
+        id: ri.ingredient.id,
+        name: ri.ingredient.name,
+        categoryId: ri.ingredient.categoryId,
+        category: ri.ingredient.category,
+      },
+      available: isAvail,
+      estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
+    };
+  });
+
+  const missingIngredients = totalIngredients - availableIngredients;
+  const score =
+    totalIngredients > 0
+      ? Math.round((availableIngredients / totalIngredients) * 100)
+      : 0;
+
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    description: recipe.description,
+    instructions: recipe.instructions,
+    prepTime: recipe.prepTime,
+    cookTime: recipe.cookTime,
+    servings: recipe.servings,
+    difficulty: recipe.difficulty,
+    imageUrl: recipe.imageUrl,
+    createdAt: recipe.createdAt,
+    createdById: recipe.createdById,
+    createdBy: recipe.createdBy,
+    source: recipe.source,
+    ingredients: formattedIngredients,
+    isFavorite: favoriteIds.has(recipe.id),
+    compatibilityScore: score,
+    missingIngredientsCount: missingIngredients,
+    estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
+    costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
+  };
+}
+
 /**
  * GET /recipes
  * Listing paginé avec filtres (recherche, difficulté, réalisable, etc.).
@@ -154,23 +223,11 @@ router.get(
         filters;
       const skip = (page - 1) * limit;
 
-      const [baseRecipes, { userFridgeItems, pricedItems, favoriteIds }] =
+      const [baseRecipes, { favoriteIds, fridgeIndex, pricedIndex }] =
         await Promise.all([
           getCachedBaseRecipes(),
           getCachedUserInventory(req.userId!),
         ]);
-
-      // Fonction pour vérifier si un ingrédient est disponible
-      const isIngredientAvailableInFridge = (
-        recipeIngredientId: string,
-        recipeIngredientName: string
-      ): boolean => {
-        return isIngredientAvailable(
-          recipeIngredientId,
-          recipeIngredientName,
-          userFridgeItems
-        );
-      };
 
       // Filtrage ultra-rapide en mémoire (évite les aller-retours SQL lents)
       let filtered = baseRecipes;
@@ -195,7 +252,7 @@ router.get(
       if (makeable) {
         filtered = filtered.filter((r) =>
           r.ingredients.every((ri: any) =>
-            isIngredientAvailableInFridge(ri.ingredientId, ri.ingredient.name)
+            fridgeIndex.isAvailable(ri.ingredientId, ri.ingredient?.name)
           )
         );
       }
@@ -203,62 +260,10 @@ router.get(
       const total = filtered.length;
       const paginated = filtered.slice(skip, skip + limit);
 
-      // Formater les résultats pour l'UI avec calcul de compatibilité et estimation des coûts
-      const formattedRecipes = paginated.map((recipe) => {
-        const totalIngredients = recipe.ingredients.length;
-        const availableIngredients = recipe.ingredients.filter((ri: any) =>
-          isIngredientAvailableInFridge(ri.ingredientId, ri.ingredient.name)
-        ).length;
-        const missingIngredients = totalIngredients - availableIngredients;
-
-        const score =
-          totalIngredients > 0
-            ? Math.round((availableIngredients / totalIngredients) * 100)
-            : 0;
-
-        const costInfo = estimateRecipeCost(
-          recipe.ingredients,
-          recipe.servings,
-          pricedItems
-        );
-
-        return {
-          id: recipe.id,
-          title: recipe.title,
-          description: recipe.description,
-          instructions: recipe.instructions,
-          prepTime: recipe.prepTime,
-          cookTime: recipe.cookTime,
-          servings: recipe.servings,
-          difficulty: recipe.difficulty,
-          imageUrl: recipe.imageUrl,
-          createdAt: recipe.createdAt,
-          createdById: recipe.createdById,
-          createdBy: recipe.createdBy,
-          source: recipe.source,
-          ingredients: recipe.ingredients.map((ri: any) => ({
-            id: ri.id,
-            recipeId: ri.recipeId,
-            ingredientId: ri.ingredientId,
-            quantity: ri.quantity,
-            unit: ri.unit,
-            notes: ri.notes,
-            ingredient: {
-              id: ri.ingredient.id,
-              name: ri.ingredient.name,
-              categoryId: ri.ingredient.categoryId,
-              category: ri.ingredient.category,
-            },
-            available: isIngredientAvailableInFridge(ri.ingredientId, ri.ingredient.name),
-            estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
-          })),
-          isFavorite: favoriteIds.has(recipe.id),
-          compatibilityScore: score,
-          missingIngredientsCount: missingIngredients,
-          estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
-          costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
-        };
-      });
+      // Formater les résultats pour l'UI avec calcul de compatibilité et estimation des coûts (en 1 seule passe instantanée)
+      const formattedRecipes = paginated.map((recipe) =>
+        formatRecipeWithUserData(recipe, fridgeIndex, pricedIndex, favoriteIds)
+      );
 
       res.json({
         success: true,
@@ -293,7 +298,7 @@ router.get(
   authenticateToken,
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const [baseRecipes, { userFridgeItems, pricedItems, favoriteIds }] =
+      const [baseRecipes, { userFridgeItems, favoriteIds, fridgeIndex, pricedIndex }] =
         await Promise.all([
           getCachedBaseRecipes(),
           getCachedUserInventory(req.userId!),
@@ -308,16 +313,15 @@ router.get(
         });
       }
 
-      // Calculer le score pour chaque recette
+      // Calculer le score pour chaque recette avec l'index O(1)
       const scoredRecipes = baseRecipes.map((recipe) => {
         const totalIngredients = recipe.ingredients.length;
-        const availableIngredients = recipe.ingredients.filter((ri: any) =>
-          isIngredientAvailable(
-            ri.ingredientId,
-            ri.ingredient.name,
-            userFridgeItems
-          )
-        ).length;
+        let availableIngredients = 0;
+        for (const ri of recipe.ingredients) {
+          if (fridgeIndex.isAvailable(ri.ingredientId, ri.ingredient?.name)) {
+            availableIngredients++;
+          }
+        }
 
         const score =
           totalIngredients > 0
@@ -337,54 +341,9 @@ router.get(
         )
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
-        .map(({ recipe, score, missingIngredients }) => {
-          const costInfo = estimateRecipeCost(
-            recipe.ingredients,
-            recipe.servings,
-            pricedItems
-          );
-
-          return {
-            id: recipe.id,
-            title: recipe.title,
-            description: recipe.description,
-            instructions: recipe.instructions,
-            prepTime: recipe.prepTime,
-            cookTime: recipe.cookTime,
-            servings: recipe.servings,
-            difficulty: recipe.difficulty,
-            imageUrl: recipe.imageUrl,
-            createdAt: recipe.createdAt,
-            createdById: recipe.createdById,
-            createdBy: recipe.createdBy,
-            source: recipe.source,
-            ingredients: recipe.ingredients.map((ri: any) => ({
-              id: ri.id,
-              recipeId: ri.recipeId,
-              ingredientId: ri.ingredientId,
-              quantity: ri.quantity,
-              unit: ri.unit,
-              notes: ri.notes,
-              ingredient: {
-                id: ri.ingredient.id,
-                name: ri.ingredient.name,
-                categoryId: ri.ingredient.categoryId,
-                category: ri.ingredient.category,
-              },
-              available: isIngredientAvailable(
-                ri.ingredientId,
-                ri.ingredient.name,
-                userFridgeItems
-              ),
-              estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
-            })),
-            isFavorite: favoriteIds.has(recipe.id),
-            compatibilityScore: Math.round(score),
-            missingIngredientsCount: missingIngredients,
-            estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
-            costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
-          };
-        });
+        .map(({ recipe }) =>
+          formatRecipeWithUserData(recipe, fridgeIndex, pricedIndex, favoriteIds)
+        );
 
       res.json({
         success: true,
@@ -407,76 +366,16 @@ router.get(
   authenticateToken,
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const [baseRecipes, { userFridgeItems, pricedItems, favoriteIds }] =
+      const [baseRecipes, { favoriteIds, fridgeIndex, pricedIndex }] =
         await Promise.all([
           getCachedBaseRecipes(),
           getCachedUserInventory(req.userId!),
         ]);
 
       const favoriteRecipes = baseRecipes.filter((r) => favoriteIds.has(r.id));
-
-      const formattedFavorites = favoriteRecipes.map((recipe) => {
-        const totalIngredients = recipe.ingredients.length;
-        const availableIngredients = recipe.ingredients.filter((ri: any) =>
-          isIngredientAvailable(
-            ri.ingredientId,
-            ri.ingredient.name,
-            userFridgeItems
-          )
-        ).length;
-        const missingIngredients = totalIngredients - availableIngredients;
-        const score =
-          totalIngredients > 0
-            ? Math.round((availableIngredients / totalIngredients) * 100)
-            : 0;
-
-        const costInfo = estimateRecipeCost(
-          recipe.ingredients,
-          recipe.servings,
-          pricedItems
-        );
-
-        return {
-          id: recipe.id,
-          title: recipe.title,
-          description: recipe.description,
-          instructions: recipe.instructions,
-          prepTime: recipe.prepTime,
-          cookTime: recipe.cookTime,
-          servings: recipe.servings,
-          difficulty: recipe.difficulty,
-          imageUrl: recipe.imageUrl,
-          createdAt: recipe.createdAt,
-          createdById: recipe.createdById,
-          createdBy: recipe.createdBy,
-          source: recipe.source,
-          ingredients: recipe.ingredients.map((ri: any) => ({
-            id: ri.id,
-            recipeId: ri.recipeId,
-            ingredientId: ri.ingredientId,
-            quantity: ri.quantity,
-            unit: ri.unit,
-            notes: ri.notes,
-            ingredient: {
-              id: ri.ingredient.id,
-              name: ri.ingredient.name,
-              categoryId: ri.ingredient.categoryId,
-              category: ri.ingredient.category,
-            },
-            available: isIngredientAvailable(
-              ri.ingredientId,
-              ri.ingredient.name,
-              userFridgeItems
-            ),
-            estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
-          })),
-          isFavorite: true,
-          compatibilityScore: score,
-          missingIngredientsCount: missingIngredients,
-          estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
-          costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
-        };
-      });
+      const formattedFavorites = favoriteRecipes.map((recipe) =>
+        formatRecipeWithUserData(recipe, fridgeIndex, pricedIndex, favoriteIds)
+      );
 
       res.json({
         success: true,
@@ -501,7 +400,7 @@ router.get(
     try {
       const { id } = req.params;
 
-      const [baseRecipes, { userFridgeItems, pricedItems, favoriteIds }] =
+      const [baseRecipes, { favoriteIds, fridgeIndex, pricedIndex }] =
         await Promise.all([
           getCachedBaseRecipes(),
           getCachedUserInventory(req.userId!),
@@ -536,50 +435,12 @@ router.get(
         });
       }
 
-      const costInfo = estimateRecipeCost(
-        recipe.ingredients,
-        recipe.servings,
-        pricedItems
+      const formattedRecipe = formatRecipeWithUserData(
+        recipe,
+        fridgeIndex,
+        pricedIndex,
+        favoriteIds
       );
-
-      const formattedRecipe = {
-        id: recipe.id,
-        title: recipe.title,
-        description: recipe.description,
-        instructions: recipe.instructions,
-        prepTime: recipe.prepTime,
-        cookTime: recipe.cookTime,
-        servings: recipe.servings,
-        difficulty: recipe.difficulty,
-        imageUrl: recipe.imageUrl,
-        createdAt: recipe.createdAt,
-        createdById: recipe.createdById,
-        createdBy: recipe.createdBy,
-        source: recipe.source,
-        ingredients: recipe.ingredients.map((ri: any) => ({
-          id: ri.id,
-          recipeId: ri.recipeId,
-          ingredientId: ri.ingredientId,
-          quantity: ri.quantity,
-          unit: ri.unit,
-          notes: ri.notes,
-          available: isIngredientAvailable(
-            ri.ingredientId,
-            ri.ingredient.name,
-            userFridgeItems
-          ),
-          estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
-          ingredient: {
-            id: ri.ingredient.id,
-            name: ri.ingredient.name,
-            categoryId: ri.ingredient.categoryId,
-            category: ri.ingredient.category,
-          },
-        })),
-        isFavorite: favoriteIds.has(recipe.id),
-        estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
-        costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
-      };
 
       res.json({
         success: true,
@@ -1005,54 +866,16 @@ router.put(
       }
 
       // Récupérer les ingrédients du frigo et prix pour calculer la disponibilité et l'estimation des coûts
-      const { userFridgeItems, pricedItems } = await getCachedUserInventory(
+      const { favoriteIds, fridgeIndex, pricedIndex } = await getCachedUserInventory(
         req.userId!
       );
 
-      const costInfo = estimateRecipeCost(
-        recipe.ingredients,
-        recipe.servings,
-        pricedItems
+      const formattedRecipe = formatRecipeWithUserData(
+        recipe,
+        fridgeIndex,
+        pricedIndex,
+        favoriteIds
       );
-
-      const formattedRecipe = {
-        id: recipe.id,
-        title: recipe.title,
-        description: recipe.description,
-        instructions: recipe.instructions,
-        prepTime: recipe.prepTime,
-        cookTime: recipe.cookTime,
-        servings: recipe.servings,
-        difficulty: recipe.difficulty,
-        imageUrl: recipe.imageUrl,
-        createdAt: recipe.createdAt,
-        createdById: recipe.createdById,
-        createdBy: recipe.createdBy,
-        source: recipe.source,
-        ingredients: recipe.ingredients.map((ri) => ({
-          id: ri.id,
-          recipeId: ri.recipeId,
-          ingredientId: ri.ingredientId,
-          quantity: ri.quantity,
-          unit: ri.unit,
-          notes: ri.notes,
-          available: isIngredientAvailable(
-            ri.ingredientId,
-            ri.ingredient.name,
-            userFridgeItems
-          ),
-          estimatedPrice: costInfo.ingredientCosts[ri.ingredientId] ?? null,
-          ingredient: {
-            id: ri.ingredient.id,
-            name: ri.ingredient.name,
-            categoryId: ri.ingredient.categoryId,
-            category: ri.ingredient.category,
-          },
-        })),
-        isFavorite: Array.isArray(recipe.favoriteRecipes) && recipe.favoriteRecipes.length > 0,
-        estimatedCost: costInfo.hasPricing ? costInfo.totalCost : null,
-        costPerServing: costInfo.hasPricing ? costInfo.costPerServing : null,
-      };
 
       invalidateRecipeCache();
 

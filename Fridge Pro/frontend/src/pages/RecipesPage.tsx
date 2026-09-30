@@ -16,6 +16,7 @@ import {
   Upload,
   Edit3,
   Coins,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -517,115 +518,151 @@ export function RecipesPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Recettes</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Recettes</h1>
+          <p className="text-xs sm:text-sm text-gray-600">
             Découvrez des recettes adaptées à vos ingrédients
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
             onClick={() => setIsGenerateModalOpen(true)}
-            className="flex items-center"
+            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-purple-700 border-purple-200 hover:bg-purple-50"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Générer avec IA
+            <Sparkles className="w-4 h-4 mr-1.5 text-purple-600" />
+            Générer IA
           </Button>
           <Button
             onClick={openCreateModal}
-            className="flex items-center"
+            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-1.5" />
             Créer recette
           </Button>
         </div>
       </div>
 
-      {/* Filtres et recherche */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Recherche */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Rechercher des recettes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
+      {/* Filtres et recherche (Mobile First) */}
+      <div className="bg-white rounded-2xl shadow-xs border border-gray-200/80 p-3 sm:p-5 space-y-3">
+        {/* Barre de recherche avec bouton d'effacement */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+          <input
+            type="text"
+            placeholder="Rechercher une recette, un ingrédient..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-9 py-2.5 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50/50 shadow-2xs"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+              aria-label="Effacer la recherche"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
-          {/* Difficulté */}
-          <select
-            value={selectedDifficulty}
-            onChange={(e) => setSelectedDifficulty(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        {/* Chips de filtres tactiles et scrollables */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 select-none text-xs">
+          <button
+            type="button"
+            onClick={() => setShowOnlyMakeable((v) => !v)}
+            className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              showOnlyMakeable
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
           >
-            <option value="">Toutes difficultés</option>
-            <option value="easy">Facile</option>
-            <option value="medium">Moyen</option>
-            <option value="hard">Difficile</option>
-          </select>
+            <span>✨</span>
+            <span>Réalisables</span>
+          </button>
 
-          {/* Filtres avancés */}
-          <div className="flex flex-wrap gap-4">
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlyMakeable}
-                onChange={(e) => setShowOnlyMakeable(e.target.checked)}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Réalisables
-              </span>
-            </label>
+          <button
+            type="button"
+            onClick={() => setShowOnlyFavorites((v) => !v)}
+            className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              showOnlyFavorites
+                ? "bg-red-500 text-white shadow-xs"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <span>❤️</span>
+            <span>Favoris</span>
+          </button>
 
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlyFavorites}
-                onChange={(e) => setShowOnlyFavorites(e.target.checked)}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm font-medium text-gray-700">Favoris</span>
-            </label>
+          <button
+            type="button"
+            onClick={() => setShowOnlyMyRecipes((v) => !v)}
+            className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              showOnlyMyRecipes
+                ? "bg-purple-600 text-white shadow-xs"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <span>👨‍🍳</span>
+            <span>Mes recettes</span>
+          </button>
 
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlyAI}
-                onChange={(e) => setShowOnlyAI(e.target.checked)}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Recette IA
-              </span>
-            </label>
+          <button
+            type="button"
+            onClick={() => setShowOnlyAI((v) => !v)}
+            className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+              showOnlyAI
+                ? "bg-blue-600 text-white shadow-xs"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <span>🤖</span>
+            <span>Recettes IA</span>
+          </button>
 
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlyMyRecipes}
-                onChange={(e) => setShowOnlyMyRecipes(e.target.checked)}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Mes recettes
-              </span>
-            </label>
+          {/* Sélecteur de difficulté sous forme de chip compact */}
+          <div className="shrink-0 flex items-center">
+            <select
+              value={selectedDifficulty}
+              onChange={(e) => setSelectedDifficulty(e.target.value)}
+              className={`px-2.5 py-1.5 rounded-full text-xs font-semibold border-none focus:ring-2 focus:ring-emerald-500 cursor-pointer ${
+                selectedDifficulty
+                  ? "bg-amber-100 text-amber-900 font-bold"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              <option value="">Difficulté (Toutes)</option>
+              <option value="easy">Facile</option>
+              <option value="medium">Moyen</option>
+              <option value="hard">Difficile</option>
+            </select>
           </div>
+        </div>
 
-          {/* Stats */}
-          <div className="text-sm text-gray-600">
-            {filteredRecipes.length} recette
-            {filteredRecipes.length !== 1 ? "s" : ""} trouvée
-            {filteredRecipes.length !== 1 ? "s" : ""}
-          </div>
+        {/* Compteur de résultats et bouton de réinitialisation */}
+        <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
+          <span>
+            {filteredRecipes.length} recette{filteredRecipes.length !== 1 ? "s" : ""} trouvée{filteredRecipes.length !== 1 ? "s" : ""}
+          </span>
+          {(showOnlyMakeable || showOnlyFavorites || showOnlyMyRecipes || showOnlyAI || selectedDifficulty || searchTerm) && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowOnlyMakeable(false);
+                setShowOnlyFavorites(false);
+                setShowOnlyMyRecipes(false);
+                setShowOnlyAI(false);
+                setSelectedDifficulty("");
+                setSearchTerm("");
+              }}
+              className="text-emerald-700 hover:underline font-medium"
+            >
+              Réinitialiser
+            </button>
+          )}
         </div>
       </div>
 
@@ -657,16 +694,16 @@ export function RecipesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredRecipes.map((recipe) => (
             <Card
               key={recipe.id}
               hover
-              className="cursor-pointer"
+              className="cursor-pointer rounded-2xl overflow-hidden shadow-xs border border-gray-200/80 active:scale-[0.99] transition-transform"
               onClick={() => setSelectedRecipe(recipe)}
             >
               {/* Image de la recette */}
-              <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden group">
+              <div className="relative h-44 sm:h-48 bg-gray-100 rounded-t-2xl overflow-hidden group">
                 {recipe.imageUrl ? (
                   <img
                     src={recipe.imageUrl}
@@ -685,19 +722,19 @@ export function RecipesPage() {
                 {/* Badge difficulté & auteur */}
                 <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium shadow-sm ${getDifficultyColor(
+                    className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold shadow-xs ${getDifficultyColor(
                       recipe.difficulty
                     )}`}
                   >
                     {getDifficultyLabel(recipe.difficulty)}
                   </span>
                   {recipe.source === "ai_generated" && (
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 shadow-sm">
+                    <span className="px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 shadow-xs">
                       IA
                     </span>
                   )}
                   {recipe.createdById === currentUser?.id && (
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 shadow-sm">
+                    <span className="px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 shadow-xs">
                       Ma recette
                     </span>
                   )}
@@ -712,9 +749,9 @@ export function RecipesPage() {
                       openEditModal(recipe);
                     }}
                     title="Modifier la recette"
-                    className="p-1.5 rounded-full bg-white/85 hover:bg-white text-gray-700 hover:text-primary-600 shadow-sm transition-all hover:scale-105"
+                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-xs hover:bg-white text-gray-700 hover:text-emerald-600 shadow-xs transition-all active:scale-95"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
 
                   <button
@@ -725,19 +762,19 @@ export function RecipesPage() {
                       cardFileInputRef.current?.click();
                     }}
                     title="Ajouter ou modifier la photo"
-                    className="p-1.5 rounded-full bg-white/85 hover:bg-white text-gray-700 hover:text-primary-600 shadow-sm transition-all hover:scale-105"
+                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-xs hover:bg-white text-gray-700 hover:text-emerald-600 shadow-xs transition-all active:scale-95"
                   >
-                    <Camera className="w-4 h-4" />
+                    <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
 
                   <button
                     type="button"
                     onClick={(e) => handleToggleFavorite(recipe.id, e)}
-                    className="p-1.5 rounded-full bg-white/85 hover:bg-white shadow-sm transition-all hover:scale-105"
+                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-xs hover:bg-white shadow-xs transition-all active:scale-95"
                     title={recipe.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
                   >
                     <Heart
-                      className={`w-4 h-4 ${
+                      className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
                         recipe.isFavorite
                           ? "fill-red-500 text-red-500"
                           : "text-gray-400 hover:text-red-500"
