@@ -3,12 +3,14 @@ import { Clock, AlertTriangle, AlertCircle } from "lucide-react";
 
 export interface FreshnessBadgeProps {
   expiryDate?: string | Date | null;
+  isEstimated?: boolean | null;
   className?: string;
   showDays?: boolean;
 }
 
 export function FreshnessBadge({
   expiryDate,
+  isEstimated = false,
   className = "",
   showDays = true,
 }: FreshnessBadgeProps) {
@@ -46,7 +48,11 @@ export function FreshnessBadge({
         </span>
         <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
         <span>
-          {showDays ? `Expiré (il y a ${daysAgo} j)` : "Expiré"}
+          {showDays
+            ? `Expiré (${isEstimated ? "~" : ""}il y a ${daysAgo} j${isEstimated ? " • estimé" : ""})`
+            : isEstimated
+            ? "Expiré (estimé)"
+            : "Expiré"}
         </span>
       </div>
     );
@@ -62,7 +68,7 @@ export function FreshnessBadge({
           <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
         </span>
         <AlertTriangle className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-        <span>Expire aujourd'hui</span>
+        <span>{isEstimated ? "Expire vers aujourd'hui (estimé)" : "Expire aujourd'hui"}</span>
       </div>
     );
   }
@@ -79,9 +85,13 @@ export function FreshnessBadge({
         <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
         <span>
           {diffDays === 1
-            ? "Expire demain"
+            ? isEstimated
+              ? "Expire vers demain (estimé)"
+              : "Expire demain"
             : showDays
-            ? `Expire dans ${diffDays} jours`
+            ? `Expire dans ${isEstimated ? "~" : ""}${diffDays} j${isEstimated ? " (estimé)" : ""}`
+            : isEstimated
+            ? "Expire bientôt (estimé)"
             : "Expire bientôt"}
         </span>
       </div>
@@ -97,7 +107,13 @@ export function FreshnessBadge({
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
       </span>
-      <span>{showDays ? `Frais • ${diffDays} j restants` : "Frais"}</span>
+      <span>
+        {showDays
+          ? `Frais • ${isEstimated ? "~" : ""}${diffDays} j restants${isEstimated ? " (estimé)" : ""}`
+          : isEstimated
+          ? "Frais (estimé)"
+          : "Frais"}
+      </span>
     </div>
   );
 }

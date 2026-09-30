@@ -299,6 +299,7 @@ export function HomePage() {
                   <div className="pt-3 mt-2 border-t border-gray-100 space-y-2">
                     <FreshnessBadge
                       expiryDate={item.expiryDate}
+                      isEstimated={item.isExpiryEstimated}
                       showDays={true}
                       className="w-full justify-center py-1 text-xs"
                     />

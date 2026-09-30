@@ -84,62 +84,22 @@ router.get(
         include: {
           category: true,
         },
-        take: 10, // Limiter à 10 résultats locaux pour laisser de la place à OpenFoodFacts
+        take: 25,
         orderBy: {
           name: "asc",
         },
       });
 
-      // Recherche dans Open Food Facts
-      let openFoodFactsResults: any[] = [];
-      try {
-        openFoodFactsResults = await openFoodFactsService.searchIngredients(q);
-      } catch (error) {
-        console.warn("Erreur lors de la recherche OpenFoodFacts:", error);
-        // Continue avec seulement les résultats locaux
-      }
-
-      // Combiner les résultats en évitant les doublons
       const allIngredients = localIngredients.map((ing) => ({
         ...ing,
         detectedQuantity: parsed.detectedQuantity,
         detectedUnit: parsed.detectedUnit,
       }));
-      const localNames = localIngredients.map((ing) => ing.name.toLowerCase());
-
-      openFoodFactsResults.forEach((offIngredient) => {
-        if (!localNames.includes(offIngredient.name.toLowerCase())) {
-          allIngredients.push({
-            id: `off_${offIngredient.sourceId}`,
-            name: offIngredient.name,
-            brand: offIngredient.brand,
-            packageQuantity: offIngredient.packageQuantity,
-            detectedQuantity: offIngredient.detectedQuantity,
-            detectedUnit: offIngredient.detectedUnit,
-            category: offIngredient.category
-              ? {
-                  id: "external",
-                  name: offIngredient.category,
-                  color: "#666666",
-                  icon: "",
-                }
-              : null,
-            categoryId: null,
-            calories: offIngredient.nutritionalInfo?.calories || null,
-            protein: offIngredient.nutritionalInfo?.proteins || null,
-            carbs: offIngredient.nutritionalInfo?.carbohydrates || null,
-            fat: offIngredient.nutritionalInfo?.fat || null,
-            fiber: offIngredient.nutritionalInfo?.fiber || null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          } as any);
-        }
-      });
 
       res.json({
         success: true,
         data: {
-          ingredients: allIngredients.slice(0, 20),
+          ingredients: allIngredients,
           detectedQuantity: parsed.detectedQuantity,
           detectedUnit: parsed.detectedUnit,
         },

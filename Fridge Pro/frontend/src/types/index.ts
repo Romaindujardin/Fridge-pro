@@ -72,6 +72,7 @@ export interface FridgeItem {
   brand?: string;
   price?: number | null;
   expiryDate?: string;
+  isExpiryEstimated?: boolean | null;
   addedDate: string;
   notes?: string;
   ingredient: Ingredient;
@@ -88,6 +89,7 @@ export interface AddFridgeItemRequest {
   price?: number;
   categoryId?: string;
   expiryDate?: string;
+  isExpiryEstimated?: boolean | null;
   notes?: string;
 }
 

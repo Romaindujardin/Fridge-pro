@@ -37,6 +37,9 @@ def log(tag: str, msg: str, color: str = RESET):
 
 def update_env_path():
     """Ajoute les chemins Homebrew et fnm / node au PATH pour être sûr de trouver node et npm."""
+    if shutil.which("node") and shutil.which("npm"):
+        return
+
     current_path = os.environ.get("PATH", "")
     additional_paths = [
         "/opt/homebrew/bin",
@@ -50,25 +53,15 @@ def update_env_path():
     fnm_bin = shutil.which("fnm") or "/opt/homebrew/bin/fnm"
     if os.path.exists(fnm_bin):
         try:
-            res = subprocess.run([fnm_bin, "env"], capture_args=False, stdout=subprocess.PIPE, text=True, check=True)
+            res = subprocess.run([fnm_bin, "env"], stdout=subprocess.PIPE, text=True, check=True)
             for line in res.stdout.splitlines():
                 if "export PATH=" in line:
-                    # export PATH="/Users/...:$PATH"
                     part = line.split("export PATH=")[1].strip().strip('"').replace("$PATH", "")
                     for p in part.split(":"):
                         if p and p not in additional_paths:
                             additional_paths.insert(0, p)
         except Exception:
             pass
-
-    # Détecter répertoires multishell fnm
-    fnm_multishell = os.path.expanduser("~/.local/state/fnm_multishells")
-    if os.path.isdir(fnm_multishell):
-        for entry in os.scandir(fnm_multishell):
-            if entry.is_dir():
-                bin_dir = os.path.join(entry.path, "bin")
-                if os.path.isdir(bin_dir) and bin_dir not in additional_paths:
-                    additional_paths.insert(0, bin_dir)
 
     new_path_entries = [p for p in additional_paths if os.path.isdir(p) and p not in current_path.split(":")]
     if new_path_entries:

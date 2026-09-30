@@ -76,6 +76,7 @@ const fridgeItemSchema = z.object({
         .nullable()
     ),
   expiryDate: z.string().optional(),
+  isExpiryEstimated: z.boolean().optional().nullable(),
   notes: z.string().optional(),
 });
 
@@ -219,6 +220,7 @@ router.post(
             brand: body.brand || null,
             price: body.price ?? null,
             expiryDate,
+            isExpiryEstimated: body.isExpiryEstimated ?? false,
             notes: body.notes,
           },
           include: {
@@ -821,9 +823,13 @@ router.put(
       if (expiryDateInput !== undefined) {
         if (expiryDateInput === "") {
           updateData.expiryDate = null;
+          updateData.isExpiryEstimated = false;
         } else {
           updateData.expiryDate = parseExpiryDate(expiryDateInput);
+          updateData.isExpiryEstimated = updates.isExpiryEstimated !== undefined ? (updates.isExpiryEstimated ?? false) : false;
         }
+      } else if (updates.isExpiryEstimated !== undefined) {
+        updateData.isExpiryEstimated = updates.isExpiryEstimated ?? false;
       }
 
       // Synchronisation intelligente de initialQuantity
