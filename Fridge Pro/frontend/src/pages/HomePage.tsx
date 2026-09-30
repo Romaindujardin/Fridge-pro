@@ -425,8 +425,8 @@ export function HomePage() {
 
                         {(recipe.compatibilityScore ?? 0) >= 80 && (
                           <div className="absolute top-2 right-2">
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              ✅ Réalisable
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                              Réalisable
                             </span>
                           </div>
                         )}

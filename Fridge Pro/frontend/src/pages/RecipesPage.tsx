@@ -574,53 +574,49 @@ export function RecipesPage() {
           <button
             type="button"
             onClick={() => setShowOnlyMakeable((v) => !v)}
-            className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
               showOnlyMakeable
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            <span>✨</span>
-            <span>Réalisables</span>
+            Réalisables
           </button>
 
           <button
             type="button"
             onClick={() => setShowOnlyFavorites((v) => !v)}
-            className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
               showOnlyFavorites
                 ? "bg-red-500 text-white shadow-xs"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            <span>❤️</span>
-            <span>Favoris</span>
+            Favoris
           </button>
 
           <button
             type="button"
             onClick={() => setShowOnlyMyRecipes((v) => !v)}
-            className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
               showOnlyMyRecipes
                 ? "bg-purple-600 text-white shadow-xs"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            <span>👨‍🍳</span>
-            <span>Mes recettes</span>
+            Mes recettes
           </button>
 
           <button
             type="button"
             onClick={() => setShowOnlyAI((v) => !v)}
-            className={`px-3 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
               showOnlyAI
                 ? "bg-blue-600 text-white shadow-xs"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            <span>🤖</span>
-            <span>Recettes IA</span>
+            Recettes IA
           </button>
 
           {/* Sélecteur de difficulté sous forme de chip compact */}

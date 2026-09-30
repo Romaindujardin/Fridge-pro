@@ -1100,7 +1100,7 @@ export function FridgePage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Mobile Floating Action Button (FAB) pour scanner ou ajouter instantanément */}
-      <div className="sm:hidden fixed bottom-18 right-3.5 z-30 flex items-center gap-2 shadow-2xl">
+      <div className="sm:hidden fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom,0.5rem))] right-3.5 z-30 flex items-center gap-2 shadow-2xl">
         <button
           type="button"
           onClick={handleScanTicketClick}
