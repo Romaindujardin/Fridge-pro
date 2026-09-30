@@ -273,36 +273,36 @@ export function ShoppingListPage() {
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-0">
-        <Card>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+      <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-0">
+        <Card hover className="flex flex-col justify-center">
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <h3 className="text-xl sm:text-3xl font-bold text-emerald-600 mb-0.5 sm:mb-1">
                 {shoppingLists.length}
               </h3>
-              <p className="text-sm text-gray-600">Listes actives</p>
+              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">Listes actives</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+        <Card hover className="flex flex-col justify-center">
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <h3 className="text-xl sm:text-3xl font-bold text-blue-600 mb-0.5 sm:mb-1">
                 {totalItems}
               </h3>
-              <p className="text-sm text-gray-600">Articles total</p>
+              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">Articles total</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="px-6 py-6">
-            <div className="flex flex-col items-center text-center pt-1">
-              <h3 className="text-2xl font-bold text-blue-600 mb-1">
+        <Card hover className="flex flex-col justify-center">
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex flex-col items-center justify-center text-center">
+              <h3 className="text-xl sm:text-3xl font-bold text-amber-600 mb-0.5 sm:mb-1">
                 {purchasedItems}
               </h3>
-              <p className="text-sm text-gray-600">Articles achetés</p>
+              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">Articles achetés</p>
             </div>
           </CardContent>
         </Card>
