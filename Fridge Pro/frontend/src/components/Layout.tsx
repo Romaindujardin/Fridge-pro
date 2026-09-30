@@ -44,10 +44,7 @@ export function Layout() {
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-2 group">
-                <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 group-hover:scale-105 transition-transform">
-                  🧊
-                </span>
+              <Link to="/" className="flex items-center group">
                 <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900">
                   Fridge<span className="text-emerald-600">Pro</span>
                 </span>
@@ -108,9 +105,10 @@ export function Layout() {
         </div>
       </nav>
 
-      {/* Main content with bottom safe padding on mobile so fixed bottom nav never overlaps */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24 md:pb-8">
+      {/* Main content with generous bottom clearance on mobile so bottom bar never obscures content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-32 pb-safe sm:pb-28 md:pb-8">
         <Outlet />
+        <div className="h-14 md:hidden pointer-events-none" aria-hidden="true" />
       </main>
 
       {/* Fixed Mobile Bottom Navigation Bar (thumb-friendly, native app feel) */}
