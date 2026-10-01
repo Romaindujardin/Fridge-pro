@@ -113,8 +113,11 @@ export async function getCachedUserInventory(userId: string): Promise<{
     ...fridgeItems.map((f) => ({
       ingredientId: f.ingredientId,
       quantity: f.quantity,
+      initialQuantity: f.initialQuantity,
       unit: f.unit,
       price: f.price,
+      itemCount: f.itemCount,
+      initialItemCount: f.initialItemCount,
       brand: f.brand,
       ingredient: f.ingredient,
     })),

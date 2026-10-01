@@ -5,6 +5,8 @@ export interface ItemWithPrice extends FridgeItemForMatching {
   unit: string;
   price?: number | null;
   itemCount?: number | null;
+  initialQuantity?: number | null;
+  initialItemCount?: number | null;
 }
 
 export interface RecipeIngredientForCost {
@@ -108,10 +110,17 @@ export function estimateRecipeCost(
     );
 
     if (match && match.price && match.price > 0 && match.quantity > 0) {
+      // Pour déterminer le prix unitaire réel de l'ingrédient, on utilise la quantité
+      // d'origine à laquelle il a été acheté (initialQuantity si disponible, sinon quantity)
+      const refQty =
+        match.initialQuantity && match.initialQuantity > 0
+          ? match.initialQuantity
+          : match.quantity;
+
       const cost = calculateIngredientCost(
         ri.quantity,
         ri.unit,
-        match.quantity,
+        refQty,
         match.unit,
         match.price
       );
