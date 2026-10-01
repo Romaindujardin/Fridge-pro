@@ -689,16 +689,18 @@ router.post(
         isFinishingAll = true;
       }
 
-      // Calcul du prix : si spécifié dans le body, on l'utilise, sinon proratisation
+      // Calcul du prix : si spécifié dans le body, on l'utilise, sinon proratisation pour l'historique
       let priceToRecord: number | null = null;
       if (body.price !== undefined) {
         priceToRecord = body.price;
       } else if (existingItem.price !== null && existingItem.price !== undefined) {
-        if (isFinishingAll) {
-          priceToRecord = existingItem.price;
-        } else {
-          priceToRecord = Math.round((existingItem.price * (quantityToFinish / existingItem.quantity)) * 100) / 100;
-        }
+        const refTotal = existingItem.initialQuantity && existingItem.initialQuantity > 0
+          ? existingItem.initialQuantity
+          : existingItem.quantity;
+        priceToRecord =
+          refTotal > 0
+            ? Math.round((existingItem.price * (quantityToFinish / refTotal)) * 100) / 100
+            : existingItem.price;
       }
 
       // 1. Créer l'entrée dans l'historique d'achat / consommation
@@ -733,17 +735,14 @@ router.post(
       } else {
         const remainingCount = Math.max(1, totalItems - countToFinish);
         const remainingQuantity = Math.round((existingItem.quantity - quantityToFinish) * 1000) / 1000;
-        const remainingPrice =
-          existingItem.price !== null && existingItem.price !== undefined && priceToRecord !== null
-            ? Math.round(Math.max(0, existingItem.price - priceToRecord) * 100) / 100
-            : existingItem.price;
 
         await prisma.fridgeItem.update({
           where: { id },
           data: {
             itemCount: remainingCount,
             quantity: remainingQuantity,
-            price: remainingPrice,
+            // Le prix d'achat d'origine payé pour le produit (ex: 10€) est préservé et ne doit PAS être divisé
+            price: existingItem.price,
             initialQuantity: existingItem.initialQuantity ?? existingItem.quantity,
             initialItemCount: existingItem.initialItemCount ?? existingItem.itemCount ?? 1,
           },

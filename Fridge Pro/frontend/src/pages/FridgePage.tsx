@@ -1047,9 +1047,9 @@ export function FridgePage() {
                 <span className="text-gray-600">Prix payé :</span>
                 <span className="font-semibold text-emerald-700">
                   {item.price.toFixed(2)} €
-                  {item.itemCount && item.itemCount > 1 ? (
+                  {(item.initialItemCount || item.itemCount || 1) > 1 ? (
                     <span className="text-xs text-gray-500 font-normal ml-1">
-                      ({(item.price / item.itemCount).toFixed(2)} €/u)
+                      ({(item.price / (item.initialItemCount || item.itemCount || 1)).toFixed(2)} €/u)
                     </span>
                   ) : null}
                 </span>
