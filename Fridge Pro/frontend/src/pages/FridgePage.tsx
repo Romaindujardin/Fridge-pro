@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   RotateCcw,
   ShoppingBag,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
