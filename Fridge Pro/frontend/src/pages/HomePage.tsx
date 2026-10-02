@@ -24,7 +24,7 @@ import { shoppingListService } from "@/services/shoppingListService";
 export function HomePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"favorites" | "suggested">("favorites");
+  const [activeTab, setActiveTab] = useState<"suggested" | "favorites">("suggested");
   const queryClient = useQueryClient();
 
   // Récupérer les données du dashboard
@@ -345,17 +345,6 @@ export function HomePage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setActiveTab("favorites")}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === "favorites"
-                    ? "bg-blue-50 text-blue-700 font-semibold"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Vos favoris ({favoriteRecipes.length})
-              </button>
-              <button
-                type="button"
                 onClick={() => setActiveTab("suggested")}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === "suggested"
@@ -365,6 +354,17 @@ export function HomePage() {
               >
                 Suggérées selon frigo ({suggestedRecipes.length})
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("favorites")}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === "favorites"
+                    ? "bg-blue-50 text-blue-700 font-semibold"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Vos favoris ({favoriteRecipes.length})
+              </button>
             </div>
             <Button asChild variant="outline" size="sm">
               <Link to="/recipes">Voir toutes</Link>
@@ -372,7 +372,7 @@ export function HomePage() {
           </div>
         </CardHeader>
         <CardContent>
-          {(activeTab === "favorites" ? favoriteRecipes : suggestedRecipes).length === 0 ? (
+          {(activeTab === "suggested" ? suggestedRecipes : favoriteRecipes).length === 0 ? (
             <div className="text-center py-8">
               <ChefHat className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
