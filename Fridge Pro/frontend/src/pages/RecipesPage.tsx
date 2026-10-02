@@ -920,7 +920,7 @@ export function RecipesPage() {
               <Users className="h-4 w-4 text-primary-600" />
               <span>Nombre de personnes</span>
             </label>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3">
               <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm">
                 <button
                   type="button"
@@ -931,7 +931,7 @@ export function RecipesPage() {
                       { shouldValidate: true }
                     )
                   }
-                  className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   disabled={Number(currentGenerateServings) <= 1}
                   aria-label="Diminuer le nombre de personnes"
                 >
@@ -953,32 +953,16 @@ export function RecipesPage() {
                       { shouldValidate: true }
                     )
                   }
-                  className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   disabled={Number(currentGenerateServings) >= 20}
                   aria-label="Augmenter le nombre de personnes"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
-
-              <div className="flex flex-wrap gap-1.5">
-                {[1, 2, 4, 6, 8].map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() =>
-                      setGenerateValue("servings", num, { shouldValidate: true })
-                    }
-                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
-                      Number(currentGenerateServings) === num
-                        ? "bg-primary-600 text-white shadow-sm ring-2 ring-primary-300"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {num} pers.
-                  </button>
-                ))}
-              </div>
+              <span className="text-sm font-medium text-gray-600">
+                {Number(currentGenerateServings) > 1 ? "personnes" : "personne"}
+              </span>
             </div>
             {generateErrors.servings && (
               <p className="mt-1 text-sm text-red-600">
