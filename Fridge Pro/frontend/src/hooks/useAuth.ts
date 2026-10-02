@@ -5,11 +5,19 @@ import { useAuthStore } from "@/stores/authStore";
 export const useAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, isLoading, setUser, logout, checkAuth } =
-    useAuthStore();
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    register,
+    setUser,
+    logout,
+    checkAuth,
+  } = useAuthStore();
 
   useEffect(() => {
-    // Vérifier l'authentification au montage
+    // Vérifier l'authentification au montage si jamais le store n'est pas synchronisé
     checkAuth();
   }, [checkAuth]);
 
@@ -36,6 +44,8 @@ export const useAuth = () => {
     user,
     isAuthenticated,
     isLoading,
+    login,
+    register,
     setUser,
     logout: handleLogout,
     checkAuth,

@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { authService } from "@/services/authService";
+import { useAuth } from "@/hooks/useAuth";
 import type { LoginRequest, RegisterRequest } from "@/types";
 
 // Schémas de validation
@@ -45,9 +46,19 @@ export function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
+  const { login, register, isAuthenticated } = useAuth();
 
-  // Récupérer la page d'origine depuis le state de navigation
-  const from = (location.state as any)?.from?.pathname || "/";
+  // Récupérer la page d'origine depuis le state de navigation (éviter la boucle sur /auth)
+  const rawFrom = (location.state as any)?.from?.pathname;
+  const from = rawFrom && rawFrom !== "/auth" ? rawFrom : "/";
+
+  // Rediriger immédiatement si déjà authentifié
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, from, navigate]);
 
   // Formulaire de connexion
   const loginForm = useForm<LoginForm>({
@@ -75,11 +86,12 @@ export function AuthPage() {
     setIsLoading(true);
     try {
       const loginData: LoginRequest = {
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
       };
 
-      await authService.login(loginData);
+      await login(loginData);
+      queryClient.clear();
       toast.success("Connexion réussie !");
       navigate(from, { replace: true });
     } catch (error: any) {
@@ -94,13 +106,14 @@ export function AuthPage() {
     setIsLoading(true);
     try {
       const registerData: RegisterRequest = {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        email: data.email.trim(),
         password: data.password,
       };
 
-      await authService.register(registerData);
+      await register(registerData);
+      queryClient.clear();
       toast.success("Compte créé avec succès !");
       navigate(from, { replace: true });
     } catch (error: any) {

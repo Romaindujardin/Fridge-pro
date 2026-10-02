@@ -81,10 +81,16 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expiré ou invalide
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/auth";
+      const url = error.config?.url || "";
+      const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/register");
+      if (!isAuthEndpoint) {
+        // Token expiré ou invalide lors d'une requête protégée
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        if (window.location.pathname !== "/auth") {
+          window.location.href = "/auth";
+        }
+      }
       return Promise.reject(error);
     }
 

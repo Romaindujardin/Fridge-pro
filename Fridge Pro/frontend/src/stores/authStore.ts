@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authService } from "@/services/authService";
-import type { User } from "@/types";
+import type { User, LoginRequest, RegisterRequest, AuthResponse } from "@/types";
 
 interface AuthState {
   user: User | null;
@@ -9,6 +9,8 @@ interface AuthState {
   isLoading: boolean;
 
   // Actions
+  login: (credentials: LoginRequest) => Promise<AuthResponse>;
+  register: (data: RegisterRequest) => Promise<AuthResponse>;
   setUser: (user: User | null) => void;
   logout: () => Promise<void>;
   checkAuth: () => void;
@@ -17,9 +19,41 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      user: null,
-      isAuthenticated: false,
+      user: authService.getCurrentUser(),
+      isAuthenticated: authService.isAuthenticated(),
       isLoading: false,
+
+      login: async (credentials: LoginRequest) => {
+        set({ isLoading: true });
+        try {
+          const data = await authService.login(credentials);
+          set({
+            user: data.user,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return data;
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      register: async (data: RegisterRequest) => {
+        set({ isLoading: true });
+        try {
+          const result = await authService.register(data);
+          set({
+            user: result.user,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return result;
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
 
       setUser: (user) => {
         set({
@@ -44,8 +78,6 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: () => {
-        set({ isLoading: true });
-
         try {
           const user = authService.getCurrentUser();
           const isAuthenticated = authService.isAuthenticated();
