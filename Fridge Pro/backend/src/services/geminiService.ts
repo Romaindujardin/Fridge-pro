@@ -186,6 +186,7 @@ export type GeneratedRecipe = {
  */
 export const generateRecipeFromPrompt = async (params: {
   prompt: string;
+  servings?: number;
   apiKey?: string;
   fridgeItems?: {
     name: string;
@@ -194,6 +195,10 @@ export const generateRecipeFromPrompt = async (params: {
   }[];
 }): Promise<GeneratedRecipe> => {
   const model = getModel(params.apiKey);
+  const targetServings =
+    typeof params.servings === "number" && params.servings > 0
+      ? Math.round(params.servings)
+      : 4;
 
   const fridgeContext = params.fridgeItems?.length
     ? `L'utilisateur dispose des ingrédients suivants (nom - quantité - unité lorsqu'elles sont connues) :
@@ -218,10 +223,10 @@ Contraintes :
 - Si des ingrédients disponibles sont fournis, privilégie-les absolument dans la recette, et complète seulement si nécessaire.
 - Donne un titre accrocheur.
 - Fournis une description courte et appétissante.
-- Propose un nombre de portions adapté (par défaut 4 si non précisé).
+- IMPORTANT : La recette et les quantités d'ingrédients DOIVENT être impérativement calculées et adaptées pour exactement ${targetServings} personne(s) (servings: ${targetServings}).
 - Indique un temps de préparation et un temps de cuisson (en minutes, même approximatifs).
 - Donne un niveau de difficulté parmi: "easy", "medium", "hard".
-- Liste les ingrédients avec quantité numérique (si possible) et unité.
+- Liste les ingrédients avec quantité numérique adaptée pour ${targetServings} personne(s) et unité.
 - Les instructions doivent être une liste d'étapes claires (chaque étape sous forme de phrase).
 - Optionnel : ajoute quelques astuces ou conseils dans un tableau "tips".
 
@@ -229,7 +234,7 @@ Répond STRICTEMENT avec un JSON valide correspondant exactement au format suiva
 {
   "title": "...",
   "description": "...",
-  "servings": nombre,
+  "servings": ${targetServings},
   "prepTime": nombre,
   "cookTime": nombre,
   "difficulty": "easy" | "medium" | "hard",
@@ -250,6 +255,8 @@ Ne renvoie aucun autre texte que ce JSON.`;
   const userPrompt = `
 Demande utilisateur :
 ${params.prompt}
+
+Nombre de personnes / portions requis : ${targetServings} personne(s).
 
 ${fridgeContext}
 `;
@@ -326,7 +333,7 @@ ${fridgeContext}
   return {
     title: raw.title,
     description: raw.description?.trim() || undefined,
-    servings: normalizeNumber(raw.servings ?? undefined, 4),
+    servings: normalizeNumber(raw.servings ?? undefined, targetServings) || targetServings,
     prepTime: normalizeNumber(raw.prepTime ?? undefined, 15, true),
     cookTime: normalizeNumber(raw.cookTime ?? undefined, 0, true),
     difficulty: difficultyNormalized,

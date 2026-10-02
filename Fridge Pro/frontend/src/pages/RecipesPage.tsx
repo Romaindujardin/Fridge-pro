@@ -11,6 +11,7 @@ import {
   Users,
   ChefHat,
   Plus,
+  Minus,
   Sparkles,
   Trash2,
   Camera,
@@ -38,6 +39,12 @@ const generateRecipeSchema = z.object({
       "Décrivez ce que vous souhaitez cuisiner (au moins 10 caractères)."
     ),
   useFridge: z.boolean().optional().default(true),
+  servings: z.coerce
+    .number()
+    .int("Le nombre de personnes doit être un entier")
+    .min(1, "Au moins 1 personne")
+    .max(20, "Maximum 20 personnes")
+    .default(4),
 });
 
 // Convertit et normalise un nombre décimal (gère virgule et point)
@@ -139,6 +146,7 @@ export function RecipesPage() {
     defaultValues: {
       prompt: "",
       useFridge: true,
+      servings: 4,
     },
   });
 
@@ -146,8 +154,12 @@ export function RecipesPage() {
     register: generateRegister,
     handleSubmit: handleGenerateSubmit,
     reset: resetGenerateForm,
+    watch: watchGenerate,
+    setValue: setGenerateValue,
     formState: { errors: generateErrors },
   } = generateRecipeForm;
+
+  const currentGenerateServings = watchGenerate("servings") || 4;
 
   const createRecipeForm = useForm<z.infer<typeof createRecipeSchema>>({
     resolver: zodResolver(createRecipeSchema),
@@ -881,6 +893,7 @@ export function RecipesPage() {
             generateRecipeMutation.mutate({
               prompt: values.prompt.trim(),
               useFridge: !!values.useFridge,
+              servings: values.servings || 4,
             })
           )}
           className="space-y-6"
@@ -890,7 +903,7 @@ export function RecipesPage() {
               Décrivez vos envies
             </label>
             <textarea
-              rows={5}
+              rows={4}
               placeholder="Ex : J'aimerais un plat italien végétarien pour ce soir."
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               {...generateRegister("prompt")}
@@ -898,6 +911,78 @@ export function RecipesPage() {
             {generateErrors.prompt && (
               <p className="mt-1 text-sm text-red-600">
                 {generateErrors.prompt.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary-600" />
+              <span>Nombre de personnes</span>
+            </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGenerateValue(
+                      "servings",
+                      Math.max(1, Number(currentGenerateServings) - 1),
+                      { shouldValidate: true }
+                    )
+                  }
+                  className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={Number(currentGenerateServings) <= 1}
+                  aria-label="Diminuer le nombre de personnes"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  className="w-14 text-center py-2 text-sm font-semibold text-gray-900 border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  {...generateRegister("servings")}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGenerateValue(
+                      "servings",
+                      Math.min(20, Number(currentGenerateServings) + 1),
+                      { shouldValidate: true }
+                    )
+                  }
+                  className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={Number(currentGenerateServings) >= 20}
+                  aria-label="Augmenter le nombre de personnes"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {[1, 2, 4, 6, 8].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() =>
+                      setGenerateValue("servings", num, { shouldValidate: true })
+                    }
+                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                      Number(currentGenerateServings) === num
+                        ? "bg-primary-600 text-white shadow-sm ring-2 ring-primary-300"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {num} pers.
+                  </button>
+                ))}
+              </div>
+            </div>
+            {generateErrors.servings && (
+              <p className="mt-1 text-sm text-red-600">
+                {generateErrors.servings.message}
               </p>
             )}
           </div>
@@ -919,10 +1004,8 @@ export function RecipesPage() {
           </div>
 
           <p className="text-sm text-gray-500">
-            Conseil : précisez le type de plat, l'inspiration culinaire, le
-            nombre de personnes et les contraintes éventuelles. Exemple :
-            &ldquo;Menu végétarien pour 2 personnes ce soir avec des pâtes et
-            des légumes.&rdquo;
+            Conseil : précisez vos préférences, vos textures ou vos envies de cuisson.
+            L'IA ajustera automatiquement les proportions selon le nombre de personnes sélectionné !
           </p>
 
           <div className="flex justify-end space-x-3">
