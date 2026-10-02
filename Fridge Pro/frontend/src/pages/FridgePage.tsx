@@ -14,6 +14,7 @@ import {
   Tags,
   Check,
   History,
+  Package,
   CheckCircle2,
   RotateCcw,
   ShoppingBag,
@@ -1186,7 +1187,8 @@ export function FridgePage() {
               : "border-transparent text-gray-500 hover:text-gray-800"
           }`}
         >
-          <span>🧊 En stock</span>
+          <Package className="w-4 h-4" />
+          <span>En stock</span>
           <span
             className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[11px] sm:text-xs ${
               activeTab === "fridge"
