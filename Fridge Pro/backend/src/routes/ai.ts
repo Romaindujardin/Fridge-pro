@@ -332,6 +332,7 @@ const formatRecipe = (recipe: any) => ({
 const generateRecipeSchema = z.object({
   prompt: z.string().min(10, "La demande doit contenir au moins 10 caractères"),
   useFridge: z.coerce.boolean().optional().default(true),
+  servings: z.coerce.number().int().min(1).max(20).optional().default(4),
 });
 
 /**
@@ -343,7 +344,7 @@ router.post(
   authenticateToken,
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { prompt, useFridge } = generateRecipeSchema.parse(req.body);
+      const { prompt, useFridge, servings } = generateRecipeSchema.parse(req.body);
 
       const userWithKey = await prisma.user.findUnique({
         where: { id: req.userId! },
@@ -383,6 +384,7 @@ router.post(
 
       const aiRecipe = await generateRecipeFromPrompt({
         prompt,
+        servings,
         fridgeItems,
         apiKey,
       });
@@ -445,7 +447,7 @@ router.post(
           instructions: aiRecipe.instructions,
           prepTime: aiRecipe.prepTime ?? 15,
           cookTime: aiRecipe.cookTime ?? 0,
-          servings: aiRecipe.servings ?? 4,
+          servings: aiRecipe.servings ?? servings ?? 4,
           difficulty: aiRecipe.difficulty,
           imageUrl: aiRecipe.imageUrl,
           source: "ai_generated",

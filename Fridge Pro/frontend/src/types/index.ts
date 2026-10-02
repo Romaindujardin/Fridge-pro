@@ -243,6 +243,7 @@ export interface ExtractReceiptResponse {
 export interface GenerateRecipeAIRequest {
   prompt: string;
   useFridge?: boolean;
+  servings?: number;
 }
 
 export interface GenerateRecipeAIResponse {
