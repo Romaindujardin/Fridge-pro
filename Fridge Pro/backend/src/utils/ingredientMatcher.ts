@@ -36,11 +36,24 @@ export function normalizeIngredient(name: string): string {
     .trim();
 }
 
+const INVARIABLE_WORDS = new Set([
+  "doux",
+  "faux",
+  "roux",
+  "cremeux",
+  "onctueux",
+  "frais",
+  "radis",
+  "mais",
+  "pois",
+  "ananas",
+]);
+
 /**
  * Mettre au singulier en français les mots courants
  */
 export function singularizeFr(word: string): string {
-  if (word.length <= 3) return word;
+  if (word.length <= 3 || INVARIABLE_WORDS.has(word)) return word;
   if (word.endsWith("s") || word.endsWith("x")) {
     return word.slice(0, -1);
   }
@@ -410,25 +423,225 @@ const PASTA_SPECIFIC = [
   "rigatoni",
 ];
 
+const NON_PASTA_PATTERNS = [
+  "feuilletee",
+  "brisee",
+  "sablee",
+  "pizza",
+  "tarte",
+  "tartiner",
+  "curry",
+  "arachide",
+  "sesame",
+  "amande",
+  "filo",
+  "brick",
+];
+
+function isPastaCandidate(norm: string, tokens: string[]): boolean {
+  if (NON_PASTA_PATTERNS.some((p) => norm.includes(p) || tokens.includes(p))) {
+    return false;
+  }
+  return (
+    PASTA_SPECIFIC.some((p) => norm.includes(p) || tokens.includes(p)) ||
+    tokens.includes("pate") ||
+    tokens.includes("nouille") ||
+    norm === "pates" ||
+    norm === "pate"
+  );
+}
+
 function matchesPasta(recipeName: string, fridgeName: string): boolean {
   const rNorm = normalizeIngredient(recipeName);
   const fNorm = normalizeIngredient(fridgeName);
+  const rTokens = getTokens(recipeName);
   const fTokens = getTokens(fridgeName);
+
+  if (!isPastaCandidate(fNorm, fTokens)) return false;
 
   // Si la recette demande des "Pâtes" ou "Pâtes courtes" au sens général
   const isRecipeGenericPasta =
-    rNorm === "pates" || rNorm === "pate" || rNorm === "pates courtes";
-  const isFridgePasta =
-    PASTA_SPECIFIC.some((p) => fNorm.includes(p) || fTokens.includes(p)) ||
-    fNorm.includes("pate");
+    !NON_PASTA_PATTERNS.some((p) => rNorm.includes(p) || rTokens.includes(p)) &&
+    (rNorm === "pates" || rNorm === "pate" || rNorm === "pates courtes");
 
-  if (isRecipeGenericPasta && isFridgePasta) return true;
+  if (isRecipeGenericPasta) return true;
 
   // Si la recette demande un type de pâtes précis (ex: "Pâtes penne" vs "Penne Rigate")
   for (const pasta of PASTA_SPECIFIC) {
     if (rNorm.includes(pasta) && fNorm.includes(pasta)) return true;
   }
   return false;
+}
+
+/**
+ * Termes désignant un plat préparé, produit fini ou porteur composite.
+ * Un article de frigo contenant un de ces termes ne peut JAMAIS valider un ingrédient brut,
+ * sauf si la recette demande expressément ce plat/porteur.
+ */
+export const CARRIER_WORDS = new Set([
+  // Plats cuisinés & street food
+  "pizza",
+  "quiche",
+  "tarte",
+  "tourte",
+  "chausson",
+  "sandwich",
+  "burger",
+  "hamburger",
+  "panini",
+  "kebab",
+  "tacos",
+  "burrito",
+  "croque",
+  "friand",
+  "feuillete",
+
+  // Plats traiteur & cuisinés
+  "lasagne",
+  "ravioli",
+  "tortellini",
+  "cannelloni",
+  "nugget",
+  "cordon", // cordon bleu
+  "poelee",
+  "wok",
+  "taboule",
+  "parmentier",
+  "paella",
+  "couscous",
+  "risotto",
+  "samoussa",
+  "nem",
+
+  // Viennoiseries, biscuits & snacks
+  "viennoiserie",
+  "croissant",
+  "biscuit",
+  "gateau",
+  "gaufre",
+  "muffin",
+  "beignet",
+  "cookie",
+  "chips",
+  "cracker",
+  "popcorn",
+
+  // Desserts / Produits laitiers finis
+  "glace",
+  "sorbet",
+  "yaourt",
+  "yogourt",
+  "flan",
+  "mousse",
+  "compote",
+
+  // Boissons (un jus de fruit n'est pas un fruit entier brut)
+  "jus",
+  "sirop",
+  "nectar",
+  "soda",
+  "boisson",
+
+  // Sauces préparées & bouillons (sauce bolognaise != viande hachée)
+  "sauce",
+  "bouillon",
+  "vinaigrette",
+  "mayonnaise",
+  "ketchup",
+]);
+
+export function getCarrierTokens(normText: string): Set<string> {
+  const carriers = new Set<string>();
+  if (!normText) return carriers;
+
+  // Exceptions où le mot porteur a un usage culinaire comme ingrédient brut ou viennoiseries
+  const cleaned = normText
+    .replace(/\bsucre glace\b/g, "sucre_glace")
+    .replace(/\bpain (?:a )?burger\b/g, "pain_burger")
+    .replace(/\bpain aux? (?:chocolat|raisin)s?\b/g, "viennoiserie")
+    .replace(/\bchocolatine\b/g, "viennoiserie");
+
+  const tokens = cleaned.split(" ").map(singularizeFr);
+  for (const t of tokens) {
+    if (CARRIER_WORDS.has(t)) {
+      carriers.add(t);
+    }
+  }
+  return carriers;
+}
+
+export function hasCarrierConflict(recipeNorm: string, fridgeNorm: string): boolean {
+  const rCarriers = getCarrierTokens(recipeNorm);
+  const fCarriers = getCarrierTokens(fridgeNorm);
+
+  for (const fc of fCarriers) {
+    if (!rCarriers.has(fc)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Qualificatifs, découpes, textures et modes de conservation autorisés comme tokens supplémentaires.
+ * Permet par ex. à "chorizo doux", "steak haché surgelé" ou "poulet fermier" de matcher "chorizo", "steak" ou "poulet".
+ */
+export const ALLOWED_MODIFIERS = new Set([
+  // Goûts, intensités & assaisonnements
+  "doux", "fort", "piquant", "epice", "nature", "fume", "sale", "demi-sel",
+  "sucre", "acidule", "aromatise",
+
+  // Couleurs & variétés végétales / animales
+  "blanc", "blanche", "jaune", "rouge", "vert", "verte", "noir", "noire",
+  "rose", "brun", "brune", "marron", "orange", "violet", "violette", "dore",
+  "golden", "gala", "granny", "fuji", "chantecler", "roma", "cerise",
+  "bintje", "charlotte", "amandine", "ratte",
+
+  // Textures, consistances & matières grasses
+  "liquide", "fluide", "epais", "epaisse", "semi-epais", "semi-epaisse",
+  "onctueux", "onctueuse", "cremeux", "cremeuse", "fondant", "fondante",
+  "allege", "allegee", "maigre", "entier", "entiere", "ecreme", "ecremee",
+  "demi-ecreme", "demi-ecremee", "brut", "pur", "concentre",
+
+  // Découpes, formats & états
+  "tranche", "tranchee", "emince", "emincee", "hache", "hachee", "rape", "rapee",
+  "concasse", "concassee", "cube", "cubes", "des", "allumette", "allumettes",
+  "morceau", "morceaux", "filet", "filets", "pave", "paves", "cuisse", "cuisses",
+  "aile", "ailes", "aiguillette", "aiguillettes", "cote", "cotes", "escalope",
+  "escalopes", "longe", "steack", "steak", "rondelle", "rondelles",
+  "egoutte", "egouttee", "pele", "pelee", "seche", "sechee", "moulu", "moulue",
+  "poudre", "grain", "grains", "gousse", "gousses",
+
+  // Modes de conservation & cuisson (dont surgelé / congelé)
+  "frais", "fraiche", "cru", "crue", "cuit", "cuite", "pre-cuit", "precuit",
+  "roti", "rotie", "grille", "grillee", "vapeur", "pasteurise", "pasteurisee",
+  "sterilise", "sterilisee", "surgele", "surfelee", "congele", "congelee",
+  "conserve",
+
+  // Origines & labels
+  "bio", "fermier", "fermiere", "sauvage", "elevage", "artisan", "artisanal",
+  "artisanale", "tradition", "traditionnel", "traditionnelle", "origine",
+  "france", "francais", "francaise", "italie", "italien", "italienne",
+  "espagne", "espagnol", "espagnole", "grece", "grec", "grecque",
+  "aop", "aoc", "igp", "label", "plein", "air", "sol", "extra", "aloyau",
+  "patissier", "patissiere",
+]);
+
+export function areExtraTokensAllowed(
+  rMeaningful: string[],
+  fMeaningful: string[],
+  brand?: string | null
+): boolean {
+  const brandTokens = brand ? getTokens(brand) : [];
+  const extraTokens = fMeaningful.filter((t) => !rMeaningful.includes(t));
+
+  return extraTokens.every(
+    (t) =>
+      ALLOWED_MODIFIERS.has(t) ||
+      brandTokens.includes(t) ||
+      STOP_WORDS.has(t) ||
+      GENERIC_TOKENS.has(t)
+  );
 }
 
 export function getMatchingConcepts(normText: string): Set<string> {
@@ -454,11 +667,20 @@ export function getMatchingConcepts(normText: string): Set<string> {
 /**
  * Compare le nom d'un ingrédient de recette avec le nom/marque d'un ingrédient du frigo
  */
-export function matchIngredientNames(recipeName: string, fridgeItemName: string): boolean {
+export function matchIngredientNames(
+  recipeName: string,
+  fridgeItemName: string,
+  brand?: string | null
+): boolean {
   if (matchesPasta(recipeName, fridgeItemName)) return true;
 
   const rNorm = normalizeIngredient(recipeName);
   const fNorm = normalizeIngredient(fridgeItemName);
+
+  // 0. Vérification anti-faux-positifs : conflit de plat préparé / porteur
+  if (hasCarrierConflict(rNorm, fNorm)) {
+    return false;
+  }
 
   // 1. Égalité exacte après normalisation
   if (rNorm === fNorm) return true;
@@ -468,19 +690,14 @@ export function matchIngredientNames(recipeName: string, fridgeItemName: string)
   const fSingular = fNorm.split(" ").map(singularizeFr).join(" ");
   if (rSingular === fSingular) return true;
 
-  // 3. Correspondance de sous-chaîne avec délimiteur de mot
-  const rRegex = new RegExp(`(^|\\s)${rSingular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`, "i");
-  const fRegex = new RegExp(`(^|\\s)${fSingular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`, "i");
-  if (rRegex.test(fSingular) || fRegex.test(rSingular)) return true;
-
-  // 4. Concepts et synonymes culinaires
+  // 3. Concepts et synonymes culinaires
   const rConcepts = getMatchingConcepts(rNorm);
   const fConcepts = getMatchingConcepts(fNorm);
   for (const cId of rConcepts) {
     if (fConcepts.has(cId)) return true;
   }
 
-  // 5. Comparaison des tokens signifiants (exclusion des mots trop génériques)
+  // 4. Comparaison des tokens signifiants (exclusion des mots trop génériques)
   const rTokens = getTokens(recipeName);
   const fTokens = getTokens(fridgeItemName);
 
@@ -489,9 +706,33 @@ export function matchIngredientNames(recipeName: string, fridgeItemName: string)
 
   if (rMeaningful.length > 0 && fMeaningful.length > 0) {
     // Si tous les tokens signifiants de la recette sont présents dans l'ingrédient du frigo
-    if (rMeaningful.every((t) => fMeaningful.includes(t))) return true;
-    // Si le frigo a un seul token bien spécifique présent dans la recette (ex: "concombre", "gorgonzola")
-    if (fMeaningful.length === 1 && rMeaningful.includes(fMeaningful[0])) return true;
+    if (rMeaningful.every((t) => fMeaningful.includes(t))) {
+      if (areExtraTokensAllowed(rMeaningful, fMeaningful, brand)) {
+        return true;
+      }
+    }
+    // Si le frigo a un seul token bien spécifique présent dans la recette (ex: "poulet" pour "filet de poulet")
+    if (fMeaningful.length === 1 && rMeaningful.includes(fMeaningful[0])) {
+      return true;
+    }
+  }
+
+  // 5. Correspondance de sous-chaîne avec délimiteur de mot (avec vérification des tokens extra)
+  const rRegex = new RegExp(
+    `(^|\\s)${rSingular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`,
+    "i"
+  );
+  if (rRegex.test(fSingular)) {
+    if (areExtraTokensAllowed(rMeaningful, fMeaningful, brand)) {
+      return true;
+    }
+  }
+  const fRegex = new RegExp(
+    `(^|\\s)${fSingular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`,
+    "i"
+  );
+  if (fRegex.test(rSingular)) {
+    return true;
   }
 
   return false;
@@ -541,9 +782,7 @@ export class FridgeIndex<T extends FridgeItemForMatching = FridgeItemForMatching
           concepts.add(c);
         }
       }
-      const isPasta =
-        PASTA_SPECIFIC.some((p) => norm.includes(p) || tokens.includes(p)) ||
-        norm.includes("pate");
+      const isPasta = isPastaCandidate(norm, tokens);
 
       const indexed: IndexedItem<T> = {
         raw,
@@ -601,9 +840,12 @@ export class FridgeIndex<T extends FridgeItemForMatching = FridgeItemForMatching
 
     const rNorm = normalizeIngredient(recipeIngredientName);
 
+    const rTokens = getTokens(recipeIngredientName);
+
     // Gestion intelligente des pâtes
     const isRecipeGenericPasta =
-      rNorm === "pates" || rNorm === "pate" || rNorm === "pates courtes";
+      !NON_PASTA_PATTERNS.some((p) => rNorm.includes(p) || rTokens.includes(p)) &&
+      (rNorm === "pates" || rNorm === "pate" || rNorm === "pates courtes");
     if (isRecipeGenericPasta && this.pastaItems.length > 0) {
       const found = this.pastaItems[0].raw;
       this.memo.set(memoKey, found);
@@ -619,42 +861,57 @@ export class FridgeIndex<T extends FridgeItemForMatching = FridgeItemForMatching
       }
     }
 
-    // 2. Égalité exacte normalisée (O(1))
+    // 2. Égalité exacte normalisée (O(1)) avec vérification porteur
     if (this.byNorm.has(rNorm)) {
       const found = this.byNorm.get(rNorm)!;
-      this.memo.set(memoKey, found);
-      return found;
-    }
-
-    // 3. Égalité exacte au singulier (O(1))
-    const rSingular = rNorm.split(" ").map(singularizeFr).join(" ");
-    if (this.bySingular.has(rSingular)) {
-      const found = this.bySingular.get(rSingular)!;
-      this.memo.set(memoKey, found);
-      return found;
-    }
-
-    // 4. Concepts et synonymes culinaires (O(1) lookup par concept)
-    const rConcepts = getMatchingConcepts(rNorm);
-    for (const c of rConcepts) {
-      if (this.byConcept.has(c)) {
-        const found = this.byConcept.get(c)!;
+      const fNorm = normalizeIngredient(found.ingredient?.name || "");
+      if (!hasCarrierConflict(rNorm, fNorm)) {
         this.memo.set(memoKey, found);
         return found;
       }
     }
 
+    // 3. Égalité exacte au singulier (O(1)) avec vérification porteur
+    const rSingular = rNorm.split(" ").map(singularizeFr).join(" ");
+    if (this.bySingular.has(rSingular)) {
+      const found = this.bySingular.get(rSingular)!;
+      const fNorm = normalizeIngredient(found.ingredient?.name || "");
+      if (!hasCarrierConflict(rNorm, fNorm)) {
+        this.memo.set(memoKey, found);
+        return found;
+      }
+    }
+
+    // 4. Concepts et synonymes culinaires (O(1) lookup par concept) avec vérification porteur
+    const rConcepts = getMatchingConcepts(rNorm);
+    for (const c of rConcepts) {
+      if (this.byConcept.has(c)) {
+        const found = this.byConcept.get(c)!;
+        const fNorm = normalizeIngredient(found.ingredient?.name || "");
+        if (!hasCarrierConflict(rNorm, fNorm)) {
+          this.memo.set(memoKey, found);
+          return found;
+        }
+      }
+    }
+
     // 5. Tokens signifiants (intersection de tokens)
-    const rTokens = getTokens(recipeIngredientName);
     const rMeaningful = rTokens.filter((t) => !GENERIC_TOKENS.has(t));
     if (rMeaningful.length > 0) {
       for (const t of rMeaningful) {
         const candidates = this.byMeaningfulToken.get(t);
         if (candidates) {
           for (const cand of candidates) {
+            // Anti-faux-positifs porteur (ex: "pizza chorizo" ne matchera pas "chorizo")
+            if (hasCarrierConflict(rNorm, cand.norm)) {
+              continue;
+            }
+
             if (rMeaningful.every((rmt) => cand.meaningfulTokens.includes(rmt))) {
-              this.memo.set(memoKey, cand.raw);
-              return cand.raw;
+              if (areExtraTokensAllowed(rMeaningful, cand.meaningfulTokens, cand.brand)) {
+                this.memo.set(memoKey, cand.raw);
+                return cand.raw;
+              }
             }
             if (
               cand.meaningfulTokens.length === 1 &&
@@ -668,13 +925,19 @@ export class FridgeIndex<T extends FridgeItemForMatching = FridgeItemForMatching
       }
     }
 
-    // 6. Correspondance de sous-chaîne (fallback)
+    // 6. Correspondance de sous-chaîne (fallback avec vérifications)
     const rEscaped = rSingular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const rRegex = new RegExp(`(^|\\s)${rEscaped}(\\s|$)`, "i");
     for (const item of this.items) {
+      if (hasCarrierConflict(rNorm, item.norm)) {
+        continue;
+      }
+
       if (rRegex.test(item.singular)) {
-        this.memo.set(memoKey, item.raw);
-        return item.raw;
+        if (areExtraTokensAllowed(rMeaningful, item.meaningfulTokens, item.brand)) {
+          this.memo.set(memoKey, item.raw);
+          return item.raw;
+        }
       }
       const itemEscaped = item.singular.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const itemRegex = new RegExp(`(^|\\s)${itemEscaped}(\\s|$)`, "i");
