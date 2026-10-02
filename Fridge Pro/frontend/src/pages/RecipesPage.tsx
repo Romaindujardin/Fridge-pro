@@ -30,6 +30,7 @@ import { fridgeService } from "@/services/fridgeService";
 import { shoppingListService } from "@/services/shoppingListService";
 import type { Recipe } from "@/types";
 import { useAuthStore } from "@/stores/authStore";
+import { compressImage, formatImageUrl } from "@/utils/imageUtils";
 
 const generateRecipeSchema = z.object({
   prompt: z
@@ -414,6 +415,21 @@ export function RecipesPage() {
     },
   });
 
+  const handleFileUpload = async (file: File, recipeId: string) => {
+    try {
+      const compressedDataUrl = await compressImage(file);
+      uploadImageMutation.mutate({
+        recipeId,
+        fileOrUrl: compressedDataUrl,
+      });
+    } catch {
+      uploadImageMutation.mutate({
+        recipeId,
+        fileOrUrl: file,
+      });
+    }
+  };
+
   // Filtrer les recettes côté client pour la recherche et les filtres instantanés
   const filteredRecipes = recipes.filter((recipe) => {
     const term = searchTerm.trim().toLowerCase();
@@ -728,18 +744,29 @@ export function RecipesPage() {
               <div className="relative h-44 sm:h-48 bg-gray-100 rounded-t-2xl overflow-hidden group">
                 {recipe.imageUrl ? (
                   <img
-                    src={recipe.imageUrl}
+                    src={formatImageUrl(recipe.imageUrl)}
                     alt={recipe.title}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        const fallback = parent.querySelector(".img-fallback");
+                        if (fallback) fallback.classList.remove("hidden");
+                      }
+                    }}
                   />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 group-hover:bg-gray-100 transition-colors">
-                    <ChefHat className="w-12 h-12 mb-1 text-gray-300" />
-                    <span className="text-xs font-medium text-gray-400 flex items-center">
-                      <Camera className="w-3.5 h-3.5 mr-1" /> Ajouter photo
-                    </span>
-                  </div>
-                )}
+                ) : null}
+                <div
+                  className={`w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 group-hover:bg-gray-100 transition-colors img-fallback ${
+                    recipe.imageUrl ? "hidden" : ""
+                  }`}
+                >
+                  <ChefHat className="w-12 h-12 mb-1 text-gray-300" />
+                  <span className="text-xs font-medium text-gray-400 flex items-center">
+                    <Camera className="w-3.5 h-3.5 mr-1" /> Ajouter photo
+                  </span>
+                </div>
 
                 {/* Badge difficulté & auteur */}
                 <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
@@ -1364,18 +1391,29 @@ export function RecipesPage() {
                 <div className="relative group rounded-lg overflow-hidden border border-gray-200 bg-gray-100 shadow-inner">
                   {selectedRecipe.imageUrl ? (
                     <img
-                      src={selectedRecipe.imageUrl}
+                      src={formatImageUrl(selectedRecipe.imageUrl)}
                       alt={selectedRecipe.title}
                       className="w-full h-64 object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          const fallback = parent.querySelector(".img-fallback-modal");
+                          if (fallback) fallback.classList.remove("hidden");
+                        }
+                      }}
                     />
-                  ) : (
-                    <div className="w-full h-64 flex flex-col items-center justify-center text-gray-400 p-6 text-center bg-gray-50">
-                      <ChefHat className="w-16 h-16 mb-2 text-gray-300" />
-                      <p className="text-sm font-medium text-gray-500">
-                        Aucune photo pour cette recette
-                      </p>
-                    </div>
-                  )}
+                  ) : null}
+                  <div
+                    className={`w-full h-64 flex flex-col items-center justify-center text-gray-400 p-6 text-center bg-gray-50 img-fallback-modal ${
+                      selectedRecipe.imageUrl ? "hidden" : ""
+                    }`}
+                  >
+                    <ChefHat className="w-16 h-16 mb-2 text-gray-300" />
+                    <p className="text-sm font-medium text-gray-500">
+                      Aucune photo pour cette recette
+                    </p>
+                  </div>
 
                   {/* Actions overlay sur l'image */}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4">
@@ -1667,10 +1705,7 @@ export function RecipesPage() {
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file && selectedRecipe) {
-            uploadImageMutation.mutate({
-              recipeId: selectedRecipe.id,
-              fileOrUrl: file,
-            });
+            handleFileUpload(file, selectedRecipe.id);
           }
           e.target.value = "";
         }}
@@ -1684,10 +1719,7 @@ export function RecipesPage() {
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file && targetRecipeIdForUpload) {
-            uploadImageMutation.mutate({
-              recipeId: targetRecipeIdForUpload,
-              fileOrUrl: file,
-            });
+            handleFileUpload(file, targetRecipeIdForUpload);
           }
           e.target.value = "";
         }}
