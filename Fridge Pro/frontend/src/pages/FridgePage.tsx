@@ -583,7 +583,7 @@ export function FridgePage() {
 
   // Vérifier si le texte saisi correspond exactement à un ingrédient existant
   const hasExactMatch = ingredients.some(
-    (ing) => ing.name.toLowerCase() === ingredientInputValue.trim().toLowerCase()
+    (ing) => (ing.name || "").toLowerCase() === ingredientInputValue.trim().toLowerCase()
   );
 
   // Afficher l'option personnalisée si le texte saisi ne correspond pas exactement
@@ -807,16 +807,23 @@ export function FridgePage() {
 
   // Filtrer les éléments du frigo (recherche texte + filtre catégorie)
   const filteredItems = fridgeItems.filter((item) => {
+    const term = searchTerm.trim().toLowerCase();
+    const ingredientName = (item.ingredient?.name || "").toLowerCase();
+    const categoryName = (item.ingredient?.category?.name || "").toLowerCase();
+    const brandName = (typeof item.brand === "string" ? item.brand : "").toLowerCase();
+    const notes = (typeof item.notes === "string" ? item.notes : "").toLowerCase();
+
     const matchesSearch =
-      item.ingredient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.ingredient.category?.name &&
-        item.ingredient.category.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (item.brand && item.brand.toLowerCase().includes(searchTerm.toLowerCase()));
+      !term ||
+      ingredientName.includes(term) ||
+      categoryName.includes(term) ||
+      brandName.includes(term) ||
+      notes.includes(term);
 
     const matchesCategory =
       selectedCategory === null ||
-      item.ingredient.category?.name === selectedCategory ||
-      item.ingredient.category?.id === selectedCategory;
+      item.ingredient?.category?.name === selectedCategory ||
+      item.ingredient?.category?.id === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -866,7 +873,7 @@ export function FridgePage() {
       } catch (err: any) {
         const existingIngredients = await fridgeService.getIngredients();
         const existing = existingIngredients.find(
-          (item) => item.name.toLowerCase() === currentInputName.toLowerCase()
+          (item) => (item.name || "").toLowerCase() === currentInputName.toLowerCase()
         );
         if (existing) {
           ingredientId = existing.id;
@@ -916,12 +923,12 @@ export function FridgePage() {
       unit: item.unit,
       brand: item.brand || "",
       price: item.price !== null && item.price !== undefined ? item.price : undefined,
-      categoryId: item.ingredient.categoryId || item.ingredient.category?.id || "",
+      categoryId: item.ingredient?.categoryId || item.ingredient?.category?.id || "",
       expiryDate: item.expiryDate ? item.expiryDate.split("T")[0] : "",
       isExpiryEstimated: item.isExpiryEstimated ?? false,
       notes: item.notes || "",
     });
-    setIngredientInputValue(item.ingredient.name);
+    setIngredientInputValue(item.ingredient?.name || "");
     setIngredientSearch("");
   };
 
@@ -939,7 +946,7 @@ export function FridgePage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <CardTitle className="text-lg font-bold text-gray-900">
-                  {item.ingredient.name}
+                  {item.ingredient?.name || "Ingrédient"}
                 </CardTitle>
                 {item.brand && (
                   <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium border border-gray-200">
@@ -947,7 +954,7 @@ export function FridgePage() {
                   </span>
                 )}
               </div>
-              {item.ingredient.category?.name && (
+              {item.ingredient?.category?.name && (
                 <div className="mt-1">
                   <span
                     className="text-xs px-2.5 py-0.5 rounded-full text-white font-medium"
@@ -1099,8 +1106,8 @@ export function FridgePage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Mobile Floating Action Button (FAB) pour scanner ou ajouter instantanément */}
-      <div className="sm:hidden fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom,0.5rem))] right-3.5 z-30 flex items-center gap-2 shadow-2xl">
+      {/* Mobile Floating Action Button (FAB) pour scanner ou ajouter instantanément avec espace au-dessus de la barre de navigation */}
+      <div className="sm:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0.75rem))] right-4 z-30 flex items-center gap-2.5 shadow-2xl">
         <button
           type="button"
           onClick={handleScanTicketClick}
@@ -1270,8 +1277,8 @@ export function FridgePage() {
               {sortedCategories.map((cat) => {
                 const count = fridgeItems.filter(
                   (i) =>
-                    i.ingredient.category?.id === cat.id ||
-                    i.ingredient.category?.name === cat.name
+                    i.ingredient?.category?.id === cat.id ||
+                    i.ingredient?.category?.name === cat.name
                 ).length;
                 const isSelected = selectedCategory === cat.name;
 
@@ -1344,7 +1351,9 @@ export function FridgePage() {
                 Aucun aliment dans la catégorie "{selectedCategory}"
               </h3>
               <p className="text-gray-500 mb-6">
-                Ajoutez des aliments à cette catégorie ou réinitialisez le filtre.
+                {searchTerm.trim()
+                  ? `Aucun ingrédient ne correspond à "${searchTerm}" dans cette catégorie.`
+                  : "Vous n'avez pas encore d'ingrédient dans cette catégorie."}
               </p>
               <div className="flex justify-center gap-3">
                 <Button variant="outline" onClick={() => setSelectedCategory(null)}>
@@ -1369,131 +1378,145 @@ export function FridgePage() {
             {filteredItems.map(renderItemCard)}
           </div>
         )
-      ) : (
-        /* Vue "Tous" : affichage par catégorie pour les catégories contenant des aliments */
-        <div className="space-y-8">
-          {sortedCategories.map((cat) => {
-            const itemsInCat = filteredItems.filter(
-              (i) =>
-                i.ingredient.category?.id === cat.id ||
-                i.ingredient.category?.name === cat.name
-            );
-
-            // Si aucun élément dans cette catégorie, ne pas l'afficher dans la vue "Tous"
-            if (itemsInCat.length === 0) {
-              return null;
-            }
-
-            return (
-              <div
-                key={cat.id}
-                className="space-y-4 bg-white/80 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm"
+      ) : searchTerm.trim() ? (
+        /* Vue recherche active : afficher directement les résultats sous forme de grille claire */
+        filteredItems.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Calendar className="w-16 h-16 mx-auto" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Aucun résultat pour "{searchTerm}"
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Vérifiez l'orthographe ou réinitialisez votre recherche.
+              </p>
+              <Button variant="outline" onClick={() => setSearchTerm("")}>
+                Effacer la recherche
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-sm text-gray-500 px-1">
+              <span>
+                {filteredItems.length} aliment{filteredItems.length > 1 ? "s" : ""} trouvé{filteredItems.length > 1 ? "s" : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="text-emerald-700 hover:underline font-medium text-xs"
               >
-                {/* En-tête de la catégorie */}
-                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className="w-3.5 h-3.5 rounded-full ring-2 ring-offset-1"
-                      style={{
-                        backgroundColor: cat.color || "#3b82f6",
-                      }}
-                    />
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                      {cat.name}
-                      <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                        {itemsInCat.length}
-                      </span>
-                    </h3>
+                Effacer la recherche
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredItems.map(renderItemCard)}
+            </div>
+          </div>
+        )
+      ) : (
+        /* Vue "Tous" sans recherche active : affichage groupé par catégorie */
+        fridgeItems.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Calendar className="w-16 h-16 mx-auto" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Votre frigo est vide
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Commencez par ajouter des ingrédients à votre frigo
+              </p>
+              <Button onClick={() => openAddModal()}>
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un ingrédient
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-8">
+            {sortedCategories.map((cat) => {
+              const itemsInCat = fridgeItems.filter(
+                (i) =>
+                  i.ingredient?.category?.id === cat.id ||
+                  i.ingredient?.category?.name === cat.name
+              );
+
+              if (itemsInCat.length === 0) {
+                return null;
+              }
+
+              return (
+                <div
+                  key={cat.id}
+                  className="space-y-4 bg-white/80 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm"
+                >
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="w-3.5 h-3.5 rounded-full ring-2 ring-offset-1"
+                        style={{
+                          backgroundColor: cat.color || "#3b82f6",
+                        }}
+                      />
+                      <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        {cat.name}
+                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                          {itemsInCat.length}
+                        </span>
+                      </h3>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openAddModal(cat.id)}
+                      className="text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 flex items-center h-8 px-2.5"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      Ajouter
+                    </Button>
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openAddModal(cat.id)}
-                    className="text-xs text-primary-600 hover:text-primary-700 hover:bg-primary-50 flex items-center h-8 px-2.5"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    Ajouter
-                  </Button>
-                </div>
-
-                {/* Éléments de la catégorie */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-                  {itemsInCat.map(renderItemCard)}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Section Sans Catégorie si des aliments du frigo n'ont pas de catégorie */}
-          {(() => {
-            const uncategorizedItems = filteredItems.filter(
-              (i) => !i.ingredient.category
-            );
-            if (uncategorizedItems.length === 0) return null;
-
-            return (
-              <div className="space-y-4 bg-white/80 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-3.5 h-3.5 rounded-full bg-gray-400 ring-2 ring-offset-1 ring-gray-400" />
-                    <h3 className="text-lg font-bold text-gray-700 flex items-center gap-2">
-                      Sans catégorie
-                      <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                        {uncategorizedItems.length}
-                      </span>
-                    </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+                    {itemsInCat.map(renderItemCard)}
                   </div>
                 </div>
+              );
+            })}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-                  {uncategorizedItems.map(renderItemCard)}
-                </div>
-              </div>
-            );
-          })()}
+            {/* Section Sans Catégorie si des aliments du frigo n'ont pas de catégorie */}
+            {(() => {
+              const uncategorizedItems = fridgeItems.filter(
+                (i) => !i.ingredient?.category
+              );
+              if (uncategorizedItems.length === 0) return null;
 
-          {/* Si recherche active et aucun résultat nulle part */}
-          {searchTerm.trim() && filteredItems.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <Calendar className="w-16 h-16 mx-auto" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Aucun résultat pour "{searchTerm}"
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  Vérifiez l'orthographe ou réinitialisez votre recherche.
-                </p>
-                <Button variant="outline" onClick={() => setSearchTerm("")}>
-                  Effacer la recherche
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+              return (
+                <div className="space-y-4 bg-white/80 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-3.5 h-3.5 rounded-full bg-gray-400 ring-2 ring-offset-1 ring-gray-400" />
+                      <h3 className="text-lg font-bold text-gray-700 flex items-center gap-2">
+                        Sans catégorie
+                        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                          {uncategorizedItems.length}
+                        </span>
+                      </h3>
+                    </div>
+                  </div>
 
-          {/* Si le frigo est totalement vide */}
-          {!searchTerm.trim() && filteredItems.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <Calendar className="w-16 h-16 mx-auto" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+                    {uncategorizedItems.map(renderItemCard)}
+                  </div>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Votre frigo est vide
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  Commencez par ajouter des ingrédients à votre frigo
-                </p>
-                <Button onClick={() => openAddModal()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter le premier ingrédient
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              );
+            })()}
+          </div>
+        )
       )}
         </div>
       ) : (

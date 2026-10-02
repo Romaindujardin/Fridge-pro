@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
@@ -108,7 +109,8 @@ const createRecipeSchema = z.object({
 });
 
 export function RecipesPage() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get("search") || "");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
   const [showOnlyMakeable, setShowOnlyMakeable] = useState(false);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
@@ -402,11 +404,23 @@ export function RecipesPage() {
 
   // Filtrer les recettes côté client pour la recherche et les filtres instantanés
   const filteredRecipes = recipes.filter((recipe) => {
+    const term = searchTerm.trim().toLowerCase();
+    const title = (recipe.title || "").toLowerCase();
+    const desc = (recipe.description || "").toLowerCase();
+    const matchesIngredients =
+      term.length > 0 &&
+      Array.isArray(recipe.ingredients) &&
+      recipe.ingredients.some((ri: any) => {
+        const ingName =
+          ri.ingredient?.name || ri.name || ri.ingredientName || "";
+        return typeof ingName === "string" && ingName.toLowerCase().includes(term);
+      });
+
     const matchesSearch =
-      !searchTerm ||
-      recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (recipe.description &&
-        recipe.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      !term ||
+      title.includes(term) ||
+      desc.includes(term) ||
+      matchesIngredients;
 
     const matchesDifficulty = selectedDifficulty
       ? recipe.difficulty === selectedDifficulty
@@ -416,7 +430,7 @@ export function RecipesPage() {
       ? (recipe.missingIngredientsCount ?? 0) === 0
       : true;
 
-    const matchesFavorite = showOnlyFavorites ? recipe.isFavorite : true;
+    const matchesFavorite = showOnlyFavorites ? Boolean(recipe.isFavorite) : true;
 
     const matchesAI = showOnlyAI ? recipe.source === "ai_generated" : true;
 
