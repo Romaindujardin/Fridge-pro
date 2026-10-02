@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { fridgeService } from "@/services/fridgeService";
 import { recipeService } from "@/services/recipeService";
 import { shoppingListService } from "@/services/shoppingListService";
+import { formatImageUrl } from "@/utils/imageUtils";
 
 export function HomePage() {
   const { user } = useAuth();
@@ -425,15 +426,26 @@ export function HomePage() {
                       <div className="relative h-32 bg-gray-200 rounded-t-lg overflow-hidden">
                         {recipe.imageUrl ? (
                           <img
-                            src={recipe.imageUrl}
+                            src={formatImageUrl(recipe.imageUrl)}
                             alt={recipe.title}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                              const parent = e.currentTarget.parentElement;
+                              if (parent) {
+                                const fallback = parent.querySelector(".home-img-fallback");
+                                if (fallback) fallback.classList.remove("hidden");
+                              }
+                            }}
                           />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <ChefHat className="w-8 h-8" />
-                          </div>
-                        )}
+                        ) : null}
+                        <div
+                          className={`w-full h-full flex items-center justify-center text-gray-400 home-img-fallback ${
+                            recipe.imageUrl ? "hidden" : ""
+                          }`}
+                        >
+                          <ChefHat className="w-8 h-8" />
+                        </div>
 
                         {(recipe.compatibilityScore ?? 0) >= 80 && (
                           <div className="absolute top-2 right-2">

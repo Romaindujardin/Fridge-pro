@@ -18,25 +18,10 @@ import multer from "multer";
 const router = Router();
 const prisma = new PrismaClient();
 
-// Configuration du stockage des photos de recettes
-const recipeUploadsDir = path.join(process.cwd(), "uploads", "recipes");
-if (!fs.existsSync(recipeUploadsDir)) {
-  fs.mkdirSync(recipeUploadsDir, { recursive: true });
-}
-
-const recipeImageStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, recipeUploadsDir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `recipe-${uniqueSuffix}${ext}`);
-  },
-});
-
+// Configuration du stockage des photos de recettes en mémoire (Data URL base64)
+// pour persistance garantie en base PostgreSQL (compatible Vercel, Render, Docker)
 const uploadRecipeImage = multer({
-  storage: recipeImageStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (_req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
@@ -923,7 +908,8 @@ router.post(
 
       let imageUrl: string | null = null;
       if (req.file) {
-        imageUrl = `/uploads/recipes/${req.file.filename}`;
+        const mime = req.file.mimetype || "image/jpeg";
+        imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
       } else if (req.body.imageUrl) {
         imageUrl = req.body.imageUrl.trim();
       }
