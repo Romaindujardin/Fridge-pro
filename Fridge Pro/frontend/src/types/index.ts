@@ -80,6 +80,8 @@ export interface FridgeItem {
 
 export interface AddFridgeItemRequest {
   ingredientId: string;
+  name?: string;
+  addedDate?: string;
   itemCount?: number;
   initialItemCount?: number;
   quantity: number;
@@ -223,7 +225,8 @@ export interface CreateShoppingListRequest {
 }
 
 export interface AddShoppingListItemRequest {
-  ingredientId: string;
+  ingredientId?: string;
+  name?: string;
   quantity: number;
   unit: string;
   notes?: string;

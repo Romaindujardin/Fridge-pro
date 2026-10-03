@@ -75,6 +75,8 @@ const fridgeItemSchema = z.object({
         .optional()
         .nullable()
     ),
+  name: z.string().optional(),
+  addedDate: z.string().optional(),
   expiryDate: z.string().optional(),
   isExpiryEstimated: z.boolean().optional().nullable(),
   notes: z.string().optional(),
@@ -808,15 +810,30 @@ router.put(
         }
       }
 
-      const { expiryDate: expiryDateInput, categoryId, ...rest } = updates;
+      const { expiryDate: expiryDateInput, categoryId, name: nameInput, addedDate: addedDateInput, ...rest } = updates;
       const updateData: Record<string, unknown> = { ...rest };
 
+      const targetIngredientId = updates.ingredientId || existingItem.ingredientId;
+
+      if (nameInput && nameInput.trim()) {
+        await prisma.ingredient.update({
+          where: { id: targetIngredientId },
+          data: { name: nameInput.trim() },
+        });
+      }
+
       if (categoryId !== undefined) {
-        const targetIngredientId = updates.ingredientId || existingItem.ingredientId;
         await prisma.ingredient.update({
           where: { id: targetIngredientId },
           data: { categoryId: categoryId || null },
         });
+      }
+
+      if (addedDateInput !== undefined) {
+        const parsedAdded = new Date(addedDateInput);
+        if (!Number.isNaN(parsedAdded.getTime())) {
+          updateData.addedDate = parsedAdded;
+        }
       }
 
       if (expiryDateInput !== undefined) {
