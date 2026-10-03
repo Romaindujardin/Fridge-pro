@@ -53,11 +53,18 @@ export function HomePage() {
     retry: false,
   });
 
+  // Récupérer les recettes véritablement réalisables (0 ingrédient manquant)
+  const { data: makeableRecipes = [] } = useQuery({
+    queryKey: ["recipes", { makeable: true }],
+    queryFn: () => recipeService.getRecipes({ makeable: true, limit: 500 }),
+    retry: false,
+  });
+
   // Calculer les statistiques
   const stats = {
     fridgeItemsCount: fridgeItems.length,
-    recipesCount: Array.isArray(suggestedRecipes)
-      ? suggestedRecipes.filter((r) => (r.compatibilityScore ?? 0) >= 80).length
+    recipesCount: Array.isArray(makeableRecipes)
+      ? makeableRecipes.length
       : 0,
     favoritesCount: Array.isArray(favoriteRecipes) ? favoriteRecipes.length : 0,
     shoppingListItemsCount: Array.isArray(shoppingLists)
@@ -447,13 +454,19 @@ export function HomePage() {
                           <ChefHat className="w-8 h-8" />
                         </div>
 
-                        {(recipe.compatibilityScore ?? 0) >= 80 && (
+                        {(recipe.missingIngredientsCount ?? 0) === 0 ? (
                           <div className="absolute top-2 right-2">
-                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 shadow-xs">
                               Réalisable
                             </span>
                           </div>
-                        )}
+                        ) : (recipe.missingIngredientsCount ?? 0) > 0 && (recipe.compatibilityScore ?? 0) > 0 ? (
+                          <div className="absolute top-2 right-2">
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 shadow-xs">
+                              {recipe.missingIngredientsCount} manquant{recipe.missingIngredientsCount && recipe.missingIngredientsCount > 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        ) : null}
                       </div>
 
                       <CardContent className="p-4">
