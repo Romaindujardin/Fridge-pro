@@ -46,7 +46,9 @@ const createListSchema = z.object({
 });
 
 const addItemSchema = z.object({
-  ingredientId: z.string().min(1, "L'ingrédient est requis"),
+  ingredientId: z.string().optional(),
+  name: z.string().optional(),
+  ingredientName: z.string().optional(),
   quantity: z
     .preprocess(
       parseDecimalNumber,
@@ -54,7 +56,7 @@ const addItemSchema = z.object({
         invalid_type_error: "La quantité doit être un nombre",
       }).positive("La quantité doit être supérieure à 0")
     ),
-  unit: z.string().min(1, "L'unité est requise"),
+  unit: z.string().optional().default("pièce"),
   notes: z.string().nullable().optional().transform((val) => val ?? undefined),
 });
 
@@ -236,24 +238,58 @@ router.post(
         });
       }
 
-      const ingredient = await prisma.ingredient.findUnique({
-        where: { id: body.ingredientId },
-      });
+      let ingredientId = body.ingredientId;
+      const rawName = (body.name || body.ingredientName || "").trim();
 
-      if (!ingredient) {
+      if (!ingredientId && !rawName) {
+        return res.status(400).json({
+          success: false,
+          message: "Veuillez spécifier un ingrédient ou article",
+        });
+      }
+
+      let ingredient = null;
+      if (ingredientId) {
+        ingredient = await prisma.ingredient.findUnique({
+          where: { id: ingredientId },
+        });
+      }
+
+      if (!ingredient && rawName) {
+        ingredient = await prisma.ingredient.findFirst({
+          where: {
+            name: {
+              equals: rawName,
+              mode: "insensitive",
+            },
+          },
+        });
+
+        if (!ingredient) {
+          ingredient = await prisma.ingredient.create({
+            data: {
+              name: rawName,
+            },
+          });
+        }
+        ingredientId = ingredient.id;
+      }
+
+      if (!ingredient || !ingredientId) {
         return res.status(404).json({
           success: false,
-          message: "Ingrédient introuvable",
+          message: "Ingrédient ou article introuvable",
         });
       }
 
       const existingItem = await prisma.shoppingListItem.findFirst({
         where: {
           shoppingListId: id,
-          ingredientId: body.ingredientId,
+          ingredientId,
         },
       });
 
+      const effectiveUnit = body.unit?.trim() || "pièce";
       let item;
 
       if (existingItem) {
@@ -261,7 +297,7 @@ router.post(
           where: { id: existingItem.id },
           data: {
             quantity: Math.round((existingItem.quantity + body.quantity) * 1000) / 1000,
-            unit: body.unit,
+            unit: effectiveUnit,
             notes: body.notes,
           },
           include: {
@@ -276,9 +312,9 @@ router.post(
         item = await prisma.shoppingListItem.create({
           data: {
             shoppingListId: id,
-            ingredientId: body.ingredientId,
+            ingredientId,
             quantity: body.quantity,
-            unit: body.unit,
+            unit: effectiveUnit,
             notes: body.notes,
           },
           include: {

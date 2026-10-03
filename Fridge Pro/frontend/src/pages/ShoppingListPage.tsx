@@ -51,13 +51,14 @@ const createListSchema = z.object({
 });
 
 const addItemSchema = z.object({
-  ingredientId: z.string().min(1, "Veuillez sélectionner un ingrédient"),
+  ingredientId: z.string().optional(),
+  name: z.string().optional(),
   quantity: z.preprocess(
     parseDecimalNumber,
     z.number({ invalid_type_error: "La quantité doit être un nombre valide" })
       .positive("La quantité doit être supérieure à 0")
   ),
-  unit: z.string().min(1, "Veuillez spécifier une unité"),
+  unit: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -160,8 +161,9 @@ export function ShoppingListPage() {
     resolver: zodResolver(addItemSchema),
     defaultValues: {
       ingredientId: "",
+      name: "",
       quantity: 1,
-      unit: "",
+      unit: "pièce",
       notes: "",
     },
   });
@@ -170,7 +172,13 @@ export function ShoppingListPage() {
     if (!isAddItemModalOpen) {
       setIngredientInputValue("");
       setIngredientSearch("");
-      addItemForm.reset();
+      addItemForm.reset({
+        ingredientId: "",
+        name: "",
+        quantity: 1,
+        unit: "pièce",
+        notes: "",
+      });
     }
   }, [isAddItemModalOpen, addItemForm]);
 
@@ -188,10 +196,17 @@ export function ShoppingListPage() {
   const handleAddItem = (data: AddItemForm) => {
     if (!selectedList) return;
 
+    const itemName = (ingredientInputValue || data.name || "").trim();
+    if (!itemName && !data.ingredientId) {
+      toast.error("Veuillez saisir un nom d'article ou choisir un ingrédient");
+      return;
+    }
+
     const itemData: AddShoppingListItemRequest = {
-      ingredientId: data.ingredientId,
-      quantity: data.quantity,
-      unit: data.unit,
+      ingredientId: data.ingredientId || undefined,
+      name: itemName || undefined,
+      quantity: data.quantity || 1,
+      unit: data.unit?.trim() || "pièce",
       notes: data.notes || undefined,
     };
 
@@ -216,15 +231,16 @@ export function ShoppingListPage() {
       addItemForm.setValue("ingredientId", selected.id, {
         shouldValidate: true,
       });
+      addItemForm.setValue("name", selected.name);
       addItemForm.clearErrors("ingredientId");
+      addItemForm.clearErrors("name");
       setIngredientInputValue(selected.name);
       setIngredientSearch("");
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Impossible de sélectionner cet ingrédient"
-      );
+    } catch {
+      // En cas de souci avec l'API externe, on permet quand même la saisie libre avec ce nom
+      addItemForm.setValue("name", ingredient.name);
+      setIngredientInputValue(ingredient.name);
+      setIngredientSearch("");
     }
   };
 
@@ -518,30 +534,36 @@ export function ShoppingListPage() {
           onSubmit={addItemForm.handleSubmit(handleAddItem)}
           className="space-y-6"
         >
-          {/* Sélection de l'ingrédient */}
+          {/* Sélection ou saisie libre de l'article */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ingrédient
-            </label>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="block text-sm font-medium text-gray-700">
+                Article ou ingrédient
+              </label>
+              <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">
+                Saisie libre
+              </span>
+            </div>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Rechercher un ingrédient..."
+                placeholder="Ex : Lessive, Éponges, Lait, Pâtes..."
                 value={ingredientInputValue}
                 onChange={(e) => {
                   const value = e.target.value;
                   setIngredientInputValue(value);
                   setIngredientSearch(value);
-
+                  addItemForm.setValue("name", value);
                   if (addItemForm.getValues("ingredientId")) {
                     addItemForm.setValue("ingredientId", "");
                   }
+                  addItemForm.clearErrors("name");
                   addItemForm.clearErrors("ingredientId");
                 }}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
               />
               {ingredients.length > 0 && ingredientSearch && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto divide-y divide-gray-50">
                   {ingredients.map((ingredient) => (
                     <button
                       key={ingredient.id}
@@ -549,24 +571,30 @@ export function ShoppingListPage() {
                       onClick={() => {
                         handleIngredientSelection(ingredient);
                       }}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2.5 hover:bg-emerald-50/60 transition-colors flex items-center justify-between"
                     >
                       <div>
-                        <div className="font-medium">{ingredient.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {ingredient.category?.name}
-                        </div>
+                        <div className="font-medium text-gray-900 text-sm">{ingredient.name}</div>
+                        {ingredient.category?.name && (
+                          <div className="text-xs text-gray-500">
+                            {ingredient.category?.name}
+                          </div>
+                        )}
                       </div>
+                      <span className="text-xs text-emerald-600 font-medium">Choisir</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            {addItemForm.formState.errors.ingredientId && (
+            {addItemForm.formState.errors.name && (
               <p className="mt-1 text-sm text-red-600">
-                {addItemForm.formState.errors.ingredientId.message}
+                {addItemForm.formState.errors.name.message}
               </p>
             )}
+            <p className="mt-1 text-xs text-gray-500">
+              Tapez n'importe quel article (alimentaire ou produit du quotidien comme de la lessive)
+            </p>
           </div>
 
           {/* Quantité et unité */}

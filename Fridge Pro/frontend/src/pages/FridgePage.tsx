@@ -19,6 +19,11 @@ import {
   RotateCcw,
   ShoppingBag,
   X,
+  MoreVertical,
+  Snowflake,
+  FolderTree,
+  Type,
+  Utensils,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -326,6 +331,19 @@ export function FridgePage() {
   const [isScanning, setIsScanning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
+
+  // Filtre par statut d'expiration (via les 3 cartes en haut : En stock, Bientôt expirés, Expirés)
+  const [statusFilter, setStatusFilter] = useState<"all" | "expiring_soon" | "expired">("all");
+
+  // Menu déroulant d'actions "..." pour chaque carte
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  // Modales d'actions rapides
+  const [categoryModalItem, setCategoryModalItem] = useState<FridgeItem | null>(null);
+  const [titleModalItem, setTitleModalItem] = useState<FridgeItem | null>(null);
+  const [quickTitle, setQuickTitle] = useState("");
+  const [expiryModalItem, setExpiryModalItem] = useState<FridgeItem | null>(null);
+  const [quickExpiryDate, setQuickExpiryDate] = useState("");
 
   // Formulaire
   const form = useForm<FridgeItemForm>({
@@ -807,7 +825,115 @@ export function FridgePage() {
     });
   };
 
-  // Filtrer les éléments du frigo (recherche texte + filtre catégorie)
+  // Détecte si un aliment est dans la catégorie surgelé / congélation
+  const isItemFrozen = (item: FridgeItem) => {
+    const catName = (item.ingredient?.category?.name || "").toLowerCase();
+    return catName.includes("surgele") || catName.includes("surgelé") || catName.includes("congel");
+  };
+
+  // Action rapide : Mettre en congélation
+  const handleFreezeItem = async (item: FridgeItem) => {
+    let freezerCat = categories.find(
+      (c) =>
+        c.name.toLowerCase().includes("surgele") ||
+        c.name.toLowerCase().includes("surgelé") ||
+        c.name.toLowerCase().includes("congel")
+    );
+
+    let freezerCatId = freezerCat?.id;
+
+    if (!freezerCatId) {
+      try {
+        const newCat = await fridgeService.createCategory({
+          name: "Surgelés",
+          color: "#06b6d4",
+          icon: "🧊",
+        });
+        freezerCatId = newCat.id;
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+      } catch {
+        // En cas d'erreur de création, continuer
+      }
+    }
+
+    updateMutation.mutate({
+      id: item.id,
+      data: {
+        categoryId: freezerCatId,
+        expiryDate: "",
+        addedDate: new Date().toISOString(),
+      },
+    });
+    toast.success(`"${item.ingredient.name}" mis en congélation !`);
+  };
+
+  // Action rapide : Terminer (100% consommé)
+  const handleQuickFinish = (item: FridgeItem) => {
+    if (confirm(`Marquer "${item.ingredient.name}" comme terminé et l'archiver dans l'historique ?`)) {
+      finishMutation.mutate({
+        id: item.id,
+        data: {
+          status: "consumed",
+          finishAll: true,
+          quantity: item.quantity,
+          itemCount: item.itemCount || 1,
+        },
+      });
+    }
+  };
+
+  // Action rapide : Changer catégorie
+  const handleQuickCategorySelect = (categoryId: string) => {
+    if (!categoryModalItem) return;
+    updateMutation.mutate({
+      id: categoryModalItem.id,
+      data: {
+        categoryId,
+      },
+    });
+    setCategoryModalItem(null);
+    toast.success("Catégorie mise à jour !");
+  };
+
+  // Action rapide : Changer titre
+  const handleQuickTitleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!titleModalItem) return;
+    const trimmed = quickTitle.trim();
+    if (!trimmed) {
+      toast.error("Veuillez saisir un nom");
+      return;
+    }
+    updateMutation.mutate({
+      id: titleModalItem.id,
+      data: {
+        name: trimmed,
+      },
+    });
+    setTitleModalItem(null);
+    toast.success("Titre mis à jour !");
+  };
+
+  // Action rapide : Changer date de péremption
+  const handleQuickExpirySave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!expiryModalItem) return;
+    updateMutation.mutate({
+      id: expiryModalItem.id,
+      data: {
+        expiryDate: quickExpiryDate || "",
+      },
+    });
+    setExpiryModalItem(null);
+    toast.success("Date de péremption mise à jour !");
+  };
+
+  // Calculer les dates de référence pour l'expiration
+  const now = new Date();
+  const threeDaysFromNow = new Date();
+  threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+
+  // Filtrer les éléments du frigo (recherche texte + filtre catégorie + filtre statut d'expiration)
   const filteredItems = fridgeItems.filter((item) => {
     const term = searchTerm.trim().toLowerCase();
     const ingredientName = (item.ingredient?.name || "").toLowerCase();
@@ -827,22 +953,34 @@ export function FridgePage() {
       item.ingredient?.category?.name === selectedCategory ||
       item.ingredient?.category?.id === selectedCategory;
 
-    return matchesSearch && matchesCategory;
+    const matchesStatus =
+      statusFilter === "all"
+        ? true
+        : statusFilter === "expiring_soon"
+        ? !isItemFrozen(item) &&
+          !!item.expiryDate &&
+          new Date(item.expiryDate) >= now &&
+          new Date(item.expiryDate) <= threeDaysFromNow
+        : statusFilter === "expired"
+        ? !isItemFrozen(item) &&
+          !!item.expiryDate &&
+          new Date(item.expiryDate) < now
+        : true;
+
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Calculer les statistiques
-  const now = new Date();
-  const threeDaysFromNow = new Date();
-  threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
-
+  // Calculer les statistiques (les aliments surgelés/congelés ne comptent pas dans les périmés)
   const stats = {
     total: fridgeItems.length,
     expiringSoon: fridgeItems.filter((item) => {
+      if (isItemFrozen(item)) return false;
       if (!item.expiryDate) return false;
       const expiryDate = new Date(item.expiryDate);
       return expiryDate >= now && expiryDate <= threeDaysFromNow;
     }).length,
     expired: fridgeItems.filter((item) => {
+      if (isItemFrozen(item)) return false;
       if (!item.expiryDate) return false;
       return new Date(item.expiryDate) < now;
     }).length,
@@ -941,8 +1079,11 @@ export function FridgePage() {
   };
 
   const renderItemCard = (item: FridgeItem) => {
+    const isFrozen = isItemFrozen(item);
+    const isMenuOpen = activeMenuId === item.id;
+
     return (
-      <Card key={item.id} hover className="relative flex flex-col justify-between">
+      <Card key={item.id} hover className={`relative flex flex-col justify-between ${isMenuOpen ? "z-30 ring-1 ring-emerald-300" : "z-0"}`}>
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -970,30 +1111,158 @@ export function FridgePage() {
                 </div>
               )}
             </div>
-            <div className="flex space-x-1 shrink-0">
-              <Button
-                size="sm"
-                variant="ghost"
-                title="Marquer comme terminé / consommé"
-                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                onClick={() => openFinishModal(item)}
+
+            {/* Menu d'actions unique '...' */}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveMenuId(isMenuOpen ? null : item.id);
+                }}
+                className={`p-2 rounded-lg transition-colors focus:outline-none ${
+                  isMenuOpen
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                }`}
+                title="Options et actions de l'aliment"
+                aria-label="Actions de l'aliment"
               >
-                <CheckCircle2 className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleEdit(item)}
-              >
-                <Edit3 className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleDelete(item.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+                <MoreVertical className="w-5 h-5" />
+              </button>
+
+              {isMenuOpen && (
+                <>
+                  {/* Backdrop invisible pour fermer au clic dehors */}
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuId(null);
+                    }}
+                  />
+
+                  {/* Dropdown Menu */}
+                  <div
+                    className="absolute right-0 top-full mt-1.5 w-60 bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 z-40 animate-in fade-in zoom-in-95 duration-150 divide-y divide-gray-100"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="py-1">
+                      {/* Action 1: Changer la catégorie */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenuId(null);
+                          setCategoryModalItem(item);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <FolderTree className="w-4 h-4 text-primary-600 shrink-0" />
+                        <span>Changer la catégorie</span>
+                      </button>
+
+                      {/* Action 2: Mettre en congélation */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenuId(null);
+                          handleFreezeItem(item);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-cyan-700 hover:bg-cyan-50 transition-colors text-left"
+                      >
+                        <Snowflake className="w-4 h-4 text-cyan-500 shrink-0" />
+                        <span>Mettre en congélation</span>
+                      </button>
+
+                      {/* Action 3: Changer le titre */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenuId(null);
+                          setTitleModalItem(item);
+                          setQuickTitle(item.ingredient?.name || "");
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <Type className="w-4 h-4 text-blue-500 shrink-0" />
+                        <span>Changer le titre</span>
+                      </button>
+
+                      {/* Action 4: Changer la date de péremption */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenuId(null);
+                          setExpiryModalItem(item);
+                          setQuickExpiryDate(
+                            item.expiryDate ? new Date(item.expiryDate).toISOString().split("T")[0] : ""
+                          );
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span>Changer la date de péremption</span>
+                      </button>
+
+                      {/* Action 5: Modifier l'aliment */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenuId(null);
+                          handleEdit(item);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <Edit3 className="w-4 h-4 text-indigo-500 shrink-0" />
+                        <span>Modifier l'aliment</span>
+                      </button>
+                    </div>
+
+                    <div className="py-1">
+                      {/* Action 6: Consommé */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenuId(null);
+                          openFinishModal(item);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors text-left"
+                      >
+                        <Utensils className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Consommé</span>
+                      </button>
+
+                      {/* Action 7: Terminé */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenuId(null);
+                          handleQuickFinish(item);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 transition-colors text-left"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Terminé</span>
+                      </button>
+                    </div>
+
+                    <div className="py-1">
+                      {/* Action 8: Supprimer */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenuId(null);
+                          handleDelete(item.id);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500 shrink-0" />
+                        <span>Supprimer</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -1065,23 +1334,36 @@ export function FridgePage() {
               </div>
             )}
 
-            {item.expiryDate && (
+            {/* Date : Si surgelé, date de congélation, sinon date de péremption */}
+            {isFrozen ? (
               <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100">
-                <span className="text-gray-600 flex items-center gap-1.5">
-                  <span>{item.isExpiryEstimated ? "Date estimée :" : "Expire le :"}</span>
-                  {item.isExpiryEstimated && (
-                    <span
-                      title="Date estimée automatiquement par l'IA lors du scan du ticket"
-                      className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 px-1.5 py-0.5 rounded font-medium"
-                    >
-                      Estimée (IA)
-                    </span>
-                  )}
+                <span className="text-cyan-700 flex items-center gap-1.5 font-medium">
+                  <Snowflake className="w-4 h-4 text-cyan-500 shrink-0" />
+                  <span>Mis en congélation le :</span>
                 </span>
-                <span className="font-medium text-gray-900">
-                  {item.isExpiryEstimated ? "~ " : ""}{new Date(item.expiryDate).toLocaleDateString("fr-FR")}
+                <span className="font-semibold text-gray-900">
+                  {new Date(item.addedDate || Date.now()).toLocaleDateString("fr-FR")}
                 </span>
               </div>
+            ) : (
+              item.expiryDate && (
+                <div className="flex justify-between items-center text-sm py-1 border-b border-gray-100">
+                  <span className="text-gray-600 flex items-center gap-1.5">
+                    <span>{item.isExpiryEstimated ? "Date estimée :" : "Expire le :"}</span>
+                    {item.isExpiryEstimated && (
+                      <span
+                        title="Date estimée automatiquement par l'IA lors du scan du ticket"
+                        className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200/80 px-1.5 py-0.5 rounded font-medium"
+                      >
+                        Estimée (IA)
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {item.isExpiryEstimated ? "~ " : ""}{new Date(item.expiryDate).toLocaleDateString("fr-FR")}
+                  </span>
+                </div>
+              )
             )}
 
             {item.notes && (
@@ -1091,7 +1373,15 @@ export function FridgePage() {
             )}
           </div>
 
-          {item.expiryDate && (
+          {/* Badge : badge de congélation si surgelé, sinon FreshnessBadge */}
+          {isFrozen ? (
+            <div className="mt-3 flex justify-center">
+              <div className="w-full justify-center py-1.5 text-xs font-semibold flex items-center gap-1.5 bg-cyan-50 text-cyan-700 border border-cyan-200/80 rounded-md">
+                <Snowflake className="w-3.5 h-3.5 text-cyan-500" />
+                <span>Congelé • Longue conservation</span>
+              </div>
+            </div>
+          ) : item.expiryDate ? (
             <div className="mt-3 flex justify-center">
               <FreshnessBadge
                 expiryDate={item.expiryDate}
@@ -1100,7 +1390,7 @@ export function FridgePage() {
                 className="w-full justify-center py-1 text-xs font-medium"
               />
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     );
@@ -1157,19 +1447,19 @@ export function FridgePage() {
             Catégories
           </Button>
 
-          {/* Bouton Scanner ticket */}
+          {/* Bouton Scanner ticket (masqué sur mobile pour éviter doublon avec le bouton flottant en bas) */}
           <Button
             variant="outline"
             onClick={handleScanTicketClick}
             loading={isScanning}
-            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+            className="hidden sm:flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
           >
             <ScanLine className="w-4 h-4 mr-1.5" />
             Scanner ticket
           </Button>
 
-          {/* Bouton Ajouter ingrédient */}
-          <Button onClick={() => openAddModal()} className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2">
+          {/* Bouton Ajouter ingrédient (masqué sur mobile pour éviter doublon avec le bouton flottant en bas) */}
+          <Button onClick={() => openAddModal()} className="hidden sm:flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2">
             <Plus className="w-4 h-4 mr-1.5" />
             Ajouter
           </Button>
@@ -1227,41 +1517,90 @@ export function FridgePage() {
 
       {activeTab === "fridge" ? (
         <div className="space-y-6 sm:space-y-8">
-          {/* Statistiques compactes et responsives */}
+          {/* Statistiques compactes, responsives et cliquables pour filtrer */}
           <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-0">
-            <Card>
+            <Card
+              className={`cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] select-none ${
+                statusFilter === "all" && selectedCategory === null
+                  ? "ring-2 ring-emerald-500 bg-emerald-50/60 shadow-md border-emerald-300"
+                  : "hover:border-emerald-300 bg-white"
+              }`}
+              onClick={() => {
+                setStatusFilter("all");
+                setSelectedCategory(null);
+              }}
+            >
               <CardContent className="px-2 sm:px-6 py-3 sm:py-6">
                 <div className="flex flex-col items-center text-center">
                   <h3 className="text-lg sm:text-2xl font-bold text-emerald-600 mb-0.5">
                     {stats.total}
                   </h3>
-                  <p className="text-[11px] sm:text-sm text-gray-600 line-clamp-1">En stock</p>
+                  <p className="text-[11px] sm:text-sm text-gray-700 font-medium line-clamp-1">En stock</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card
+              className={`cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] select-none ${
+                statusFilter === "expiring_soon"
+                  ? "ring-2 ring-amber-500 bg-amber-50/60 shadow-md border-amber-300"
+                  : "hover:border-amber-300 bg-white"
+              }`}
+              onClick={() => {
+                setStatusFilter(statusFilter === "expiring_soon" ? "all" : "expiring_soon");
+              }}
+            >
               <CardContent className="px-2 sm:px-6 py-3 sm:py-6">
                 <div className="flex flex-col items-center text-center">
                   <h3 className="text-lg sm:text-2xl font-bold text-amber-600 mb-0.5">
                     {stats.expiringSoon}
                   </h3>
-                  <p className="text-[11px] sm:text-sm text-gray-600 line-clamp-1">Bientôt expirés</p>
+                  <p className="text-[11px] sm:text-sm text-gray-700 font-medium line-clamp-1">Bientôt expirés</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card
+              className={`cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] select-none ${
+                statusFilter === "expired"
+                  ? "ring-2 ring-red-500 bg-red-50/60 shadow-md border-red-300"
+                  : "hover:border-red-300 bg-white"
+              }`}
+              onClick={() => {
+                setStatusFilter(statusFilter === "expired" ? "all" : "expired");
+              }}
+            >
               <CardContent className="px-2 sm:px-6 py-3 sm:py-6">
                 <div className="flex flex-col items-center text-center">
                   <h3 className="text-lg sm:text-2xl font-bold text-red-600 mb-0.5">
                     {stats.expired}
                   </h3>
-                  <p className="text-[11px] sm:text-sm text-gray-600 line-clamp-1">Expirés</p>
+                  <p className="text-[11px] sm:text-sm text-gray-700 font-medium line-clamp-1">Expirés</p>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Indicateur de filtre actif si un statut particulier est sélectionné */}
+          {statusFilter !== "all" && (
+            <div className="flex items-center justify-between bg-amber-50 border border-amber-200/80 px-3.5 py-2 rounded-xl text-xs text-amber-900 shadow-xs animate-in fade-in duration-200">
+              <span className="flex items-center gap-1.5 font-medium">
+                <span>Filtre actif :</span>
+                <strong className="font-bold underline">
+                  {statusFilter === "expiring_soon" ? "Bientôt expirés (≤ 3 jours)" : "Expirés"}
+                </strong>
+                <span>({filteredItems.length} aliment{filteredItems.length > 1 ? "s" : ""})</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className="text-amber-800 hover:text-amber-950 font-semibold px-2 py-0.5 bg-amber-100/70 hover:bg-amber-200 rounded-md transition-colors flex items-center gap-1"
+              >
+                <span>Tous</span>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Barre de filtre par Catégories */}
           <div className="space-y-3">
@@ -2276,6 +2615,181 @@ export function FridgePage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal d'action rapide : Changer la catégorie */}
+      <Modal
+        isOpen={!!categoryModalItem}
+        onClose={() => setCategoryModalItem(null)}
+        title={`Changer la catégorie : ${categoryModalItem?.ingredient?.name || ""}`}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">
+            Sélectionnez une nouvelle catégorie pour cet ingrédient :
+          </p>
+
+          <div className="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto p-1">
+            {sortedCategories.map((cat) => {
+              const isSelected =
+                categoryModalItem?.ingredient?.categoryId === cat.id ||
+                categoryModalItem?.ingredient?.category?.id === cat.id ||
+                categoryModalItem?.ingredient?.category?.name === cat.name;
+
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => handleQuickCategorySelect(cat.id)}
+                  className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs sm:text-sm font-medium transition-all ${
+                    isSelected
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-400 font-semibold"
+                      : "border-gray-200 hover:border-emerald-300 hover:bg-gray-50 text-gray-800"
+                  }`}
+                >
+                  <span className="text-base">{cat.icon || "📦"}</span>
+                  <span className="truncate">{cat.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCategoryModalItem(null)}
+            >
+              Fermer
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal d'action rapide : Changer le titre */}
+      <Modal
+        isOpen={!!titleModalItem}
+        onClose={() => setTitleModalItem(null)}
+        title="Changer le titre de l'aliment"
+        size="sm"
+      >
+        <form onSubmit={handleQuickTitleSave} className="space-y-4">
+          <Input
+            label="Nouveau titre"
+            placeholder="Ex : Poulet rôti, Tomates cerises..."
+            value={quickTitle}
+            onChange={(e) => setQuickTitle(e.target.value)}
+            autoFocus
+          />
+
+          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setTitleModalItem(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              loading={updateMutation.isPending}
+            >
+              Enregistrer
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal d'action rapide : Changer la date de péremption */}
+      <Modal
+        isOpen={!!expiryModalItem}
+        onClose={() => setExpiryModalItem(null)}
+        title={`Date de péremption : ${expiryModalItem?.ingredient?.name || ""}`}
+        size="sm"
+      >
+        <form onSubmit={handleQuickExpirySave} className="space-y-4">
+          <Input
+            label="Date limite de consommation"
+            type="date"
+            value={quickExpiryDate}
+            onChange={(e) => setQuickExpiryDate(e.target.value)}
+          />
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Raccourcis rapides :
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 3);
+                  setQuickExpiryDate(d.toISOString().split("T")[0]);
+                }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+              >
+                +3 jours
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 7);
+                  setQuickExpiryDate(d.toISOString().split("T")[0]);
+                }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+              >
+                +1 semaine
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 14);
+                  setQuickExpiryDate(d.toISOString().split("T")[0]);
+                }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+              >
+                +2 semaines
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setMonth(d.getMonth() + 1);
+                  setQuickExpiryDate(d.toISOString().split("T")[0]);
+                }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+              >
+                +1 mois
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickExpiryDate("")}
+                className="text-xs px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors"
+              >
+                Aucune date
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setExpiryModalItem(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              loading={updateMutation.isPending}
+            >
+              Enregistrer
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
