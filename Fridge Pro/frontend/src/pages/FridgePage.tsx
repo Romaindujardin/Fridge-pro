@@ -1614,14 +1614,20 @@ export function FridgePage() {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                Tous ({fridgeItems.length})
+                Tous ({statusFilter === "all" ? fridgeItems.length : filteredItems.length})
               </button>
               {sortedCategories.map((cat) => {
-                const count = fridgeItems.filter(
+                const count = (statusFilter === "all" ? fridgeItems : filteredItems).filter(
                   (i) =>
                     i.ingredient?.category?.id === cat.id ||
                     i.ingredient?.category?.name === cat.name
                 ).length;
+
+                // Si un filtre d'expiration est actif et que la catégorie n'a aucun aliment concerné, on la masque
+                if (statusFilter !== "all" && count === 0) {
+                  return null;
+                }
+
                 const isSelected = selectedCategory === cat.name;
 
                 return (
@@ -1695,6 +1701,8 @@ export function FridgePage() {
               <p className="text-gray-500 mb-6">
                 {searchTerm.trim()
                   ? `Aucun ingrédient ne correspond à "${searchTerm}" dans cette catégorie.`
+                  : statusFilter !== "all"
+                  ? `Aucun aliment ${statusFilter === "expiring_soon" ? "bientôt expiré" : "expiré"} dans cette catégorie.`
                   : "Vous n'avez pas encore d'ingrédient dans cette catégorie."}
               </p>
               <div className="flex justify-center gap-3">
@@ -1778,10 +1786,35 @@ export function FridgePage() {
               </Button>
             </CardContent>
           </Card>
+        ) : filteredItems.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <div className="text-emerald-500 mb-4">
+                <CheckCircle2 className="w-16 h-16 mx-auto" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                {statusFilter === "expiring_soon"
+                  ? "Aucun aliment bientôt expiré !"
+                  : statusFilter === "expired"
+                  ? "Aucun aliment expiré !"
+                  : "Aucun aliment trouvé"}
+              </h3>
+              <p className="text-gray-500 mb-6">
+                {statusFilter === "expiring_soon"
+                  ? "Tous vos aliments en stock sont consommables pour au moins les 3 prochains jours."
+                  : statusFilter === "expired"
+                  ? "Bonne nouvelle, vous n'avez aucun aliment dont la date de péremption est dépassée."
+                  : "Aucun aliment ne correspond aux critères sélectionnés."}
+              </p>
+              <Button onClick={() => setStatusFilter("all")}>
+                Afficher tous les aliments
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-8">
             {sortedCategories.map((cat) => {
-              const itemsInCat = fridgeItems.filter(
+              const itemsInCat = filteredItems.filter(
                 (i) =>
                   i.ingredient?.category?.id === cat.id ||
                   i.ingredient?.category?.name === cat.name
@@ -1832,7 +1865,7 @@ export function FridgePage() {
 
             {/* Section Sans Catégorie si des aliments du frigo n'ont pas de catégorie */}
             {(() => {
-              const uncategorizedItems = fridgeItems.filter(
+              const uncategorizedItems = filteredItems.filter(
                 (i) => !i.ingredient?.category
               );
               if (uncategorizedItems.length === 0) return null;
