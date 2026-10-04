@@ -166,38 +166,13 @@ export function AuthPage() {
               onSubmit={loginForm.handleSubmit(handleLogin)}
               className="space-y-6"
             >
-              <div className="space-y-2">
-                <Input
-                  label="Identifiant ou email"
-                  type="text"
-                  placeholder="romain, sophie ou email"
-                  error={loginForm.formState.errors.email?.message}
-                  {...loginForm.register("email")}
-                />
-                <div className="flex items-center gap-2 pt-0.5">
-                  <span className="text-xs text-gray-500 font-medium">Connexion rapide :</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      loginForm.setValue("email", "romain");
-                      loginForm.clearErrors("email");
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60 transition-colors"
-                  >
-                    👨 Romain
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      loginForm.setValue("email", "sophie");
-                      loginForm.clearErrors("email");
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200/60 transition-colors"
-                  >
-                    👩 Sophie
-                  </button>
-                </div>
-              </div>
+              <Input
+                label="Identifiant ou email"
+                type="text"
+                placeholder="romain, sophie ou email"
+                error={loginForm.formState.errors.email?.message}
+                {...loginForm.register("email")}
+              />
 
               <div className="relative">
                 <Input
