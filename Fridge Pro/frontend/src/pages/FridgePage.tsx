@@ -614,6 +614,7 @@ export function FridgePage() {
     ingredientSearch.trim().length > 0;
 
   const handleScanTicketClick = () => {
+    setActiveMenuId(null);
     fileInputRef.current?.click();
   };
 
@@ -643,6 +644,7 @@ export function FridgePage() {
   };
 
   const openAddModal = (defaultCatId?: any) => {
+    setActiveMenuId(null);
     setEditingItem(null);
     const initialCatId = typeof defaultCatId === "string" ? defaultCatId : "";
     form.reset({
@@ -1084,7 +1086,7 @@ export function FridgePage() {
     const isMenuOpen = activeMenuId === item.id;
 
     return (
-      <Card key={item.id} hover className={`relative flex flex-col justify-between ${isMenuOpen ? "z-40 ring-1 ring-emerald-300" : "z-0"}`}>
+      <Card key={item.id} hover className={`relative flex flex-col justify-between ${isMenuOpen ? "z-30 ring-1 ring-emerald-300" : "z-0"}`}>
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -1124,7 +1126,7 @@ export function FridgePage() {
                   } else {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const spaceBelow = window.innerHeight - rect.bottom;
-                    if (spaceBelow < 320 && rect.top > spaceBelow) {
+                    if (spaceBelow < 380 && rect.top > spaceBelow) {
                       setMenuPlacement("top");
                     } else {
                       setMenuPlacement("bottom");
@@ -1414,28 +1416,6 @@ export function FridgePage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Mobile Floating Action Button (FAB) pour scanner ou ajouter instantanément avec espace au-dessus de la barre de navigation */}
-      <div className="sm:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0.75rem))] right-4 z-30 flex items-center gap-2.5 shadow-2xl">
-        <button
-          type="button"
-          onClick={handleScanTicketClick}
-          disabled={isScanning}
-          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 active:from-emerald-700 active:to-teal-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg shadow-emerald-700/30 active:scale-95 transition-all text-sm"
-        >
-          <ScanLine className="w-4 h-4 animate-pulse" />
-          <span>{isScanning ? "Analyse..." : "Scanner ticket"}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => openAddModal()}
-          className="flex items-center justify-center w-11 h-11 bg-white text-emerald-700 border border-emerald-200 rounded-full shadow-lg active:scale-95 transition-all"
-          title="Ajouter un ingrédient"
-          aria-label="Ajouter un ingrédient"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
-      </div>
-
       {/* Header & Boutons d'action */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
@@ -1463,22 +1443,19 @@ export function FridgePage() {
             Catégories
           </Button>
 
-          {/* Bouton Scanner ticket */}
+          {/* Bouton Scanner ticket (masqué sur mobile pour éviter doublon avec le bouton flottant en bas) */}
           <Button
             variant="outline"
             onClick={handleScanTicketClick}
             loading={isScanning}
-            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+            className="hidden sm:flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
           >
             <ScanLine className="w-4 h-4 mr-1.5" />
             Scanner ticket
           </Button>
 
-          {/* Bouton Ajouter ingrédient */}
-          <Button
-            onClick={() => openAddModal()}
-            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2"
-          >
+          {/* Bouton Ajouter ingrédient (masqué sur mobile pour éviter doublon avec le bouton flottant en bas) */}
+          <Button onClick={() => openAddModal()} className="hidden sm:flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2">
             <Plus className="w-4 h-4 mr-1.5" />
             Ajouter
           </Button>
@@ -1849,7 +1826,7 @@ export function FridgePage() {
                 <div
                   key={cat.id}
                   className={`space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm transition-all ${
-                    hasActiveMenu ? "relative z-30" : "relative z-0"
+                    hasActiveMenu ? "relative z-20" : "relative z-0"
                   }`}
                 >
                   <div className="flex items-center justify-between border-b border-gray-100 pb-3">
@@ -1898,7 +1875,7 @@ export function FridgePage() {
               return (
                 <div
                   className={`space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm transition-all ${
-                    hasActiveMenu ? "relative z-30" : "relative z-0"
+                    hasActiveMenu ? "relative z-20" : "relative z-0"
                   }`}
                 >
                   <div className="flex items-center justify-between border-b border-gray-100 pb-3">
@@ -2853,6 +2830,28 @@ export function FridgePage() {
           </div>
         </form>
       </Modal>
+
+      {/* Mobile Floating Action Button (FAB) pour scanner ou ajouter instantanément avec espace au-dessus de la barre de navigation */}
+      <div className="sm:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0.75rem))] right-4 z-40 flex items-center gap-2.5 shadow-2xl">
+        <button
+          type="button"
+          onClick={handleScanTicketClick}
+          disabled={isScanning}
+          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 active:from-emerald-700 active:to-teal-700 text-white font-semibold px-4 py-3 rounded-full shadow-lg shadow-emerald-700/30 active:scale-95 transition-all text-sm"
+        >
+          <ScanLine className="w-4 h-4 animate-pulse" />
+          <span>{isScanning ? "Analyse..." : "Scanner ticket"}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => openAddModal()}
+          className="flex items-center justify-center w-11 h-11 bg-white text-emerald-700 border border-emerald-200 rounded-full shadow-lg active:scale-95 transition-all"
+          title="Ajouter un ingrédient"
+          aria-label="Ajouter un ingrédient"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
     </div>
   );
 }
