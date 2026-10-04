@@ -1463,19 +1463,22 @@ export function FridgePage() {
             Catégories
           </Button>
 
-          {/* Bouton Scanner ticket (masqué sur mobile pour éviter doublon avec le bouton flottant en bas) */}
+          {/* Bouton Scanner ticket */}
           <Button
             variant="outline"
             onClick={handleScanTicketClick}
             loading={isScanning}
-            className="hidden sm:flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
           >
             <ScanLine className="w-4 h-4 mr-1.5" />
             Scanner ticket
           </Button>
 
-          {/* Bouton Ajouter ingrédient (masqué sur mobile pour éviter doublon avec le bouton flottant en bas) */}
-          <Button onClick={() => openAddModal()} className="hidden sm:flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2">
+          {/* Bouton Ajouter ingrédient */}
+          <Button
+            onClick={() => openAddModal()}
+            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2"
+          >
             <Plus className="w-4 h-4 mr-1.5" />
             Ajouter
           </Button>
