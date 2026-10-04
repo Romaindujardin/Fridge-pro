@@ -337,6 +337,7 @@ export function FridgePage() {
 
   // Menu déroulant d'actions "..." pour chaque carte
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [menuPlacement, setMenuPlacement] = useState<"bottom" | "top">("bottom");
 
   // Modales d'actions rapides
   const [categoryModalItem, setCategoryModalItem] = useState<FridgeItem | null>(null);
@@ -1083,7 +1084,7 @@ export function FridgePage() {
     const isMenuOpen = activeMenuId === item.id;
 
     return (
-      <Card key={item.id} hover className={`relative flex flex-col justify-between ${isMenuOpen ? "z-30 ring-1 ring-emerald-300" : "z-0"}`}>
+      <Card key={item.id} hover className={`relative flex flex-col justify-between ${isMenuOpen ? "z-40 ring-1 ring-emerald-300" : "z-0"}`}>
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -1118,7 +1119,18 @@ export function FridgePage() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setActiveMenuId(isMenuOpen ? null : item.id);
+                  if (isMenuOpen) {
+                    setActiveMenuId(null);
+                  } else {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    if (spaceBelow < 320 && rect.top > spaceBelow) {
+                      setMenuPlacement("top");
+                    } else {
+                      setMenuPlacement("bottom");
+                    }
+                    setActiveMenuId(item.id);
+                  }
                 }}
                 className={`p-2 rounded-lg transition-colors focus:outline-none ${
                   isMenuOpen
@@ -1135,7 +1147,7 @@ export function FridgePage() {
                 <>
                   {/* Backdrop invisible pour fermer au clic dehors */}
                   <div
-                    className="fixed inset-0 z-30"
+                    className="fixed inset-0 z-40"
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveMenuId(null);
@@ -1144,7 +1156,11 @@ export function FridgePage() {
 
                   {/* Dropdown Menu */}
                   <div
-                    className="absolute right-0 top-full mt-1.5 w-60 bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 z-40 animate-in fade-in zoom-in-95 duration-150 divide-y divide-gray-100"
+                    className={`absolute right-0 ${
+                      menuPlacement === "top"
+                        ? "bottom-full mb-1.5 origin-bottom-right"
+                        : "top-full mt-1.5 origin-top-right"
+                    } w-60 max-h-[min(380px,80vh)] overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 divide-y divide-gray-100`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="py-1">
@@ -1824,10 +1840,14 @@ export function FridgePage() {
                 return null;
               }
 
+              const hasActiveMenu = itemsInCat.some((i) => i.id === activeMenuId);
+
               return (
                 <div
                   key={cat.id}
-                  className="space-y-4 bg-white/80 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm"
+                  className={`space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm transition-all ${
+                    hasActiveMenu ? "relative z-30" : "relative z-0"
+                  }`}
                 >
                   <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                     <div className="flex items-center gap-2.5">
@@ -1870,8 +1890,14 @@ export function FridgePage() {
               );
               if (uncategorizedItems.length === 0) return null;
 
+              const hasActiveMenu = uncategorizedItems.some((i) => i.id === activeMenuId);
+
               return (
-                <div className="space-y-4 bg-white/80 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm">
+                <div
+                  className={`space-y-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-sm transition-all ${
+                    hasActiveMenu ? "relative z-30" : "relative z-0"
+                  }`}
+                >
                   <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                     <div className="flex items-center gap-2.5">
                       <span className="w-3.5 h-3.5 rounded-full bg-gray-400 ring-2 ring-offset-1 ring-gray-400" />
