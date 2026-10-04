@@ -18,8 +18,20 @@ export const useAuth = () => {
   } = useAuthStore();
 
   useEffect(() => {
-    // Vérifier l'authentification au montage si jamais le store n'est pas synchronisé
+    // Vérifier l'authentification au montage et au réveil de l'application (iOS PWA)
     checkAuth();
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkAuth();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onVisibilityChange);
+    };
   }, [checkAuth]);
 
   useEffect(() => {

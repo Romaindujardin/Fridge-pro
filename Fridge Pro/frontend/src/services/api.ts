@@ -82,11 +82,17 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const url = error.config?.url || "";
-      const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/register");
+      const isAuthEndpoint =
+        url.includes("/auth/login") || url.includes("/auth/register");
       if (!isAuthEndpoint) {
-        // Token expiré ou invalide lors d'une requête protégée
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        // Token expiré ou invalide lors d'une requête protégée : nettoyer TOUS les stockages
+        try {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("auth-storage");
+        } catch {
+          // ignore
+        }
         if (window.location.pathname !== "/auth") {
           window.location.href = "/auth";
         }
@@ -94,12 +100,24 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const rawMessage = error.response?.data?.message || error.message;
-    const errorMessage =
-      typeof rawMessage === "string" && !rawMessage.toLowerCase().includes("cyclic")
-        ? rawMessage
-        : "Une erreur est survenue lors de l'opération";
-    toast.error(errorMessage);
+    // Ne pas spammer l'utilisateur de toasts en cas de démarrage à froid du serveur (Render) ou de coupure réseau
+    const isNetworkOrColdStart =
+      !error.response ||
+      error.code === "ECONNABORTED" ||
+      error.message?.includes("Network Error") ||
+      error.response?.status === 502 ||
+      error.response?.status === 503 ||
+      error.response?.status === 504;
+
+    if (!isNetworkOrColdStart) {
+      const rawMessage = error.response?.data?.message || error.message;
+      const errorMessage =
+        typeof rawMessage === "string" &&
+        !rawMessage.toLowerCase().includes("cyclic")
+          ? rawMessage
+          : "Une erreur est survenue lors de l'opération";
+      toast.error(errorMessage);
+    }
 
     return Promise.reject(error);
   }

@@ -99,7 +99,7 @@ router.post(
       const newToken = jwt.sign(
         { userId: user.id, activeProfile: targetProfile },
         process.env.JWT_SECRET || "your-secret-key",
-        { expiresIn: "7d" }
+        { expiresIn: "30d" }
       );
 
       return res.json({

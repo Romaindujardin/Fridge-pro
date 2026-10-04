@@ -66,7 +66,7 @@ router.post("/register", async (req, res, next) => {
     const token = jwt.sign(
       { userId: user.id, activeProfile: user.firstName },
       process.env.JWT_SECRET || "your-secret-key",
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
 
     res.status(201).json({
@@ -171,7 +171,7 @@ router.post("/login", async (req, res, next) => {
     const token = jwt.sign(
       { userId: user.id, activeProfile: finalFirstName },
       process.env.JWT_SECRET || "your-secret-key",
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
 
     // Retourner les données utilisateur (sans le mot de passe)
