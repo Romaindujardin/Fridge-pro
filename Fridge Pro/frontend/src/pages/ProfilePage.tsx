@@ -36,14 +36,9 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>;
 
 export function ProfilePage() {
-  const { user, setUser, switchProfile } = useAuth();
+  const { user, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const isCoupleAccount =
-    user?.firstName?.toLowerCase() === "romain" ||
-    user?.firstName?.toLowerCase() === "sophie" ||
-    user?.email === "demo@fridgepro.com";
 
   const maskGeminiKey = (value?: string | null) => {
     if (!value) return null;
@@ -126,79 +121,6 @@ export function ProfilePage() {
           </p>
         </div>
       </div>
-
-      {/* Compte Duo Partagé */}
-      {isCoupleAccount && (
-        <Card className="border-emerald-200/80 bg-gradient-to-r from-emerald-50/70 via-purple-50/50 to-pink-50/40 shadow-xs">
-          <CardContent className="p-5 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">👩‍❤️‍👨</span>
-                  <h2 className="text-lg font-bold text-gray-900">
-                    Compte Duo Partagé (Romain & Sophie)
-                  </h2>
-                </div>
-                <p className="text-sm text-gray-600 max-w-2xl">
-                  Ce compte synchronise l'ensemble de votre frigo, recettes et liste de courses.
-                  Vous pouvez vous connecter avec le même mot de passe avec l'identifiant{" "}
-                  <span className="font-semibold text-emerald-700">"romain"</span> ou{" "}
-                  <span className="font-semibold text-purple-700">"sophie"</span>.
-                </p>
-              </div>
-              <div className="flex items-center gap-3 bg-white/90 backdrop-blur-xs p-2 rounded-xl border border-gray-200/80 self-start sm:self-center shadow-xs">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-1">
-                  Profil actif :
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (user?.firstName !== "Romain") {
-                        try {
-                          await switchProfile("Romain");
-                          toast.success("Profil actif : Romain 👨");
-                        } catch {
-                          toast.error("Erreur lors du changement de profil");
-                        }
-                      }
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                      user?.firstName === "Romain"
-                        ? "bg-emerald-600 text-white shadow-xs font-semibold"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    <span>👨</span>
-                    <span>Romain</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (user?.firstName !== "Sophie") {
-                        try {
-                          await switchProfile("Sophie");
-                          toast.success("Profil actif : Sophie 👩");
-                        } catch {
-                          toast.error("Erreur lors du changement de profil");
-                        }
-                      }
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                      user?.firstName === "Sophie"
-                        ? "bg-purple-600 text-white shadow-xs font-semibold"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    <span>👩</span>
-                    <span>Sophie</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Informations personnelles */}
