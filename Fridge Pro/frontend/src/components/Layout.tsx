@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   Home,
   Refrigerator,
@@ -12,7 +13,12 @@ import { useAuth } from "@/hooks/useAuth";
 
 export function Layout() {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, switchProfile } = useAuth();
+
+  const isCoupleAccount =
+    user?.firstName?.toLowerCase() === "romain" ||
+    user?.firstName?.toLowerCase() === "sophie" ||
+    user?.email === "demo@fridgepro.com";
 
   const navigation = [
     { name: "Accueil", href: "/", icon: Home, shortName: "Accueil" },
@@ -75,6 +81,56 @@ export function Layout() {
 
             {/* User menu & Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Sélecteur de profil couple partagé */}
+              {isCoupleAccount && (
+                <div className="flex items-center bg-gray-100 p-0.5 rounded-full border border-gray-200/80 text-xs">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (user?.firstName !== "Romain") {
+                        try {
+                          await switchProfile("Romain");
+                          toast.success("Profil actif : Romain 👨");
+                        } catch {
+                          toast.error("Erreur lors du changement de profil");
+                        }
+                      }
+                    }}
+                    className={`px-2 sm:px-2.5 py-1 rounded-full font-medium transition-all text-xs flex items-center gap-1 ${
+                      user?.firstName === "Romain"
+                        ? "bg-white text-emerald-700 shadow-xs font-semibold"
+                        : "text-gray-500 hover:text-gray-900"
+                    }`}
+                    title="Basculez sur le profil de Romain"
+                  >
+                    <span>👨</span>
+                    <span className="hidden xs:inline sm:inline">Romain</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (user?.firstName !== "Sophie") {
+                        try {
+                          await switchProfile("Sophie");
+                          toast.success("Profil actif : Sophie 👩");
+                        } catch {
+                          toast.error("Erreur lors du changement de profil");
+                        }
+                      }
+                    }}
+                    className={`px-2 sm:px-2.5 py-1 rounded-full font-medium transition-all text-xs flex items-center gap-1 ${
+                      user?.firstName === "Sophie"
+                        ? "bg-white text-purple-700 shadow-xs font-semibold"
+                        : "text-gray-500 hover:text-gray-900"
+                    }`}
+                    title="Basculez sur le profil de Sophie"
+                  >
+                    <span>👩</span>
+                    <span className="hidden xs:inline sm:inline">Sophie</span>
+                  </button>
+                </div>
+              )}
+
               <Link
                 to="/profile"
                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${

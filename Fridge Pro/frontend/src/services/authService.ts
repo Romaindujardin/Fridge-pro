@@ -74,4 +74,19 @@ export const authService = {
   getToken(): string | null {
     return localStorage.getItem("token");
   },
+
+  // Basculer de profil au sein du compte partagé (Romain / Sophie)
+  async switchProfile(profileName: "Romain" | "Sophie"): Promise<AuthResponse> {
+    try {
+      const response = await api.post("/users/switch-profile", { profileName });
+      const data = handleApiResponse<AuthResponse>(response);
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      return data;
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
 };
