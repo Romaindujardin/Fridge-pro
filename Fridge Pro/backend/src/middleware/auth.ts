@@ -10,11 +10,13 @@ const prisma = new PrismaClient();
 // Étend la requête Express pour attacher l'utilisateur authentifié.
 export interface AuthenticatedRequest extends Request {
   userId?: string;
+  activeProfile?: string;
   user?: {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
+    activeProfile?: string;
   };
 }
 
@@ -42,7 +44,7 @@ export const authenticateToken = async (
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET || "your-secret-key"
-    ) as { userId: string };
+    ) as { userId: string; activeProfile?: string };
 
     // Récupérer l'utilisateur correspondant en base
     const user = await prisma.user.findUnique({
@@ -62,9 +64,16 @@ export const authenticateToken = async (
       });
     }
 
+    const activeFirstName = decoded.activeProfile || user.firstName;
+
     // Ajouter l'utilisateur à la requête pour les middlewares/controllers suivants
     req.userId = user.id;
-    req.user = user;
+    req.activeProfile = activeFirstName;
+    req.user = {
+      ...user,
+      firstName: activeFirstName,
+      activeProfile: activeFirstName,
+    };
 
     next();
   } catch (error) {

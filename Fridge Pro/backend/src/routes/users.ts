@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import jwt from "jsonwebtoken";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
 
 const router = Router();
@@ -52,11 +53,66 @@ router.get(
         });
       }
 
+      const activeFirstName = req.user?.firstName || user.firstName;
+
       return res.json({
         success: true,
         data: {
-          user,
+          user: {
+            ...user,
+            firstName: activeFirstName,
+            activeProfile: activeFirstName,
+          },
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /users/switch-profile
+ * Bascule instantanément le profil actif entre Romain et Sophie
+ */
+router.post(
+  "/switch-profile",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { profileName } = req.body;
+      const targetProfile =
+        profileName?.toLowerCase() === "sophie" ? "Sophie" : "Romain";
+
+      const user = await prisma.user.findUnique({
+        where: { id: req.userId },
+        select: userSelect,
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Utilisateur introuvable",
+        });
+      }
+
+      const newToken = jwt.sign(
+        { userId: user.id, activeProfile: targetProfile },
+        process.env.JWT_SECRET || "your-secret-key",
+        { expiresIn: "7d" }
+      );
+
+      return res.json({
+        success: true,
+        data: {
+          user: {
+            ...user,
+            firstName: targetProfile,
+            activeProfile: targetProfile,
+          },
+          token: newToken,
+        },
+        message: `Profil basculé sur ${targetProfile}`,
       });
     } catch (error) {
       next(error);
@@ -113,10 +169,16 @@ router.put(
         select: userSelect,
       });
 
+      const activeFirstName = req.user?.firstName || updatedUser.firstName;
+
       return res.json({
         success: true,
         data: {
-          user: updatedUser,
+          user: {
+            ...updatedUser,
+            firstName: activeFirstName,
+            activeProfile: activeFirstName,
+          },
         },
         message: "Profil mis à jour avec succès",
       });

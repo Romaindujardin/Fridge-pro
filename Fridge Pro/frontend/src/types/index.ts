@@ -4,6 +4,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  activeProfile?: string;
   geminiApiKey?: string | null;
   createdAt: string;
   updatedAt: string;

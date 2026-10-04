@@ -11,6 +11,7 @@ interface AuthState {
   // Actions
   login: (credentials: LoginRequest) => Promise<AuthResponse>;
   register: (data: RegisterRequest) => Promise<AuthResponse>;
+  switchProfile: (profileName: "Romain" | "Sophie") => Promise<AuthResponse>;
   setUser: (user: User | null) => void;
   logout: () => Promise<void>;
   checkAuth: () => void;
@@ -49,6 +50,21 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
           return result;
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      switchProfile: async (profileName: "Romain" | "Sophie") => {
+        set({ isLoading: true });
+        try {
+          const data = await authService.switchProfile(profileName);
+          set({
+            user: data.user,
+            isLoading: false,
+          });
+          return data;
         } catch (error) {
           set({ isLoading: false });
           throw error;

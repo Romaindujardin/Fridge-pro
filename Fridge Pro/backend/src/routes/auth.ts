@@ -18,7 +18,7 @@ const registerSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().email("Adresse email invalide"),
+  email: z.string().min(1, "Identifiant ou adresse email requis"),
   password: z.string().min(1, "Le mot de passe est requis"),
 });
 
@@ -64,7 +64,7 @@ router.post("/register", async (req, res, next) => {
 
     // Générer le JWT
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, activeProfile: user.firstName },
       process.env.JWT_SECRET || "your-secret-key",
       { expiresIn: "7d" }
     );
@@ -91,17 +91,67 @@ router.post("/register", async (req, res, next) => {
 // POST /api/auth/login
 router.post("/login", async (req, res, next) => {
   try {
-    const { email, password } = loginSchema.parse(req.body);
+    const { email: identifier, password } = loginSchema.parse(req.body);
+    const clean = identifier.trim().toLowerCase();
 
-    // Trouver l'utilisateur
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    let user = null;
+    let activeProfile: string | null = null;
+
+    // Compte couple partagé (Romain & Sophie)
+    if (clean === "sophie" || clean.startsWith("sophie")) {
+      activeProfile = "Sophie";
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: "demo@fridgepro.com" },
+            { firstName: { equals: "Romain", mode: "insensitive" } },
+            { email: { contains: "romain", mode: "insensitive" } },
+          ],
+        },
+      });
+      // Si pas trouvé par ces critères, fallback sur le premier compte utilisateur
+      if (!user) {
+        user = await prisma.user.findFirst();
+      }
+    } else if (clean === "romain" || clean.startsWith("romain")) {
+      activeProfile = "Romain";
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: "demo@fridgepro.com" },
+            { firstName: { equals: "Romain", mode: "insensitive" } },
+            { email: { contains: "romain", mode: "insensitive" } },
+          ],
+        },
+      });
+      if (!user) {
+        user = await prisma.user.findFirst();
+      }
+    } else {
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: { equals: clean, mode: "insensitive" } },
+            { firstName: { equals: clean, mode: "insensitive" } },
+          ],
+        },
+      });
+      if (user) {
+        if (
+          user.email === "demo@fridgepro.com" ||
+          user.firstName.toLowerCase() === "romain"
+        ) {
+          activeProfile = "Romain";
+        } else {
+          activeProfile = user.firstName;
+        }
+      }
+    }
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Adresse email ou mot de passe incorrect",
+        message: "Identifiant ou mot de passe incorrect",
       });
     }
 
@@ -111,13 +161,15 @@ router.post("/login", async (req, res, next) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: "Adresse email ou mot de passe incorrect",
+        message: "Identifiant ou mot de passe incorrect",
       });
     }
 
-    // Générer le JWT
+    const finalFirstName = activeProfile || user.firstName;
+
+    // Générer le JWT avec le profil actif
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, activeProfile: finalFirstName },
       process.env.JWT_SECRET || "your-secret-key",
       { expiresIn: "7d" }
     );
@@ -126,8 +178,9 @@ router.post("/login", async (req, res, next) => {
     const userData = {
       id: user.id,
       email: user.email,
-      firstName: user.firstName,
+      firstName: finalFirstName,
       lastName: user.lastName,
+      activeProfile: finalFirstName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
