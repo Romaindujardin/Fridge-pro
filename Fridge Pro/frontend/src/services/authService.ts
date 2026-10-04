@@ -39,6 +39,35 @@ export const authService = {
     }
   },
 
+  // Nettoyer tous les stockages de session
+  clearSession(): void {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("auth-storage");
+    } catch {
+      // Ignorer si localStorage n'est pas accessible
+    }
+  },
+
+  // Vérifier si le token JWT est structurellement valide et non expiré
+  isTokenValid(token: string | null): boolean {
+    if (!token || typeof token !== "string") return false;
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) return false;
+      const payloadJson = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+      const payload = JSON.parse(payloadJson);
+      if (typeof payload.exp === "number") {
+        // Marge de sécurité de 10 secondes
+        return Date.now() < (payload.exp - 10) * 1000;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   // Déconnexion
   async logout(): Promise<void> {
     try {
@@ -47,9 +76,7 @@ export const authService = {
       // Continuer même si l'API échoue
       console.error("Erreur lors de la déconnexion:", error);
     } finally {
-      // Nettoyer le localStorage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      this.clearSession();
     }
   },
 
@@ -63,11 +90,18 @@ export const authService = {
     }
   },
 
-  // Vérifier si l'utilisateur est connecté
+  // Vérifier si l'utilisateur est connecté et le token non expiré
   isAuthenticated(): boolean {
-    const token = localStorage.getItem("token");
+    const token = this.getToken();
     const user = this.getCurrentUser();
-    return !!(token && user);
+    if (!token || !user) {
+      return false;
+    }
+    if (!this.isTokenValid(token)) {
+      this.clearSession();
+      return false;
+    }
+    return true;
   },
 
   // Récupérer le token

@@ -85,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error("Erreur lors de la déconnexion:", error);
         } finally {
+          authService.clearSession();
           set({
             user: null,
             isAuthenticated: false,
@@ -95,8 +96,12 @@ export const useAuthStore = create<AuthState>()(
 
       checkAuth: () => {
         try {
-          const user = authService.getCurrentUser();
           const isAuthenticated = authService.isAuthenticated();
+          const user = isAuthenticated ? authService.getCurrentUser() : null;
+
+          if (!isAuthenticated) {
+            authService.clearSession();
+          }
 
           set({
             user,
@@ -108,6 +113,7 @@ export const useAuthStore = create<AuthState>()(
             "Erreur lors de la vérification d'authentification:",
             error
           );
+          authService.clearSession();
           set({
             user: null,
             isAuthenticated: false,

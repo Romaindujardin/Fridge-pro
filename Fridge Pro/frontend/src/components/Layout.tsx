@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Home,
   Refrigerator,
@@ -13,6 +15,22 @@ import { useAuth } from "@/hooks/useAuth";
 export function Layout() {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Re-synchroniser les requêtes quand l'application revient au premier plan sur mobile (iOS PWA)
+  useEffect(() => {
+    const handleResume = () => {
+      if (document.visibilityState === "visible") {
+        queryClient.invalidateQueries();
+      }
+    };
+    document.addEventListener("visibilitychange", handleResume);
+    window.addEventListener("focus", handleResume);
+    return () => {
+      document.removeEventListener("visibilitychange", handleResume);
+      window.removeEventListener("focus", handleResume);
+    };
+  }, [queryClient]);
 
   const navigation = [
     { name: "Accueil", href: "/", icon: Home, shortName: "Accueil" },

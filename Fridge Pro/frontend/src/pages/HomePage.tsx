@@ -32,32 +32,27 @@ export function HomePage() {
   const { data: fridgeItems = [], isError: fridgeError } = useQuery({
     queryKey: ["fridgeItems"],
     queryFn: fridgeService.getFridgeItems,
-    retry: false,
   });
 
   const { data: suggestedRecipes = [], isError: recipesError } = useQuery({
     queryKey: ["suggestedRecipes"],
     queryFn: recipeService.getSuggestedRecipes,
-    retry: false,
   });
 
   const { data: favoriteRecipes = [], isError: favoritesError } = useQuery({
     queryKey: ["favoriteRecipes"],
     queryFn: recipeService.getFavoriteRecipes,
-    retry: false,
   });
 
   const { data: shoppingLists = [], isError: shoppingError } = useQuery({
     queryKey: ["shoppingLists"],
     queryFn: shoppingListService.getShoppingLists,
-    retry: false,
   });
 
   // Récupérer les recettes véritablement réalisables (0 ingrédient manquant)
   const { data: makeableRecipes = [] } = useQuery({
     queryKey: ["recipes", { makeable: true }],
     queryFn: () => recipeService.getRecipes({ makeable: true, limit: 500 }),
-    retry: false,
   });
 
   // Calculer les statistiques
@@ -105,6 +100,23 @@ export function HomePage() {
           ingrédients disponibles.
         </p>
       </div>
+
+      {/* Alerte discrète si le serveur se réveille ou réseau instable */}
+      {fridgeError && (
+        <div className="flex items-center justify-between p-3.5 bg-amber-50/90 border border-amber-200/80 rounded-xl text-sm text-amber-800 animate-fade-in shadow-xs">
+          <div className="flex items-center gap-2">
+            <span>⏳</span>
+            <span>Le serveur se réveille ou la connexion a été interrompue.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => queryClient.invalidateQueries()}
+            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium text-xs shadow-xs transition-colors shrink-0"
+          >
+            Actualiser
+          </button>
+        </div>
+      )}
 
       {/* Statistiques rapides */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mt-0">
