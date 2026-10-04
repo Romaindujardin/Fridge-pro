@@ -60,6 +60,15 @@ export function ProfilePage() {
   });
 
   useEffect(() => {
+    userService
+      .getProfile()
+      .then((freshUser) => {
+        setUser(freshUser);
+      })
+      .catch(() => {});
+  }, [setUser]);
+
+  useEffect(() => {
     if (user) {
       form.reset({
         firstName: user.firstName,
