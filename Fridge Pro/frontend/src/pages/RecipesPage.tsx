@@ -40,6 +40,8 @@ const generateRecipeSchema = z.object({
       "Décrivez ce que vous souhaitez cuisiner (au moins 10 caractères)."
     ),
   useFridge: z.boolean().optional().default(true),
+  useExistingRecipes: z.boolean().optional().default(false),
+  specificRecipeId: z.string().optional(),
   servings: z.coerce
     .number()
     .int("Le nombre de personnes doit être un entier")
@@ -147,6 +149,8 @@ export function RecipesPage() {
     defaultValues: {
       prompt: "",
       useFridge: true,
+      useExistingRecipes: false,
+      specificRecipeId: "",
       servings: 4,
     },
   });
@@ -920,6 +924,8 @@ export function RecipesPage() {
             generateRecipeMutation.mutate({
               prompt: values.prompt.trim(),
               useFridge: !!values.useFridge,
+              useExistingRecipes: !!values.useExistingRecipes,
+              specificRecipeId: values.specificRecipeId || undefined,
               servings: values.servings || 4,
             })
           )}
@@ -931,7 +937,7 @@ export function RecipesPage() {
             </label>
             <textarea
               rows={4}
-              placeholder="Ex : J'aimerais un plat italien végétarien pour ce soir."
+              placeholder="Ex : Propose-moi un plat original qui change de mes recettes habituelles, ou revisite mon burger maison en version plus légère."
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               {...generateRegister("prompt")}
             />
@@ -998,20 +1004,60 @@ export function RecipesPage() {
             )}
           </div>
 
-          <div className="flex items-start space-x-3">
-            <input
-              type="checkbox"
-              id="useFridge"
-              className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              {...generateRegister("useFridge")}
-            />
-            <label
-              htmlFor="useFridge"
-              className="text-sm text-gray-700 leading-relaxed"
-            >
-              Utiliser les ingrédients disponibles dans mon frigo pour adapter
-              la recette.
-            </label>
+          <div className="space-y-3 pt-1 border-t border-gray-100">
+            <div className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                id="useFridge"
+                className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                {...generateRegister("useFridge")}
+              />
+              <label
+                htmlFor="useFridge"
+                className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+              >
+                Utiliser les ingrédients disponibles dans mon frigo pour adapter
+                la recette.
+              </label>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="useExistingRecipes"
+                  className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  {...generateRegister("useExistingRecipes")}
+                />
+                <label
+                  htmlFor="useExistingRecipes"
+                  className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+                >
+                  Inclure mes recettes existantes ({recipes.length} en stock) pour s'en inspirer, revisiter un plat ou créer une variante qui change de l'ordinaire.
+                </label>
+              </div>
+
+              {watchGenerate("useExistingRecipes") && recipes.length > 0 && (
+                <div className="ml-7 pt-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Cibler une recette précise à adapter / revisiter (optionnel) :
+                  </label>
+                  <select
+                    className="w-full text-xs p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary-500 focus:bg-white text-gray-800"
+                    {...generateRegister("specificRecipeId")}
+                  >
+                    <option value="">
+                      Toutes mes recettes (laisser l'IA s'inspirer de mes goûts ou apporter de la nouveauté)
+                    </option>
+                    {recipes.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
 
           <p className="text-sm text-gray-500">

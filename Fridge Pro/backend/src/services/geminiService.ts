@@ -193,6 +193,18 @@ export const generateRecipeFromPrompt = async (params: {
     quantity?: number | null;
     unit?: string | null;
   }[];
+  existingRecipes?: {
+    id?: string;
+    title: string;
+    description?: string | null;
+    ingredients: {
+      name: string;
+      quantity?: number | null;
+      unit?: string | null;
+    }[];
+    instructions?: string[];
+    isTarget?: boolean;
+  }[];
 }): Promise<GeneratedRecipe> => {
   const model = getModel(params.apiKey);
   const targetServings =
@@ -201,7 +213,7 @@ export const generateRecipeFromPrompt = async (params: {
       : 4;
 
   const fridgeContext = params.fridgeItems?.length
-    ? `L'utilisateur dispose des ingrédients suivants (nom - quantité - unité lorsqu'elles sont connues) :
+    ? `L'utilisateur dispose des ingrédients suivants au frigo (nom - quantité - unité lorsqu'elles sont connues) :
 ${params.fridgeItems
   .map((item) => {
     const parts = [item.name];
@@ -214,13 +226,71 @@ ${params.fridgeItems
     return `- ${parts.join(" ")}`;
   })
   .join("\n")}`
-    : "L'utilisateur n'a pas fourni de liste d'ingrédients disponibles.";
+    : "L'utilisateur n'a pas fourni de liste d'ingrédients disponibles au frigo.";
+
+  let recipesContext = "";
+  if (params.existingRecipes && params.existingRecipes.length > 0) {
+    const targetRecipe = params.existingRecipes.find((r) => r.isTarget);
+    if (targetRecipe) {
+      recipesContext = `
+Recette existante expressément ciblée par l'utilisateur : "${targetRecipe.title}"
+${targetRecipe.description ? `Description d'origine : ${targetRecipe.description}\n` : ""}- Ingrédients d'origine : ${targetRecipe.ingredients
+        .map(
+          (ing) =>
+            `${ing.name}${
+              ing.quantity ? ` (${ing.quantity} ${ing.unit || ""})` : ""
+            }`
+        )
+        .join(", ")}
+${
+  targetRecipe.instructions?.length
+    ? `- Instructions d'origine : ${targetRecipe.instructions.join(" ; ")}\n`
+    : ""
+}
+Consigne pour cette recette ciblée : Revois, adapte, décline ou allège cette recette spécifique selon la demande de l'utilisateur !
+
+Autres recettes disponibles dans son carnet (${params.existingRecipes.length - 1} autres recettes) :
+${params.existingRecipes
+  .filter((r) => !r.isTarget)
+  .slice(0, 30)
+  .map(
+    (r) =>
+      `- "${r.title}" (Ingrédients clés : ${r.ingredients
+        .slice(0, 6)
+        .map((i) => i.name)
+        .join(", ")})`
+  )
+  .join("\n")}
+`;
+    } else {
+      recipesContext = `
+Carnet des recettes déjà enregistrées par l'utilisateur (${params.existingRecipes.length} recettes au total) :
+${params.existingRecipes
+  .slice(0, 40)
+  .map(
+    (r) =>
+      `- "${r.title}" (Ingrédients clés : ${r.ingredients
+        .slice(0, 8)
+        .map((i) => i.name)
+        .join(", ")})`
+  )
+  .join("\n")}
+
+Consigne concernant ces recettes existantes :
+- Si la demande de l'utilisateur vise à MODIFIER, REVISITER ou DÉCLINER une de ces recettes, sers-toi de la recette correspondante comme base tout en appliquant les ajustements demandés.
+- Si la demande de l'utilisateur vise à PROPOSER DES TRUCS QUI CHANGENT, DE LA NOUVEAUTÉ ou DE L'ORIGINALITÉ, observe attentivement ses habitudes culinaires ci-dessus afin de concevoir un plat innovant et savoureux qui n'apparaît PAS dans son carnet et apporte un vrai renouveau !
+`;
+    }
+  }
 
   const systemPrompt = `
 Tu es un chef cuisinier créatif et précis. Ta mission est de générer une recette détaillée en français.
 
 Contraintes :
-- Si des ingrédients disponibles sont fournis, privilégie-les absolument dans la recette, et complète seulement si nécessaire.
+- Si des ingrédients disponibles au frigo sont fournis, privilégie-les absolument dans la recette, et complète seulement si nécessaire.
+- Si un carnet de recettes existantes est fourni :
+  * Si la demande porte sur la révision, l'adaptation ou la déclinaison d'une recette ou d'un plat du carnet, respecte son identité tout en appliquant les ajustements demandés par l'utilisateur.
+  * Si la demande porte sur "des trucs qui changent", de la diversité ou une nouvelle idée, propose une création originale qui évite la redondance avec ses plats habituels.
 - Donne un titre accrocheur.
 - Fournis une description courte et appétissante.
 - IMPORTANT : La recette et les quantités d'ingrédients DOIVENT être impérativement calculées et adaptées pour exactement ${targetServings} personne(s) (servings: ${targetServings}).
@@ -259,6 +329,7 @@ ${params.prompt}
 Nombre de personnes / portions requis : ${targetServings} personne(s).
 
 ${fridgeContext}
+${recipesContext ? `\n${recipesContext}` : ""}
 `;
 
   const result = await model.generateContent([
