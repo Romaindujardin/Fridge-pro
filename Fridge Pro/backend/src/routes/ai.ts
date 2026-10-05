@@ -332,19 +332,27 @@ const formatRecipe = (recipe: any) => ({
 const generateRecipeSchema = z.object({
   prompt: z.string().min(10, "La demande doit contenir au moins 10 caractères"),
   useFridge: z.coerce.boolean().optional().default(true),
+  useExistingRecipes: z.coerce.boolean().optional().default(false),
+  specificRecipeId: z.string().optional(),
   servings: z.coerce.number().int().min(1).max(20).optional().default(4),
 });
 
 /**
  * POST /ai/generate-recipe
- * Demande à l'IA une recette personnalisée, optionnellement basée sur le frigo.
+ * Demande à l'IA une recette personnalisée, optionnellement basée sur le frigo et les recettes existantes.
  */
 router.post(
   "/generate-recipe",
   authenticateToken,
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { prompt, useFridge, servings } = generateRecipeSchema.parse(req.body);
+      const {
+        prompt,
+        useFridge,
+        useExistingRecipes,
+        specificRecipeId,
+        servings,
+      } = generateRecipeSchema.parse(req.body);
 
       const userWithKey = await prisma.user.findUnique({
         where: { id: req.userId! },
@@ -382,10 +390,52 @@ router.post(
         }));
       }
 
+      let existingRecipes:
+        | {
+            id?: string;
+            title: string;
+            description?: string | null;
+            ingredients: {
+              name: string;
+              quantity?: number | null;
+              unit?: string | null;
+            }[];
+            instructions?: string[];
+            isTarget?: boolean;
+          }[]
+        | undefined;
+
+      if (useExistingRecipes) {
+        const recipes = await prisma.recipe.findMany({
+          include: {
+            ingredients: {
+              include: {
+                ingredient: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        existingRecipes = recipes.map((r) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          ingredients: r.ingredients.map((ri) => ({
+            name: ri.ingredient.name,
+            quantity: ri.quantity,
+            unit: ri.unit,
+          })),
+          instructions: r.instructions,
+          isTarget: specificRecipeId ? r.id === specificRecipeId : false,
+        }));
+      }
+
       const aiRecipe = await generateRecipeFromPrompt({
         prompt,
         servings,
         fridgeItems,
+        existingRecipes,
         apiKey,
       });
 
