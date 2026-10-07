@@ -330,14 +330,24 @@ const formatRecipe = (recipe: any) => ({
   missingIngredientsCount: recipe.missingIngredientsCount ?? null,
 });
 
-// Validation de la payload pour la génération de recette.
-const generateRecipeSchema = z.object({
-  prompt: z.string().min(10, "La demande doit contenir au moins 10 caractères"),
-  useFridge: z.coerce.boolean().optional().default(true),
-  useExistingRecipes: z.coerce.boolean().optional().default(false),
-  specificRecipeId: z.string().optional(),
-  servings: z.coerce.number().int().min(1).max(20).optional().default(4),
-});
+// Validation de la payload pour la génération de recette (accepte 'prompt' ou 'userPrompt').
+const generateRecipeSchema = z
+  .object({
+    prompt: z.string().optional(),
+    userPrompt: z.string().optional(),
+    useFridge: z.coerce.boolean().optional().default(true),
+    useExistingRecipes: z.coerce.boolean().optional().default(false),
+    specificRecipeId: z.string().optional(),
+    servings: z.coerce.number().int().min(1).max(20).optional().default(4),
+  })
+  .transform((data) => ({
+    ...data,
+    prompt: (data.prompt || data.userPrompt || "").trim(),
+  }))
+  .refine((data) => data.prompt.length >= 10, {
+    message: "La demande doit contenir au moins 10 caractères",
+    path: ["prompt"],
+  });
 
 /**
  * POST /ai/generate-recipe

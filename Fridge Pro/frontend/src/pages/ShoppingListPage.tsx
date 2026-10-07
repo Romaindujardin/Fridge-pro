@@ -154,7 +154,7 @@ export function ShoppingListPage() {
       setGeneratingRecipeId(idea.title);
       const prompt = `Crée la recette complète : ${idea.title}.${idea.description ? ` Description : ${idea.description}.` : ""}${idea.mainIngredients?.length ? ` Ingrédients clés à inclure : ${idea.mainIngredients.join(", ")}.` : ""}`;
       await recipeService.generateRecipeWithAI({
-        userPrompt: prompt,
+        prompt,
         servings: aiServings,
       });
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
