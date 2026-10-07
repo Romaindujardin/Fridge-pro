@@ -478,6 +478,14 @@ export const generateShoppingListWithAI = async (params: {
     unit?: string | null;
     expiryDate?: Date | string | null;
   }[];
+  archivedItems?: {
+    name: string;
+    brand?: string | null;
+    quantity?: number | null;
+    unit?: string | null;
+    status?: string | null;
+    finishedDate?: Date | string | null;
+  }[];
   allRecipes: {
     id: string;
     title: string;
@@ -493,6 +501,7 @@ export const generateShoppingListWithAI = async (params: {
   servings?: number;
   maxBudget?: number | null;
   includePantryBasics?: boolean;
+  includeArchivedItems?: boolean;
   userPrompt?: string;
 }): Promise<GeneratedShoppingList> => {
   const model = getModel(params.apiKey);
@@ -520,6 +529,26 @@ ${params.fridgeItems
   })
   .join("\n")}`
     : "Le frigo est actuellement vide.";
+
+  const archivedContext =
+    params.archivedItems && params.archivedItems.length > 0
+      ? `Historique des aliments récemment consommés / archivés par l'utilisateur (${params.archivedItems.length} aliments archivés) :
+${params.archivedItems
+  .slice(0, 40)
+  .map((i) => {
+    const details = [i.name];
+    if (i.brand) details.push(`(${i.brand})`);
+    if (i.quantity) details.push(`${i.quantity} ${i.unit || ""}`);
+    if (i.status === "consumed") details.push("[consommé/terminé]");
+    else if (i.status === "expired") details.push("[périmé]");
+    if (i.finishedDate) {
+      const finished = new Date(i.finishedDate).toLocaleDateString("fr-FR");
+      details.push(`le ${finished}`);
+    }
+    return `- ${details.join(" ")}`;
+  })
+  .join("\n")}`
+      : "";
 
   let recipesContext = "";
   if (targetRecipes.length > 0) {
@@ -585,7 +614,11 @@ RÈGLES D'OR ABSOLUES :
        : ""
    }
 
-3. CLASSEMENT PAR RAYONS :
+3. HISTORIQUE DES ALIMENTS CONSOMMÉS (ARCHIVÉS) :
+   - Si un historique d'aliments consommés/archivés est fourni, analyse-le pour comprendre ce que le foyer consomme couramment et ce qui est récemment tombé en rupture de stock.
+   - Si un ingrédient de base essentiel ou un aliment récurrent apprécié a été récemment terminé/consommé et n'est plus dans le frigo actuel, tu peux judicieusement proposer son réapprovisionnement dans la liste de courses si cela répond aux recettes ou aux besoins du foyer.
+
+4. CLASSEMENT PAR RAYONS :
    - Indique pour chaque article son rayon de supermarché parmi : "Fruits & Légumes", "Boucherie & Poissonnerie", "Produits Frais & Crémerie", "Épicerie salée", "Épicerie sucrée", "Boissons", "Surgelés".
 
 Réponds STRICTEMENT avec un JSON valide suivant ce format :
@@ -631,7 +664,7 @@ ${
 
 ${fridgeContext}
 
-${recipesContext}
+${archivedContext ? `${archivedContext}\n\n` : ""}${recipesContext}
 `;
 
   const result = await model.generateContent([

@@ -262,6 +262,7 @@ export interface GenerateShoppingListAIRequest {
   servings?: number;
   maxBudget?: number | null;
   includePantryBasics?: boolean;
+  includeArchivedItems?: boolean;
   userPrompt?: string;
   listName?: string;
 }

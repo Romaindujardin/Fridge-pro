@@ -557,6 +557,7 @@ const generateShoppingListSchema = z.object({
   servings: z.coerce.number().int().min(1).max(20).optional().default(2),
   maxBudget: z.coerce.number().positive().optional().nullable(),
   includePantryBasics: z.coerce.boolean().optional().default(false),
+  includeArchivedItems: z.coerce.boolean().optional().default(true),
   userPrompt: z.string().optional(),
   listName: z.string().optional(),
 });
@@ -577,6 +578,7 @@ router.post(
         servings,
         maxBudget,
         includePantryBasics,
+        includeArchivedItems,
         userPrompt,
         listName: requestedListName,
       } = generateShoppingListSchema.parse(req.body);
@@ -614,7 +616,35 @@ router.post(
         orderBy: { createdAt: "desc" },
       });
 
-      // 3. Appel de Gemini
+      // 3. Récupérer l'historique des aliments consommés / archivés si demandé
+      let archivedItems: Array<{
+        name: string;
+        brand?: string | null;
+        quantity?: number | null;
+        unit?: string | null;
+        status?: string | null;
+        finishedDate?: Date | string | null;
+      }> = [];
+
+      if (includeArchivedItems) {
+        const historyRecords = await prisma.purchaseHistory.findMany({
+          where: { userId: req.userId },
+          include: { ingredient: true },
+          orderBy: { finishedDate: "desc" },
+          take: 40,
+        });
+
+        archivedItems = historyRecords.map((h) => ({
+          name: h.ingredient.name,
+          brand: h.brand,
+          quantity: h.quantity,
+          unit: h.unit,
+          status: h.status,
+          finishedDate: h.finishedDate,
+        }));
+      }
+
+      // 4. Appel de Gemini
       const aiResult = await generateShoppingListWithAI({
         apiKey,
         fridgeItems: fridgeItems.map((fi) => ({
@@ -624,6 +654,7 @@ router.post(
           unit: fi.unit,
           expiryDate: fi.expiryDate,
         })),
+        archivedItems,
         allRecipes: allRecipes.map((r) => ({
           id: r.id,
           title: r.title,
@@ -639,6 +670,7 @@ router.post(
         servings,
         maxBudget,
         includePantryBasics,
+        includeArchivedItems,
         userPrompt,
       });
 
