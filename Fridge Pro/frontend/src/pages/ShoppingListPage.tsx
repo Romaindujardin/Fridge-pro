@@ -812,7 +812,13 @@ export function ShoppingListPage() {
               {aiAllowRepeatMeals && (
                 <div className="flex items-center gap-1.5 font-medium text-purple-700">
                   <Repeat className="w-3.5 h-3.5" />
-                  <span>Batch cooking (x2 repas)</span>
+                  <span>Batch cooking (quantités mutualisées)</span>
+                </div>
+              )}
+              {aiIncludePantryBasics && (
+                <div className="flex items-center gap-1.5 font-medium text-blue-700">
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Essentiels & boissons</span>
                 </div>
               )}
               {aiSuggestNewRecipes && (
@@ -958,7 +964,7 @@ export function ShoppingListPage() {
 
               {/* Options supplémentaires (cases à cocher) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Option Cuisiner pour 2 repas (Batch cooking / Restes) */}
+                {/* Option Mutualiser les quantités (Batch cooking / Multi-repas) */}
                 <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
                   <input
                     type="checkbox"
@@ -973,10 +979,10 @@ export function ShoppingListPage() {
                       className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
                     >
                       <Repeat className="w-3.5 h-3.5 text-purple-600" />
-                      Cuisiner pour 2 repas (batch cooking)
+                      Mutualiser les quantités (batch cooking)
                     </label>
                     <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                      L'IA peut prévoir de consommer un même plat 2 fois (portions doubles / restes) pour vous simplifier la semaine.
+                      Si un gros conditionnement est acheté (ex: 1kg de pâtes + 1kg bolo, grand gratin, chili...), rentabiliser en couvrant plusieurs repas (2, 3 ou plus selon les portions).
                     </p>
                   </div>
                 </div>
@@ -1027,7 +1033,7 @@ export function ShoppingListPage() {
                   </div>
                 </div>
 
-                {/* Option Essentiels du quotidien */}
+                {/* Option Essentiels du quotidien & boissons */}
                 <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
                   <input
                     type="checkbox"
@@ -1042,10 +1048,10 @@ export function ShoppingListPage() {
                       className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
                     >
                       <Package className="w-3.5 h-3.5 text-blue-600" />
-                      Essentiels du quotidien
+                      Essentiels du quotidien & boissons
                     </label>
                     <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                      Ajouter les indispensables de base de la maison (pain, beurre, lait, fruits...).
+                      Boissons habituelles (Coca-Cola, jus, eau), petit-déj (pain, brioche, café, lait, beurre), encas et fruits, notamment ceux en rupture.
                     </p>
                   </div>
                 </div>
@@ -1221,7 +1227,7 @@ export function ShoppingListPage() {
                       {m.isRepeatOrLeftover ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 shrink-0">
                           <Repeat className="w-2.5 h-2.5" />
-                          2ème repas (batch cooking)
+                          {m.details || "Multi-repas / batch cooking"}
                         </span>
                       ) : (
                         <span className="text-[10px] text-gray-500 shrink-0">
