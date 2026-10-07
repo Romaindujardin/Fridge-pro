@@ -620,7 +620,7 @@ router.post(
         orderBy: { createdAt: "desc" },
       });
 
-      // 3. Récupérer l'historique des aliments consommés / archivés si demandé
+      // 3. Récupérer l'historique des aliments consommés / archivés si demandé ou si essentiels du quotidien cochés
       let archivedItems: Array<{
         name: string;
         brand?: string | null;
@@ -630,22 +630,50 @@ router.post(
         finishedDate?: Date | string | null;
       }> = [];
 
-      if (includeArchivedItems) {
+      let outOfStockItems: Array<{
+        name: string;
+        brand?: string | null;
+        unit?: string | null;
+        finishedDate?: Date | string | null;
+      }> = [];
+
+      if (includeArchivedItems || includePantryBasics) {
         const historyRecords = await prisma.purchaseHistory.findMany({
           where: { userId: req.userId },
           include: { ingredient: true },
           orderBy: { finishedDate: "desc" },
-          take: 40,
+          take: 60,
         });
 
-        archivedItems = historyRecords.map((h) => ({
-          name: h.ingredient.name,
-          brand: h.brand,
-          quantity: h.quantity,
-          unit: h.unit,
-          status: h.status,
-          finishedDate: h.finishedDate,
-        }));
+        if (includeArchivedItems) {
+          archivedItems = historyRecords.map((h) => ({
+            name: h.ingredient.name,
+            brand: h.brand,
+            quantity: h.quantity,
+            unit: h.unit,
+            status: h.status,
+            finishedDate: h.finishedDate,
+          }));
+        }
+
+        // Identifier les aliments consommés qui ne sont plus actuellement au frigo (rupture de stock du foyer)
+        const fridgeNames = new Set(
+          fridgeItems.map((fi) => fi.ingredient.name.trim().toLowerCase())
+        );
+        const seenOutOfStock = new Set<string>();
+        for (const h of historyRecords) {
+          const name = h.ingredient.name.trim();
+          const lower = name.toLowerCase();
+          if (!fridgeNames.has(lower) && !seenOutOfStock.has(lower)) {
+            seenOutOfStock.add(lower);
+            outOfStockItems.push({
+              name,
+              brand: h.brand,
+              unit: h.unit,
+              finishedDate: h.finishedDate,
+            });
+          }
+        }
       }
 
       // 4. Appel de Gemini
@@ -659,6 +687,7 @@ router.post(
           expiryDate: fi.expiryDate,
         })),
         archivedItems,
+        outOfStockItems,
         allRecipes: allRecipes.map((r) => ({
           id: r.id,
           title: r.title,

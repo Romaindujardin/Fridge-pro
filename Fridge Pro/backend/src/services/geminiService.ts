@@ -520,6 +520,12 @@ export const generateShoppingListWithAI = async (params: {
     status?: string | null;
     finishedDate?: Date | string | null;
   }[];
+  outOfStockItems?: {
+    name: string;
+    brand?: string | null;
+    unit?: string | null;
+    finishedDate?: Date | string | null;
+  }[];
   allRecipes: {
     id: string;
     title: string;
@@ -551,6 +557,13 @@ export const generateShoppingListWithAI = async (params: {
     ? params.allRecipes.filter((r) => params.targetRecipeIds!.includes(r.id))
     : [];
 
+  const isSweetOrDessertRecipe = (title: string, desc?: string | null) => {
+    const text = `${title} ${desc || ""}`.toLowerCase();
+    return /g[âa]teau|banana\s*bread|cr[êe]pe(?!s?\s+de\s+sarrasin)|pancake|crumble|cookie|muffin|brownie|dessert|fondant|mousse\s*au\s*chocolat|sucr[ée]|pain\s*perdu|brioche\s*perdue|gaufre/i.test(
+      text
+    );
+  };
+
   const fridgeContext = params.fridgeItems.length
     ? `Contenu actuel du frigo et stocks de l'utilisateur (${params.fridgeItems.length} aliments enregistrés) :
 ${params.fridgeItems
@@ -566,6 +579,23 @@ ${params.fridgeItems
   })
   .join("\n")}`
     : "Le frigo est actuellement vide.";
+
+  const outOfStockContext =
+    params.outOfStockItems && params.outOfStockItems.length > 0
+      ? `ALIMENTS DU FOYER TERMINÉS / EN RUPTURE DE STOCK (boissons, petit-déj, snacks récemment épuisés) :
+${params.outOfStockItems
+  .slice(0, 30)
+  .map((i) => {
+    const details = [i.name];
+    if (i.brand) details.push(`(${i.brand})`);
+    if (i.finishedDate) {
+      const finished = new Date(i.finishedDate).toLocaleDateString("fr-FR");
+      details.push(`[terminé le ${finished}]`);
+    }
+    return `- ${details.join(" ")}`;
+  })
+  .join("\n")}`
+      : "";
 
   const archivedContext =
     params.archivedItems && params.archivedItems.length > 0
@@ -610,22 +640,26 @@ ${r.ingredients
     recipesContext = `
 L'utilisateur n'a pas imposé de recettes fixes. Voici son carnet de recettes disponibles (${params.allRecipes.length} recettes au total) :
 ${params.allRecipes
-  .map(
-    (r, idx) =>
-      `### ${idx + 1}. "${r.title}" (${r.servings || 2} pers.) :
+  .map((r, idx) => {
+    const isSweet = isSweetOrDessertRecipe(r.title, r.description);
+    const tag = isSweet
+      ? "[DESSERT / SUCRÉ - INTERDIT EN PLAT PRINCIPAL DU MIDI/SOIR]"
+      : "[PLAT PRINCIPAL SALÉ]";
+    return `### ${idx + 1}. "${r.title}" ${tag} (${r.servings || 2} pers.) :
 Ingrédients : ${r.ingredients
-        .map(
-          (i) =>
-            `${i.name}${i.quantity ? ` (${i.quantity} ${i.unit || ""})` : ""}`
-        )
-        .join(", ")}`
-  )
+      .map(
+        (i) =>
+          `${i.name}${i.quantity ? ` (${i.quantity} ${i.unit || ""})` : ""}`
+      )
+      .join(", ")}`;
+  })
   .join("\n\n")}
 
 Consignes impératives de sélection des recettes :
 - L'utilisateur souhaite planifier EXACTEMENT ${days} repas pour ${targetServings} personne(s).
-- RÈGLE DU FOYER : 1 RECETTE = 1 REPAS POUR 2 PERSONNES (sauf si un nombre différent de portions est expressément indiqué dans la recette).
-- Tu dois sélectionner assez de recettes de son carnet pour couvrir précisément les ${days} repas demandés (par exemple ${days} repas complets).
+- EXCLUSION FORMELLE DES RECETTES SUCRÉES : Les ${days} repas sont STRICTEMENT des déjeuners et dîners salés. INTERDICTION FORMELLE de choisir un gâteau, banana bread, crêpes sucrées, pancakes, crumble ou tout dessert comme repas principal !
+- RÈGLE DU FOYER : 1 recette standard = 1 repas pour 2 personnes (sauf si un nombre différent de portions est expressément indiqué dans la recette).
+- MUTUALISATION DES QUANTITÉS ET BATCH COOKING NATUREL : Si un plat ou conditionnement acheté est volumineux (ex: 1kg de spaghettis + 1kg de bolo, lasagnes, gratin, chili...), il DOIT couvrir plusieurs repas (2, 3 ou plus selon les portions). Tu n'es ABSOLUMENT PAS limité à 2 repas : n'hésite pas à attribuer 2, 3 ou 4 repas à une même préparation généreuse !
 - Pour chacune des recettes retenues, adapte les proportions pour ${targetServings} personne(s).
 `;
   }
@@ -642,37 +676,49 @@ RÈGLES D'OR ABSOLUES :
    - Si un aliment au frigo a une DLC proche, privilégie son utilisation en priorité pour éviter le gaspillage !
    - Inscris TOUS les ingrédients évités grâce au frigo dans "alreadyInFridge" avec une note claire (ex: "Gruyère râpé (utilisé à la place de l'emmental râpé)").
 
-2. MUTUALISATION ET CONDITIONNEMENTS RÉELS DE MAGASIN :
-   - Ne crée PAS de petites quantités isolées impossibles à acheter.
-   - GROUPE et CUMULE les ingrédients identiques ou compatibles entre plusieurs recettes (ex: si 2 recettes nécessitent des spaghettis, propose directement "Spaghettis" quantité "1", unité "kg" ou "paquet de 1kg" avec la mention en note).
-   - Adapte aux formats réels de supermarché (boîte de 6 ou 12 œufs, plaquette de beurre 250g, brique de crème 20cl ou 50cl, filet d'oignons 1kg, etc.).
-   ${
-     params.maxBudget
-       ? `- Budget maximal indicatif visé par l'utilisateur : environ ${params.maxBudget} €. Optimise les choix et conditionnements pour rester dans cette fourchette.`
-       : ""
-   }
-   ${
-     params.includePantryBasics
-       ? "- Inclus également les indispensables du quotidien pour la semaine (ex: pain, lait, café/thé ou fruits frais pour dessert/snack)."
-       : ""
-   }
+2. REPAS PRINCIPAUX DU MIDI ET SOIR (SALÉS UNIQUEMENT - INTERDICTION DES DESSERTS) :
+   - Les ${days} repas planifiés pour la semaine sont impérativement des DÉJEUNERS et DÎNERS.
+   - IL EST STRICTEMENT INTERDIT de sélectionner des recettes sucrées, gâteaux (ex: Gâteau marbré vanille et chocolat, Banana bread), crêpes sucrées, pancakes, cookies, crumbles ou autres desserts comme plat principal du repas !
+   - Tous les ${days} repas doivent être exclusivement de VRAIS PLATS COMPLETS SALÉS (viandes, poissons, œufs, pâtes, riz, gratins, plats mijotés, légumes, tartes salées, etc.).
+   - Même si le carnet de l'utilisateur contient des desserts, NE LES SÉLECTIONNE JAMAIS comme repas principal du midi ou du soir.
 
-3. HISTORIQUE DES ALIMENTS CONSOMMÉS (ARCHIVÉS) :
-   - Si un historique d'aliments consommés/archivés est fourni, analyse-le pour comprendre ce que le foyer consomme couramment et ce qui est récemment tombé en rupture de stock.
-   - Si un ingrédient de base essentiel ou un aliment récurrent apprécié a été récemment terminé/consommé et n'est plus dans le frigo actuel, tu peux judicieusement proposer son réapprovisionnement dans la liste de courses si cela répond aux recettes ou aux besoins du foyer.
-
-4. PLANIFICATION DES ${days} REPAS ET CUISINE EN DOUBLE PORTION (BATCH COOKING) :
-   - RÈGLE FONDAMENTALE : 1 RECETTE = 1 REPAS POUR 2 PERSONNES (sauf si un nombre différent de portions est expressément indiqué dans la recette).
+3. CONDITIONNEMENTS RÉELS ET BATCH COOKING NATUREL (NON LIMITÉ À 2 EXEMPLAIRES) :
+   - Ne crée PAS de petites quantités isolées impossibles à acheter en magasin.
+   - GROUPE et CUMULE les ingrédients identiques ou compatibles entre plusieurs recettes (ex: paquet de 1kg de spaghettis, barquette familiale de viande hachée, filet d'oignons 1kg...).
    ${
      params.allowRepeatMeals !== false
-       ? `- TU PEUX PLANIFIER DE MANGER 2 FOIS LE MÊME PLAT (ex: "Lasagnes - Dîner soir 1" et "Lasagnes - Déjeuner midi 2", ou restes). C'est très avantageux et pratique pour le foyer, car cela évite de cuisiner à chaque repas !
-   - Si tu prévois qu'un plat est mangé 2 fois, adapte les quantités de la recette pour 2 repas complets et note-le clairement dans "coveredRecipes" (ex: "Lasagnes traditionnelles (x2 repas)") et dans "mealPlan".`
+       ? `- Le batch cooking découle du bon sens d'achat et des quantités réelles de magasin, et non d'une répétition artificielle !
+   - Exemple concret : si l'utilisateur achète 1kg de spaghettis et 1kg de sauce bolognaise (ou 800g de viande hachée), ou s'il prépare un grand plat de lasagnes familiales, un gratin ou un grand chili, la quantité cuisinée dépasse largement 1 repas pour 2 personnes !
+   - Cette préparation couvrira naturellement PLUSIEURS REPAS DU FOYER (2, 3 repas ou plus selon les quantités et les portions du foyer).
+   - TU N'ES EN AUCUN CAS LIMITÉ À 2 EXEMPLAIRES : si le format de paquet ou la préparation permet de faire 2, 3 ou 4 repas, prévois ces multiples repas dans le "mealPlan" (ex: "Spaghettis Bolognaise" Repas 1/3, Repas 2/3, Repas 3/3).
+   - C'est une vraie optimisation pratique qui évite à l'utilisateur de devoir cuisiner un plat différent chaque jour et rentabilise les gros conditionnements sans gaspillage !`
        : `- Prévois des repas distincts sans répétition.`
    }
    - Tu dois obligatoirement couvrir l'ensemble des ${days} repas demandés.
    - NE TE LIMITE JAMAIS ARTIFICIELLEMENT EN NOMBRE D'ARTICLES ! Ne te restreins pas à 10 ou 11 aliments : ajoute ABSOLUMENT TOUS les ingrédients nécessaires pour réaliser l'intégralité des ${days} repas (légumes, viandes/poissons, crèmes, fromages, épicerie salée/sucrée, sauces, herbes) qui ne sont pas déjà au frigo.
 
-5. SUGGESTIONS CRÉATIVES DE NOUVELLES RECETTES POUR RENTABILISER LES ACHATS :
+4. ESSENTIELS DU QUOTIDIEN, BOISSONS ET RÉAPPROVISIONNEMENT (RÈGLE MAJEURE SI OPTION ACTIVE) :
+   ${
+     params.includePantryBasics
+       ? `- L'utilisateur a EXPRESSÉMENT COCHÉ l'option "Essentiels du quotidien" ! Tu DOIS OBLIGATOIREMENT ajouter à la liste de courses :
+     * LES BOISSONS DU FOYER : Regarde attentivement la liste des aliments en rupture de stock et l'historique ! S'il y a des boissons (ex: Coca-Cola, Cherry Coca, sodas, Ice Tea, jus Oasis/orange, eau minérale, bière) qui ont été consommées et qui ne sont plus dans le frigo, AJOUTE IMMÉDIATEMENT UNE BOISSON (ex: Coca-Cola ou jus de fruits) dans la catégorie "Boissons" avec la note "Réapprovisionnement boisson habituelle (en rupture)" !
+     * LE PETIT-DÉJEUNER & MATIN : Pain (pain de mie complet, baguette ou brioche si terminée), beurre, lait, café ou thé.
+     * LES FRUITS & ENCAS : Fruits frais de saison (ex: bananes, pommes, clémentines...), yaourts ou compotes, biscuits/chips si consommés régulièrement.
+     * LES INDISPENSABLES DU PLACARD : Essuie-tout, huile, sel si nécessaire.
+   - CES ARTICLES DU QUOTIDIEN DOIVENT TOUS FIGURER DANS "itemsToBuy" ! Ne les oublie JAMAIS lorsque cette option est cochée !`
+       : `- Si un aliment habituel majeur (boisson ou pain) est manifestement en rupture dans l'historique, tu peux judicieusement en proposer le réapprovisionnement.`
+   }
+   ${
+     params.maxBudget
+       ? `- Budget maximal indicatif visé par l'utilisateur : environ ${params.maxBudget} €. Optimise les choix et conditionnements pour rester dans cette fourchette.`
+       : ""
+   }
+
+5. HISTORIQUE DES ALIMENTS CONSOMMÉS (ARCHIVÉS) :
+   - Analyse l'historique pour comprendre ce que le foyer consomme couramment et ce qui est récemment tombé en rupture de stock.
+   - Si un ingrédient de base essentiel ou un aliment récurrent apprécié a été récemment terminé/consommé et n'est plus dans le frigo actuel, propose son réapprovisionnement dans la liste de courses.
+
+6. SUGGESTIONS CRÉATIVES DE NOUVELLES RECETTES POUR RENTABILISER LES ACHATS :
    ${
      params.suggestNewRecipes !== false
        ? `- En plus des repas planifiés, propose dans "suggestedNewRecipes" entre 2 et 4 NOUVELLES IDÉES DE RECETTES qui réutilisent et rentabilisent les conditionnements achetés ou surplus d'ingrédients (ex: "Vous achetez 1kg de spaghettis : 500g pour les carbo + suggestion de Spaghettis à la viande hachée avec le surplus", ou "Avec le reste de barquette de viande hachée, suggestion de Légumes farcis au four").
@@ -684,24 +730,24 @@ RÈGLES D'OR ABSOLUES :
        : `- Laisse "suggestedNewRecipes" vide ([]).`
    }
 
-6. CLASSEMENT PAR RAYONS :
+7. CLASSEMENT PAR RAYONS :
    - Indique pour chaque article son rayon de supermarché parmi : "Fruits & Légumes", "Boucherie & Poissonnerie", "Produits Frais & Crémerie", "Épicerie salée", "Épicerie sucrée", "Boissons", "Surgelés".
 
 Réponds STRICTEMENT avec un JSON valide suivant ce format :
 {
   "listName": "Courses de la semaine (nom évocateur)",
-  "coveredRecipes": ["Tagliatelles carbonara (x2 repas)", "Salade César"],
+  "coveredRecipes": ["Spaghettis bolognaise maison (x2 repas - format 1kg)", "Salade César aux tenders"],
   "mealPlan": [
-    { "mealIndex": 1, "dishName": "Tagliatelles carbonara", "isRepeatOrLeftover": false, "details": "Préparé en portion double pour 2 repas" },
-    { "mealIndex": 2, "dishName": "Tagliatelles carbonara", "isRepeatOrLeftover": true, "details": "Deuxième repas (restes/batch cooking)" },
-    { "mealIndex": 3, "dishName": "Salade César", "isRepeatOrLeftover": false, "details": "Repas frais du soir" }
+    { "mealIndex": 1, "dishName": "Spaghettis bolognaise maison", "isRepeatOrLeftover": false, "details": "Plat chaud préparé en format 1kg pour plusieurs repas" },
+    { "mealIndex": 2, "dishName": "Spaghettis bolognaise maison", "isRepeatOrLeftover": true, "details": "Deuxième repas (batch cooking format familial)" },
+    { "mealIndex": 3, "dishName": "Salade César aux tenders", "isRepeatOrLeftover": false, "details": "Repas frais du soir" }
   ],
   "suggestedNewRecipes": [
     {
-      "title": "Spaghettis bolo express",
-      "description": "Utilise les 500g de spaghettis restants du paquet de 1kg avec la viande hachée achetée.",
-      "mainIngredients": ["Spaghettis", "Viande hachée"],
-      "whySuggested": "Rentabilise le paquet de 1kg de spaghettis et mutualise la viande."
+      "title": "Gratin de pâtes à la viande",
+      "description": "Utilise le reste de viande hachée et de spaghettis avec un peu de fromage au four.",
+      "mainIngredients": ["Spaghettis", "Viande hachée", "Gruyère râpé"],
+      "whySuggested": "Rentabilise le paquet de 1kg et mutualise la viande."
     }
   ],
   "itemsToBuy": [
@@ -709,22 +755,30 @@ Réponds STRICTEMENT avec un JSON valide suivant ce format :
       "name": "Spaghettis",
       "quantity": 1,
       "unit": "kg",
-      "notes": "Format 1kg pour couvrir les pâtes carbo et bolo",
+      "notes": "Format familial 1kg pour couvrir plusieurs repas bolognaise",
       "category": "Épicerie salée",
       "estimatedPrice": 1.80
+    },
+    {
+      "name": "Coca-Cola",
+      "quantity": 1,
+      "unit": "bouteille 1.5L",
+      "notes": "Réapprovisionnement boisson habituelle du foyer (en rupture)",
+      "category": "Boissons",
+      "estimatedPrice": 2.20
     }
   ],
   "alreadyInFridge": [
     {
       "name": "Gruyère râpé",
-      "usedFor": "Pâtes carbonara",
-      "substitutionNote": "Utilisé à la place de l'emmental râpé"
+      "usedFor": "Pâtes bolognaise",
+      "substitutionNote": "Utilisé à la place du parmesan"
     }
   ],
   "tips": [
-    "Format familial 1kg de pâtes choisi pour mutualiser les recettes."
+    "Format familial 1kg de pâtes choisi pour rentabiliser la préparation sur plusieurs repas."
   ],
-  "estimatedTotalCost": 28.50
+  "estimatedTotalCost": 32.50
 }
 Ne renvoie aucun autre texte que ce JSON.`;
 
@@ -735,18 +789,18 @@ ${params.userPrompt?.trim() || "Crée ma liste de courses optimisée pour la sem
 Nombre de repas prévus : EXACTEMENT ${days} repas (à couvrir sans omettre aucun ingrédient).
 Nombre de personnes par repas : ${targetServings} personne(s).
 Règle : 1 recette = 1 repas pour 2 personnes (sauf si un nombre différent de portions est précisé dans la recette).
-${params.allowRepeatMeals !== false ? "Option active : Possibilité de cuisiner pour 2 repas (batch cooking / restes).\n" : ""}
+${params.allowRepeatMeals !== false ? "Option active : Mutualisation des quantités et batch cooking multi-repas autorisés si gros formats achetés.\n" : ""}
 ${params.suggestNewRecipes !== false ? "Option active : Suggérer de nouvelles idées de recettes pour rentabiliser les conditionnements achetés.\n" : ""}
 ${params.maxBudget ? `Budget max souhaité : ${params.maxBudget} €\n` : ""}
 ${
   params.includePantryBasics
-    ? `Option active : Inclure les basiques indispensables de la maison (pain, fruits, etc.)\n`
+    ? `Option active : INCLURE OBLIGATOIREMENT les essentiels du quotidien et boissons du foyer (Coca-Cola, jus, pain, lait, fruits, etc.)\n`
     : ""
 }
 
 ${fridgeContext}
 
-${archivedContext ? `${archivedContext}\n\n` : ""}${recipesContext}
+${outOfStockContext ? `${outOfStockContext}\n\n` : ""}${archivedContext ? `${archivedContext}\n\n` : ""}${recipesContext}
 `;
 
   const result = await model.generateContent([
