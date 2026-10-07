@@ -249,7 +249,8 @@ export interface ExtractReceiptResponse {
 }
 
 export interface GenerateRecipeAIRequest {
-  prompt: string;
+  prompt?: string;
+  userPrompt?: string;
   useFridge?: boolean;
   useExistingRecipes?: boolean;
   specificRecipeId?: string;
