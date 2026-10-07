@@ -272,12 +272,14 @@ export interface SuggestedRecipeIdea {
 
 export interface GenerateShoppingListAIRequest {
   targetRecipeIds?: string[];
+  excludedRecipeIds?: string[];
   daysCount?: number;
   servings?: number;
   maxBudget?: number | null;
   includePantryBasics?: boolean;
   includeArchivedItems?: boolean;
   suggestNewRecipes?: boolean;
+  suggestedRecipesCount?: number;
   allowRepeatMeals?: boolean;
   userPrompt?: string;
   listName?: string;

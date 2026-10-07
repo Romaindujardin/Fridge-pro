@@ -23,6 +23,7 @@ import {
   History,
   Minus,
   Repeat,
+  Ban,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -94,9 +95,13 @@ export function ShoppingListPage() {
   const [aiIncludePantryBasics, setAiIncludePantryBasics] = useState<boolean>(false);
   const [aiIncludeArchivedItems, setAiIncludeArchivedItems] = useState<boolean>(true);
   const [aiSuggestNewRecipes, setAiSuggestNewRecipes] = useState<boolean>(true);
+  const [aiSuggestedRecipesCount, setAiSuggestedRecipesCount] = useState<number>(2);
   const [aiAllowRepeatMeals, setAiAllowRepeatMeals] = useState<boolean>(true);
   const [aiSelectedRecipeIds, setAiSelectedRecipeIds] = useState<string[]>([]);
   const [aiRecipeSearch, setAiRecipeSearch] = useState<string>("");
+  const [aiEnableExcludeRecipes, setAiEnableExcludeRecipes] = useState<boolean>(false);
+  const [aiExcludedRecipeIds, setAiExcludedRecipeIds] = useState<string[]>([]);
+  const [aiExcludeRecipeSearch, setAiExcludeRecipeSearch] = useState<string>("");
   const [aiUserPrompt, setAiUserPrompt] = useState<string>("");
 
   // Modale récapitulatif post-génération IA
@@ -193,6 +198,8 @@ export function ShoppingListPage() {
       setIsAiModalOpen(false);
       setAiUserPrompt("");
       setAiSelectedRecipeIds([]);
+      setAiExcludedRecipeIds([]);
+      setAiEnableExcludeRecipes(false);
       setAiSummaryData({
         listName: data.shoppingList.name,
         summary: data.summary,
@@ -824,7 +831,13 @@ export function ShoppingListPage() {
               {aiSuggestNewRecipes && (
                 <div className="flex items-center gap-1.5 font-medium text-emerald-700">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Idées recettes surplus</span>
+                  <span>Idées recettes ({aiSuggestedRecipesCount})</span>
+                </div>
+              )}
+              {aiEnableExcludeRecipes && aiExcludedRecipeIds.length > 0 && (
+                <div className="flex items-center gap-1.5 font-medium text-rose-700">
+                  <Ban className="w-3.5 h-3.5" />
+                  <span>{aiExcludedRecipeIds.length} exclue(s)</span>
                 </div>
               )}
             </div>
@@ -988,26 +1001,77 @@ export function ShoppingListPage() {
                 </div>
 
                 {/* Option Suggestions de nouvelles recettes pour mutualiser */}
-                <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
-                  <input
-                    type="checkbox"
-                    id="aiSuggestNewRecipes"
-                    checked={aiSuggestNewRecipes}
-                    onChange={(e) => setAiSuggestNewRecipes(e.target.checked)}
-                    className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
-                  />
-                  <div>
-                    <label
-                      htmlFor="aiSuggestNewRecipes"
-                      className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      Suggérer de nouvelles recettes
-                    </label>
-                    <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                      Idées pour rentabiliser les gros formats et surplus d'ingrédients (ex: paquet 1kg de pâtes, viande hachée...).
-                    </p>
+                <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+                  <div className="flex items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      id="aiSuggestNewRecipes"
+                      checked={aiSuggestNewRecipes}
+                      onChange={(e) => setAiSuggestNewRecipes(e.target.checked)}
+                      className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <label
+                        htmlFor="aiSuggestNewRecipes"
+                        className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                        Suggérer de nouvelles recettes
+                      </label>
+                      <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                        Idées pour rentabiliser les gros formats et surplus d'ingrédients (ex: paquet 1kg de pâtes, viande hachée...).
+                      </p>
+                    </div>
                   </div>
+
+                  {aiSuggestNewRecipes && (
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200/60 pl-6">
+                      <span className="text-[11px] font-medium text-gray-700">
+                        Suggestions d'idées (sur vos {aiDaysCount} repas) :
+                      </span>
+                      <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAiSuggestedRecipesCount((prev) => Math.max(1, prev - 1))
+                          }
+                          disabled={aiSuggestedRecipesCount <= 1}
+                          className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                          aria-label="Diminuer les suggestions"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max={Math.max(1, aiDaysCount)}
+                          value={aiSuggestedRecipesCount}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val)) {
+                              setAiSuggestedRecipesCount(
+                                Math.min(Math.max(1, aiDaysCount), Math.max(1, val))
+                              );
+                            }
+                          }}
+                          className="w-10 text-center py-1 text-xs font-semibold text-gray-900 border-x border-gray-300 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAiSuggestedRecipesCount((prev) =>
+                              Math.min(Math.max(1, aiDaysCount), prev + 1)
+                            )
+                          }
+                          disabled={aiSuggestedRecipesCount >= Math.max(1, aiDaysCount)}
+                          className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                          aria-label="Augmenter les suggestions"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Option Aliments archivés */}
@@ -1097,19 +1161,28 @@ export function ShoppingListPage() {
                         : true
                     )
                     .map((recipe) => {
-                      const isSelected = aiSelectedRecipeIds.includes(recipe.id);
+                      const isExcluded =
+                        aiEnableExcludeRecipes && aiExcludedRecipeIds.includes(recipe.id);
+                      const isSelected =
+                        aiSelectedRecipeIds.includes(recipe.id) && !isExcluded;
                       return (
                         <label
                           key={recipe.id}
-                          className={`flex items-center justify-between px-3 py-2 text-xs cursor-pointer transition-colors ${
-                            isSelected ? "bg-primary-50/70" : "hover:bg-gray-50"
+                          className={`flex items-center justify-between px-3 py-2 text-xs transition-colors ${
+                            isExcluded
+                              ? "bg-gray-100/80 opacity-50 cursor-not-allowed select-none"
+                              : isSelected
+                              ? "bg-primary-50/70 cursor-pointer"
+                              : "hover:bg-gray-50 cursor-pointer"
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
                             <input
                               type="checkbox"
                               checked={isSelected}
+                              disabled={isExcluded}
                               onChange={() => {
+                                if (isExcluded) return;
                                 if (isSelected) {
                                   setAiSelectedRecipeIds(
                                     aiSelectedRecipeIds.filter((id) => id !== recipe.id)
@@ -1118,22 +1191,149 @@ export function ShoppingListPage() {
                                   setAiSelectedRecipeIds([...aiSelectedRecipeIds, recipe.id]);
                                 }
                               }}
-                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer disabled:cursor-not-allowed"
                             />
-                            <span className="font-medium text-gray-800">
+                            <span
+                              className={`font-medium ${
+                                isExcluded
+                                  ? "line-through text-gray-400"
+                                  : isSelected
+                                  ? "text-primary-900 font-semibold"
+                                  : "text-gray-800"
+                              }`}
+                            >
                               {recipe.title}
                             </span>
                           </div>
-                          <span className="text-[10px] text-gray-400">
-                            {recipe.ingredients.length} ingrédient(s)
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {isExcluded && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500 font-medium">
+                                ⛔ Exclue ci-dessous
+                              </span>
+                            )}
+                            <span className="text-[10px] text-gray-400">
+                              {recipe.ingredients.length} ingrédient(s)
+                            </span>
+                          </div>
                         </label>
                       );
                     })}
                 </div>
               </div>
 
-              {/* 4. Consigne ou demande libre */}
+              {/* 4. Exclure des recettes (optionnel) */}
+              <div className="space-y-2 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="aiEnableExcludeRecipes"
+                      checked={aiEnableExcludeRecipes}
+                      onChange={(e) => {
+                        setAiEnableExcludeRecipes(e.target.checked);
+                        if (!e.target.checked) {
+                          setAiExcludedRecipeIds([]);
+                        }
+                      }}
+                      className="rounded border-gray-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                    />
+                    <label
+                      htmlFor="aiEnableExcludeRecipes"
+                      className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
+                    >
+                      <Ban className="w-3.5 h-3.5 text-rose-600" />
+                      Exclure des recettes de la sélection (optionnel)
+                    </label>
+                  </div>
+                  {aiEnableExcludeRecipes && aiExcludedRecipeIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAiExcludedRecipeIds([])}
+                      className="text-[11px] text-rose-600 hover:underline"
+                    >
+                      Désélectionner tout ({aiExcludedRecipeIds.length})
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-gray-500">
+                  Par défaut, toutes vos recettes sont éligibles. Cochez ci-dessous celles que vous refusez de cuisiner : elles seront grisées dans la liste ci-dessus et interdites à l'IA.
+                </p>
+
+                {aiEnableExcludeRecipes && (
+                  <div className="pt-2 border-t border-gray-200/70 space-y-2 animate-in fade-in duration-150">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <Input
+                        placeholder="Filtrer les recettes à exclure..."
+                        value={aiExcludeRecipeSearch}
+                        onChange={(e) => setAiExcludeRecipeSearch(e.target.value)}
+                        className="pl-8 text-xs py-1.5 bg-white"
+                      />
+                    </div>
+
+                    <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100 bg-white">
+                      {recipes
+                        .filter((r) =>
+                          aiExcludeRecipeSearch.trim()
+                            ? r.title.toLowerCase().includes(aiExcludeRecipeSearch.toLowerCase())
+                            : true
+                        )
+                        .map((recipe) => {
+                          const isExcluded = aiExcludedRecipeIds.includes(recipe.id);
+                          return (
+                            <label
+                              key={recipe.id}
+                              className={`flex items-center justify-between px-3 py-2 text-xs cursor-pointer transition-colors ${
+                                isExcluded ? "bg-rose-50/80" : "hover:bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <input
+                                  type="checkbox"
+                                  checked={isExcluded}
+                                  onChange={() => {
+                                    if (isExcluded) {
+                                      setAiExcludedRecipeIds(
+                                        aiExcludedRecipeIds.filter((id) => id !== recipe.id)
+                                      );
+                                    } else {
+                                      setAiExcludedRecipeIds([...aiExcludedRecipeIds, recipe.id]);
+                                      // Retirer de la sélection des recettes ci-dessus
+                                      setAiSelectedRecipeIds((prev) =>
+                                        prev.filter((id) => id !== recipe.id)
+                                      );
+                                    }
+                                  }}
+                                  className="rounded border-gray-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                                />
+                                <span
+                                  className={`font-medium ${
+                                    isExcluded ? "text-rose-900 font-semibold" : "text-gray-800"
+                                  }`}
+                                >
+                                  {recipe.title}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isExcluded && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-medium">
+                                    ⛔ Exclue
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-gray-400">
+                                  {recipe.ingredients.length} ingrédient(s)
+                                </span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 5. Consigne ou demande libre */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
                   Consigne particulière pour l'IA (optionnel)
@@ -1169,8 +1369,13 @@ export function ShoppingListPage() {
                   includePantryBasics: aiIncludePantryBasics,
                   includeArchivedItems: aiIncludeArchivedItems,
                   suggestNewRecipes: aiSuggestNewRecipes,
+                  suggestedRecipesCount: aiSuggestNewRecipes ? aiSuggestedRecipesCount : undefined,
                   allowRepeatMeals: aiAllowRepeatMeals,
                   targetRecipeIds: aiSelectedRecipeIds.length > 0 ? aiSelectedRecipeIds : undefined,
+                  excludedRecipeIds:
+                    aiEnableExcludeRecipes && aiExcludedRecipeIds.length > 0
+                      ? aiExcludedRecipeIds
+                      : undefined,
                   userPrompt: aiUserPrompt.trim() || undefined,
                 });
               }}
