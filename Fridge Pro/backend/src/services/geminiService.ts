@@ -414,3 +414,271 @@ ${recipesContext ? `\n${recipesContext}` : ""}
     tips: raw.tips?.map((tip) => tip.trim()).filter(Boolean),
   };
 };
+
+// Schéma de validation pour la génération intelligente de liste de courses
+const GENERATED_SHOPPING_LIST_SCHEMA = z.object({
+  listName: z.string().default("Courses de la semaine"),
+  coveredRecipes: z.array(z.string()).default([]),
+  itemsToBuy: z
+    .array(
+      z.object({
+        name: z.string(),
+        quantity: z.union([z.number(), z.string()]).default(1),
+        unit: z.string().default("pièce"),
+        notes: z.string().nullish(),
+        category: z.string().nullish(),
+        estimatedPrice: z.union([z.number(), z.string()]).nullish(),
+      })
+    )
+    .default([]),
+  alreadyInFridge: z
+    .array(
+      z.object({
+        name: z.string(),
+        usedFor: z.string().nullish().default(""),
+        substitutionNote: z.string().nullish(),
+      })
+    )
+    .default([]),
+  tips: z.array(z.string()).nullish(),
+  estimatedTotalCost: z.union([z.number(), z.string()]).nullish(),
+});
+
+export type GeneratedShoppingList = {
+  listName: string;
+  coveredRecipes: string[];
+  itemsToBuy: {
+    name: string;
+    quantity: number;
+    unit: string;
+    notes?: string;
+    category?: string;
+    estimatedPrice?: number;
+  }[];
+  alreadyInFridge: {
+    name: string;
+    usedFor: string;
+    substitutionNote?: string;
+  }[];
+  tips?: string[];
+  estimatedTotalCost?: number;
+};
+
+/**
+ * Génère une liste de courses mutualisée et intelligente avec Gemini
+ * en prenant en compte le frigo, les équivalences (ex: gruyère vs emmental),
+ * le nombre de repas, le budget et le conditionnement en supermarché.
+ */
+export const generateShoppingListWithAI = async (params: {
+  apiKey?: string;
+  fridgeItems: {
+    name: string;
+    brand?: string | null;
+    quantity?: number | null;
+    unit?: string | null;
+    expiryDate?: Date | string | null;
+  }[];
+  allRecipes: {
+    id: string;
+    title: string;
+    description?: string | null;
+    ingredients: {
+      name: string;
+      quantity?: number | null;
+      unit?: string | null;
+    }[];
+  }[];
+  targetRecipeIds?: string[];
+  daysCount?: number;
+  servings?: number;
+  maxBudget?: number | null;
+  includePantryBasics?: boolean;
+  userPrompt?: string;
+}): Promise<GeneratedShoppingList> => {
+  const model = getModel(params.apiKey);
+  const targetServings =
+    params.servings && params.servings > 0 ? Math.round(params.servings) : 2;
+  const days =
+    params.daysCount && params.daysCount > 0 ? Math.round(params.daysCount) : 4;
+
+  const targetRecipes = params.targetRecipeIds?.length
+    ? params.allRecipes.filter((r) => params.targetRecipeIds!.includes(r.id))
+    : [];
+
+  const fridgeContext = params.fridgeItems.length
+    ? `Contenu actuel du frigo et stocks de l'utilisateur (${params.fridgeItems.length} aliments enregistrés) :
+${params.fridgeItems
+  .map((i) => {
+    const details = [i.name];
+    if (i.brand) details.push(`(${i.brand})`);
+    if (i.quantity) details.push(`${i.quantity} ${i.unit || ""}`);
+    if (i.expiryDate) {
+      const exp = new Date(i.expiryDate).toLocaleDateString("fr-FR");
+      details.push(`[DLC: ${exp}]`);
+    }
+    return `- ${details.join(" ")}`;
+  })
+  .join("\n")}`
+    : "Le frigo est actuellement vide.";
+
+  let recipesContext = "";
+  if (targetRecipes.length > 0) {
+    recipesContext = `
+Recettes expressément sélectionnées par l'utilisateur (${targetRecipes.length} recettes à préparer) :
+${targetRecipes
+  .map(
+    (r, idx) => `### Recette ${idx + 1} : "${r.title}"
+${r.description ? `Description : ${r.description}\n` : ""}Ingrédients requis :
+${r.ingredients
+  .map(
+    (ing) =>
+      `- ${ing.name}${
+        ing.quantity ? ` : ${ing.quantity} ${ing.unit || ""}` : ""
+      }`
+  )
+  .join("\n")}`
+  )
+  .join("\n\n")}
+`;
+  } else {
+    recipesContext = `
+L'utilisateur n'a pas imposé de recettes fixes. Voici son carnet de recettes disponibles (${params.allRecipes.length} recettes au total) :
+${params.allRecipes
+  .slice(0, 35)
+  .map(
+    (r) =>
+      `- "${r.title}" (Ingrédients clés : ${r.ingredients
+        .slice(0, 8)
+        .map((i) => i.name)
+        .join(", ")})`
+  )
+  .join("\n")}
+
+Consigne : Choisis judicieusement environ ${days} recettes parmi son carnet qui se marient bien, plaisent à l'utilisateur et maximisent la réutilisation des mêmes ingrédients frais ou de base pour éviter le gaspillage.
+`;
+  }
+
+  const systemPrompt = `
+Tu es un majordome et chef cuisinier expert en optimisation de courses ménagères et gestion intelligente de frigo.
+Ton objectif est de créer une liste de courses ultra-optimisée, réaliste et économique pour ${targetServings} personne(s).
+
+RÈGLES D'OR ABSOLUES :
+1. BON SENS CULINAIRE ET ÉQUIVALENCES DU FRIGO :
+   - Examine très attentivement le contenu du frigo de l'utilisateur.
+   - Fais preuve d'intelligence culinaire et de bon sens : si une recette demande de l'emmental râpé et que le frigo contient du gruyère râpé, compte le gruyère du frigo comme équivalent et NE RAJOUTE PAS d'emmental à la liste !
+   - De même pour les équivalences évidentes (lardons / bacon, crème liquide / crème fraîche, beurre doux / demi-sel, coulis / pulpe de tomate, oignons jaunes / blancs, etc.) et les stocks partiels.
+   - Si un aliment au frigo a une DLC proche, privilégie son utilisation en priorité pour éviter le gaspillage !
+   - Inscris TOUS les ingrédients évités grâce au frigo dans "alreadyInFridge" avec une note claire (ex: "Gruyère râpé (utilisé à la place de l'emmental râpé)").
+
+2. MUTUALISATION ET CONDITIONNEMENTS RÉELS DE MAGASIN :
+   - Ne crée PAS de petites quantités isolées impossibles à acheter.
+   - GROUPE et CUMULE les ingrédients identiques ou compatibles entre plusieurs recettes (ex: si 2 recettes nécessitent des spaghettis, propose directement "Spaghettis" quantité "1", unité "kg" ou "paquet de 1kg" avec la mention en note).
+   - Adapte aux formats réels de supermarché (boîte de 6 ou 12 œufs, plaquette de beurre 250g, brique de crème 20cl ou 50cl, filet d'oignons 1kg, etc.).
+   ${
+     params.maxBudget
+       ? `- Budget maximal indicatif visé par l'utilisateur : environ ${params.maxBudget} €. Optimise les choix et conditionnements pour rester dans cette fourchette.`
+       : ""
+   }
+   ${
+     params.includePantryBasics
+       ? "- Inclus également les indispensables du quotidien pour la semaine (ex: pain, lait, café/thé ou fruits frais pour dessert/snack)."
+       : ""
+   }
+
+3. CLASSEMENT PAR RAYONS :
+   - Indique pour chaque article son rayon de supermarché parmi : "Fruits & Légumes", "Boucherie & Poissonnerie", "Produits Frais & Crémerie", "Épicerie salée", "Épicerie sucrée", "Boissons", "Surgelés".
+
+Réponds STRICTEMENT avec un JSON valide suivant ce format :
+{
+  "listName": "Courses de la semaine (nom évocateur)",
+  "coveredRecipes": ["Nom Recette 1", "Nom Recette 2"],
+  "itemsToBuy": [
+    {
+      "name": "Spaghettis",
+      "quantity": 1,
+      "unit": "kg",
+      "notes": "Format 1kg pour couvrir les pâtes carbo et bolo",
+      "category": "Épicerie salée",
+      "estimatedPrice": 1.80
+    }
+  ],
+  "alreadyInFridge": [
+    {
+      "name": "Gruyère râpé",
+      "usedFor": "Pâtes carbonara",
+      "substitutionNote": "Utilisé à la place de l'emmental râpé"
+    }
+  ],
+  "tips": [
+    "Format familial 1kg de pâtes choisi pour mutualiser les deux recettes."
+  ],
+  "estimatedTotalCost": 28.50
+}
+Ne renvoie aucun autre texte que ce JSON.`;
+
+  const userPromptText = `
+Demande utilisateur :
+${params.userPrompt?.trim() || "Crée ma liste de courses optimisée pour la semaine."}
+
+Nombre de personnes / portions : ${targetServings} personne(s).
+Nombre de jours / repas prévus : ${days} repas/jours.
+${params.maxBudget ? `Budget max souhaité : ${params.maxBudget} €\n` : ""}
+${
+  params.includePantryBasics
+    ? `Option active : Inclure les basiques indispensables de la maison (pain, fruits, etc.)\n`
+    : ""
+}
+
+${fridgeContext}
+
+${recipesContext}
+`;
+
+  const result = await model.generateContent([
+    { text: systemPrompt },
+    { text: userPromptText },
+  ]);
+
+  const responseText = result.response?.text()?.trim().replace(/\r/g, "");
+  if (!responseText) {
+    throw new Error("Aucune réponse reçue du modèle IA.");
+  }
+
+  const parsed = extractJson(responseText);
+  const raw = GENERATED_SHOPPING_LIST_SCHEMA.parse(parsed);
+
+  const normalizeQty = (val: number | string | undefined | null) => {
+    if (val === undefined || val === null || val === "") return 1;
+    const n =
+      typeof val === "number" ? val : Number(String(val).replace(",", "."));
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  };
+
+  const normalizePrice = (val: number | string | undefined | null) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    const n =
+      typeof val === "number" ? val : Number(String(val).replace(",", "."));
+    return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : undefined;
+  };
+
+  return {
+    listName: raw.listName.trim() || "Courses optimisées IA",
+    coveredRecipes: raw.coveredRecipes.map((r) => r.trim()).filter(Boolean),
+    itemsToBuy: raw.itemsToBuy.map((item) => ({
+      name: item.name.trim(),
+      quantity: normalizeQty(item.quantity),
+      unit: item.unit?.trim() || "pièce",
+      notes: item.notes?.trim() || undefined,
+      category: item.category?.trim() || "Épicerie",
+      estimatedPrice: normalizePrice(item.estimatedPrice),
+    })),
+    alreadyInFridge: raw.alreadyInFridge.map((f) => ({
+      name: f.name.trim(),
+      usedFor: f.usedFor?.trim() || "",
+      substitutionNote: f.substitutionNote?.trim() || undefined,
+    })),
+    tips: raw.tips?.map((t) => t.trim()).filter(Boolean),
+    estimatedTotalCost: normalizePrice(raw.estimatedTotalCost),
+  };
+};
+

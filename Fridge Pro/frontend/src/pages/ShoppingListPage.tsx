@@ -14,6 +14,12 @@ import {
   Calendar,
   Package,
   ChefHat,
+  Sparkles,
+  DollarSign,
+  Users,
+  CheckCircle2,
+  SlidersHorizontal,
+  Search,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -22,11 +28,14 @@ import { Modal } from "@/components/ui/Modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { shoppingListService } from "@/services/shoppingListService";
 import { fridgeService } from "@/services/fridgeService";
+import { recipeService } from "@/services/recipeService";
 import type {
   ShoppingList,
   CreateShoppingListRequest,
   AddShoppingListItemRequest,
   Ingredient,
+  GenerateShoppingListAIRequest,
+  GenerateShoppingListAIResponse,
 } from "@/types";
 
 // Convertit et normalise un nombre décimal (gère virgule et point)
@@ -73,10 +82,42 @@ export function ShoppingListPage() {
   const [ingredientInputValue, setIngredientInputValue] = useState("");
   const queryClient = useQueryClient();
 
+  // Modale & options de génération IA
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [aiDaysCount, setAiDaysCount] = useState<number>(4);
+  const [aiServings, setAiServings] = useState<number>(2);
+  const [aiMaxBudget, setAiMaxBudget] = useState<string>("");
+  const [aiIncludePantryBasics, setAiIncludePantryBasics] = useState<boolean>(false);
+  const [aiSelectedRecipeIds, setAiSelectedRecipeIds] = useState<string[]>([]);
+  const [aiRecipeSearch, setAiRecipeSearch] = useState<string>("");
+  const [aiUserPrompt, setAiUserPrompt] = useState<string>("");
+
+  // Modale récapitulatif post-génération IA
+  const [aiSummaryData, setAiSummaryData] = useState<{
+    listName: string;
+    summary: GenerateShoppingListAIResponse["summary"];
+  } | null>(null);
+  const [isAiSummaryModalOpen, setIsAiSummaryModalOpen] = useState(false);
+
   // Récupérer les listes de courses
   const { data: shoppingLists = [], isLoading } = useQuery({
     queryKey: ["shoppingLists"],
     queryFn: shoppingListService.getShoppingLists,
+  });
+
+  // Récupérer les recettes existantes pour la sélection IA
+  const { data: recipes = [] } = useQuery({
+    queryKey: ["recipes"],
+    queryFn: () => recipeService.getRecipes({ limit: 100 }),
+    staleTime: 60 * 1000,
+  });
+
+  // Récupérer les aliments du frigo
+  const { data: fridgeItems = [] } = useQuery({
+    queryKey: ["fridgeItems"],
+    queryFn: fridgeService.getFridgeItems,
+    staleTime: 60 * 1000,
   });
 
   // Récupérer les ingrédients pour le formulaire
@@ -105,6 +146,30 @@ export function ShoppingListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shoppingLists"] });
       toast.success("Liste supprimée !");
+    },
+  });
+
+  // Mutation génération automatique IA
+  const generateAiListMutation = useMutation({
+    mutationFn: (payload: GenerateShoppingListAIRequest) =>
+      shoppingListService.generateShoppingListWithAI(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["shoppingLists"] });
+      setIsAiModalOpen(false);
+      setAiUserPrompt("");
+      setAiSelectedRecipeIds([]);
+      setAiSummaryData({
+        listName: data.shoppingList.name,
+        summary: data.summary,
+      });
+      setIsAiSummaryModalOpen(true);
+      toast.success("Liste de courses générée avec succès !");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.message ||
+          "Erreur lors de la génération IA de la liste de courses"
+      );
     },
   });
 
@@ -279,13 +344,24 @@ export function ShoppingListPage() {
           </p>
         </div>
 
-        <Button
-          onClick={() => setIsCreateListModalOpen(true)}
-          className="flex items-center"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle liste
-        </Button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            onClick={() => setIsAiModalOpen(true)}
+            className="flex items-center bg-gradient-to-r from-purple-600 via-indigo-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white shadow-md shadow-indigo-500/20"
+          >
+            <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
+            Génération Auto (IA)
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setIsCreateListModalOpen(true)}
+            className="flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle liste
+          </Button>
+        </div>
       </div>
 
       {/* Statistiques */}
@@ -341,10 +417,19 @@ export function ShoppingListPage() {
             <p className="text-gray-500 mb-6">
               Créez votre première liste pour commencer à organiser vos achats
             </p>
-            <Button onClick={() => setIsCreateListModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Créer ma première liste
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                onClick={() => setIsAiModalOpen(true)}
+                className="flex items-center bg-gradient-to-r from-purple-600 via-indigo-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white shadow-md shadow-indigo-500/20"
+              >
+                <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
+                Générer ma liste automatiquement (IA)
+              </Button>
+              <Button variant="outline" onClick={() => setIsCreateListModalOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Créer manuellement
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
@@ -643,6 +728,368 @@ export function ShoppingListPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modale Génération Auto IA */}
+      <Modal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        title="Génération automatique de liste (IA)"
+        size="lg"
+      >
+        <div className="space-y-6">
+          {/* Bannière explicative d'optimisation */}
+          <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-emerald-50 border border-indigo-100 rounded-2xl p-4 text-xs text-gray-700 space-y-2">
+            <div className="flex items-center gap-2 text-indigo-900 font-semibold text-sm">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <span>Optimisation intelligente des courses</span>
+            </div>
+            <p className="text-gray-600 leading-relaxed">
+              L'IA croise vos recettes prévues avec les stocks réels de votre frigo (<strong>{fridgeItems.length} aliments en stock</strong>). Elle applique le bon sens culinaire (équivalences gruyère / emmental, stocks partiels), déduit ce que vous possédez déjà et mutualise les quantités en conditionnements de supermarché (ex: 1kg de spaghettis pour 2 plats).
+            </p>
+          </div>
+
+          {/* Mode par défaut en résumé rapide */}
+          <div className="bg-gray-50/80 border border-gray-200/80 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-4 text-gray-700">
+              <div className="flex items-center gap-1.5 font-medium">
+                <Calendar className="w-4 h-4 text-primary-600" />
+                <span>{aiDaysCount} jours / repas</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <Users className="w-4 h-4 text-primary-600" />
+                <span>{aiServings} personnes</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <ChefHat className="w-4 h-4 text-primary-600" />
+                <span>
+                  {aiSelectedRecipeIds.length > 0
+                    ? `${aiSelectedRecipeIds.length} recette(s) choisie(s)`
+                    : "Sélection automatique selon le frigo"}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
+              className="text-primary-700 hover:text-primary-800 font-semibold flex items-center gap-1 underline underline-offset-2 ml-auto"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              {isCustomizeOpen ? "Réduire les options" : "Personnaliser les critères"}
+            </button>
+          </div>
+
+          {/* Section personnalisation (accordéon) */}
+          {isCustomizeOpen && (
+            <div className="space-y-5 pt-1 border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-150">
+              {/* 1. Nombre de repas et portions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-primary-600" />
+                    Nombre de jours / repas
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {[2, 3, 4, 5, 7].map((days) => (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => setAiDaysCount(days)}
+                        className={`px-3 py-1.5 text-xs rounded-lg font-medium border transition-all ${
+                          aiDaysCount === days
+                            ? "bg-primary-50 border-primary-500 text-primary-700 shadow-sm"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {days}j
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-primary-600" />
+                    Nombre de personnes (portions)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 4, 6].map((serv) => (
+                      <button
+                        key={serv}
+                        type="button"
+                        onClick={() => setAiServings(serv)}
+                        className={`px-3 py-1.5 text-xs rounded-lg font-medium border transition-all ${
+                          aiServings === serv
+                            ? "bg-primary-50 border-primary-500 text-primary-700 shadow-sm"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {serv} pers.
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Budget max estimé (optionnel) & Basiques */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                    Budget maximum estimé (€) (optionnel)
+                  </label>
+                  <Input
+                    type="number"
+                    min="5"
+                    max="500"
+                    step="5"
+                    placeholder="Ex : 40 € (laisser vide pour sans limite)"
+                    value={aiMaxBudget}
+                    onChange={(e) => setAiMaxBudget(e.target.value)}
+                    className="text-xs py-2 bg-white"
+                  />
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    L'IA privilégiera les conditionnements économiques et ingrédients abordables.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5 text-blue-600" />
+                    Essentiels du quotidien
+                  </label>
+                  <div className="flex items-start gap-2.5 p-2.5 bg-gray-50 rounded-xl border border-gray-200/80">
+                    <input
+                      type="checkbox"
+                      id="aiIncludePantryBasics"
+                      checked={aiIncludePantryBasics}
+                      onChange={(e) => setAiIncludePantryBasics(e.target.checked)}
+                      className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                    />
+                    <label
+                      htmlFor="aiIncludePantryBasics"
+                      className="text-xs text-gray-700 leading-snug cursor-pointer select-none"
+                    >
+                      Ajouter les indispensables de la maison (pain, beurre, lait, fruits...)
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Sélection des recettes spécifiques (optionnel) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                    <ChefHat className="w-3.5 h-3.5 text-indigo-600" />
+                    Choisir des recettes précises (optionnel)
+                  </label>
+                  {aiSelectedRecipeIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAiSelectedRecipeIds([])}
+                      className="text-[11px] text-red-600 hover:underline"
+                    >
+                      Désélectionner tout ({aiSelectedRecipeIds.length})
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-gray-500">
+                  Par défaut, l'IA choisit les meilleures recettes selon votre frigo. Vous pouvez cocher ci-dessous celles que vous voulez absolument cuisiner.
+                </p>
+
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    placeholder="Filtrer mes recettes..."
+                    value={aiRecipeSearch}
+                    onChange={(e) => setAiRecipeSearch(e.target.value)}
+                    className="pl-8 text-xs py-1.5 bg-white"
+                  />
+                </div>
+
+                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100 bg-white">
+                  {recipes
+                    .filter((r) =>
+                      aiRecipeSearch.trim()
+                        ? r.title.toLowerCase().includes(aiRecipeSearch.toLowerCase())
+                        : true
+                    )
+                    .map((recipe) => {
+                      const isSelected = aiSelectedRecipeIds.includes(recipe.id);
+                      return (
+                        <label
+                          key={recipe.id}
+                          className={`flex items-center justify-between px-3 py-2 text-xs cursor-pointer transition-colors ${
+                            isSelected ? "bg-primary-50/70" : "hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                if (isSelected) {
+                                  setAiSelectedRecipeIds(
+                                    aiSelectedRecipeIds.filter((id) => id !== recipe.id)
+                                  );
+                                } else {
+                                  setAiSelectedRecipeIds([...aiSelectedRecipeIds, recipe.id]);
+                                }
+                              }}
+                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                            />
+                            <span className="font-medium text-gray-800">
+                              {recipe.title}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-gray-400">
+                            {recipe.ingredients.length} ingrédient(s)
+                          </span>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* 4. Consigne ou demande libre */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Consigne particulière pour l'IA (optionnel)
+                </label>
+                <Input
+                  placeholder="Ex : Repas légers pour le soir, privilégier des légumes, pas de porc..."
+                  value={aiUserPrompt}
+                  onChange={(e) => setAiUserPrompt(e.target.value)}
+                  className="text-xs py-2 bg-white"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Boutons d'action */}
+          <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAiModalOpen(false)}
+              disabled={generateAiListMutation.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                const parsedBudget = aiMaxBudget ? parseFloat(aiMaxBudget) : null;
+                generateAiListMutation.mutate({
+                  daysCount: aiDaysCount,
+                  servings: aiServings,
+                  maxBudget: parsedBudget && parsedBudget > 0 ? parsedBudget : null,
+                  includePantryBasics: aiIncludePantryBasics,
+                  targetRecipeIds: aiSelectedRecipeIds.length > 0 ? aiSelectedRecipeIds : undefined,
+                  userPrompt: aiUserPrompt.trim() || undefined,
+                });
+              }}
+              loading={generateAiListMutation.isPending}
+              className="bg-gradient-to-r from-purple-600 via-indigo-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white shadow-md shadow-indigo-500/20"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Générer la liste optimisée
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modale Récapitulatif IA post-génération */}
+      <Modal
+        isOpen={isAiSummaryModalOpen}
+        onClose={() => setIsAiSummaryModalOpen(false)}
+        title="✨ Votre liste de courses est prête !"
+        size="md"
+      >
+        {aiSummaryData && (
+          <div className="space-y-5">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-emerald-900">
+              <h4 className="font-bold text-sm mb-1 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>{aiSummaryData.listName}</span>
+              </h4>
+              <p className="text-xs text-emerald-800">
+                La liste a été créée et ajoutée à vos listes actives avec tous ses articles classés par rayon.
+              </p>
+            </div>
+
+            {/* Recettes couvertes */}
+            {aiSummaryData.summary.coveredRecipes.length > 0 && (
+              <div>
+                <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <ChefHat className="w-3.5 h-3.5 text-primary-600" />
+                  Plats prévus ({aiSummaryData.summary.coveredRecipes.length})
+                </h5>
+                <div className="flex flex-wrap gap-1.5">
+                  {aiSummaryData.summary.coveredRecipes.map((r, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium border border-primary-200"
+                    >
+                      🍽️ {r}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Ingrédients économisés grâce au frigo */}
+            {aiSummaryData.summary.alreadyInFridge.length > 0 && (
+              <div>
+                <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5 text-emerald-600" />
+                  Économisé grâce à votre frigo ({aiSummaryData.summary.alreadyInFridge.length})
+                </h5>
+                <div className="bg-gray-50 border border-gray-200/80 rounded-xl p-3 space-y-2 max-h-40 overflow-y-auto text-xs">
+                  {aiSummaryData.summary.alreadyInFridge.map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-gray-700">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <div>
+                        <strong className="text-gray-900">{item.name}</strong>
+                        {item.substitutionNote && (
+                          <span className="text-gray-500 italic ml-1">
+                            ({item.substitutionNote})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Astuces & Budget */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 text-xs">
+              {aiSummaryData.summary.estimatedTotalCost !== undefined && (
+                <div className="flex items-center gap-1.5 text-gray-700 font-medium">
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  <span>Budget estimé : ~{aiSummaryData.summary.estimatedTotalCost} €</span>
+                </div>
+              )}
+              {aiSummaryData.summary.tips && aiSummaryData.summary.tips.length > 0 && (
+                <div className="w-full text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl p-2.5">
+                  💡 {aiSummaryData.summary.tips[0]}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={() => setIsAiSummaryModalOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Accéder à mes courses
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

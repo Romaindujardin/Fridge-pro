@@ -4,6 +4,8 @@ import type {
   CreateShoppingListRequest,
   AddShoppingListItemRequest,
   ShoppingListItem,
+  GenerateShoppingListAIRequest,
+  GenerateShoppingListAIResponse,
 } from "@/types";
 
 export const shoppingListService = {
@@ -129,6 +131,18 @@ export const shoppingListService = {
         listName: listName || `Liste pour recette`,
       });
       return handleApiResponse<ShoppingList>(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // Générer une liste de courses mutualisée et intelligente avec l'IA
+  async generateShoppingListWithAI(
+    payload: GenerateShoppingListAIRequest
+  ): Promise<GenerateShoppingListAIResponse> {
+    try {
+      const response = await api.post("/ai/generate-shopping-list", payload);
+      return handleApiResponse<GenerateShoppingListAIResponse>(response);
     } catch (error) {
       return handleApiError(error);
     }
