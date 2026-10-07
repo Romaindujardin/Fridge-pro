@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   Search,
+  History,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -89,6 +90,7 @@ export function ShoppingListPage() {
   const [aiServings, setAiServings] = useState<number>(2);
   const [aiMaxBudget, setAiMaxBudget] = useState<string>("");
   const [aiIncludePantryBasics, setAiIncludePantryBasics] = useState<boolean>(false);
+  const [aiIncludeArchivedItems, setAiIncludeArchivedItems] = useState<boolean>(true);
   const [aiSelectedRecipeIds, setAiSelectedRecipeIds] = useState<string[]>([]);
   const [aiRecipeSearch, setAiRecipeSearch] = useState<string>("");
   const [aiUserPrompt, setAiUserPrompt] = useState<string>("");
@@ -117,6 +119,13 @@ export function ShoppingListPage() {
   const { data: fridgeItems = [] } = useQuery({
     queryKey: ["fridgeItems"],
     queryFn: fridgeService.getFridgeItems,
+    staleTime: 60 * 1000,
+  });
+
+  // Récupérer l'historique des achats / consommations pour le contexte IA
+  const { data: historyData } = useQuery({
+    queryKey: ["purchaseHistory", "ai-context"],
+    queryFn: () => fridgeService.getHistory({ limit: 1 }),
     staleTime: 60 * 1000,
   });
 
@@ -745,13 +754,13 @@ export function ShoppingListPage() {
               Optimisation intelligente des courses
             </h4>
             <p className="text-xs text-gray-600 leading-relaxed">
-              L'IA croise vos recettes prévues avec les stocks réels de votre frigo (<strong>{fridgeItems.length} aliments en stock</strong>). Elle applique le bon sens culinaire (équivalences gruyère / emmental, stocks partiels), déduit ce que vous possédez déjà et mutualise les quantités en conditionnements de supermarché (ex: 1kg de spaghettis pour 2 plats).
+              L'IA croise vos recettes prévues avec les stocks réels de votre frigo (<strong>{fridgeItems.length} aliments en stock</strong>){aiIncludeArchivedItems && (historyData?.pagination?.total ?? 0) > 0 ? ` et votre historique récent (${historyData?.pagination.total} aliments consommés/archivés)` : ""}. Elle applique le bon sens culinaire (équivalences gruyère / emmental, stocks partiels), déduit ce que vous possédez déjà et mutualise les quantités en conditionnements de supermarché (ex: 1kg de spaghettis pour 2 plats).
             </p>
           </div>
 
           {/* Mode par défaut en résumé rapide */}
           <div className="bg-gray-50/80 border border-gray-200/80 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-4 text-gray-700">
+            <div className="flex flex-wrap items-center gap-4 text-gray-700">
               <div className="flex items-center gap-1.5 font-medium">
                 <Calendar className="w-4 h-4 text-primary-600" />
                 <span>{aiDaysCount} jours / repas</span>
@@ -766,6 +775,12 @@ export function ShoppingListPage() {
                   {aiSelectedRecipeIds.length > 0
                     ? `${aiSelectedRecipeIds.length} recette(s) choisie(s)`
                     : "Sélection automatique selon le frigo"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <History className={`w-4 h-4 ${aiIncludeArchivedItems ? "text-primary-600" : "text-gray-400"}`} />
+                <span>
+                  {aiIncludeArchivedItems ? "Historique inclus" : "Sans historique"}
                 </span>
               </div>
             </div>
@@ -832,47 +847,72 @@ export function ShoppingListPage() {
                 </div>
               </div>
 
-              {/* 2. Budget max estimé (optionnel) & Basiques */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                    Budget maximum estimé (€) (optionnel)
-                  </label>
-                  <Input
-                    type="number"
-                    min="5"
-                    max="500"
-                    step="5"
-                    placeholder="Ex : 40 € (laisser vide pour sans limite)"
-                    value={aiMaxBudget}
-                    onChange={(e) => setAiMaxBudget(e.target.value)}
-                    className="text-xs py-2 bg-white"
+              {/* 2. Budget max estimé (optionnel) */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                  Budget maximum estimé (€) (optionnel)
+                </label>
+                <Input
+                  type="number"
+                  min="5"
+                  max="500"
+                  step="5"
+                  placeholder="Ex : 40 € (laisser vide pour sans limite)"
+                  value={aiMaxBudget}
+                  onChange={(e) => setAiMaxBudget(e.target.value)}
+                  className="text-xs py-2 bg-white"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  L'IA privilégiera les conditionnements économiques et ingrédients abordables.
+                </p>
+              </div>
+
+              {/* Options supplémentaires (cases à cocher) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Option Aliments archivés */}
+                <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+                  <input
+                    type="checkbox"
+                    id="aiIncludeArchivedItems"
+                    checked={aiIncludeArchivedItems}
+                    onChange={(e) => setAiIncludeArchivedItems(e.target.checked)}
+                    className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                   />
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    L'IA privilégiera les conditionnements économiques et ingrédients abordables.
-                  </p>
+                  <div>
+                    <label
+                      htmlFor="aiIncludeArchivedItems"
+                      className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
+                    >
+                      <History className="w-3.5 h-3.5 text-amber-600" />
+                      Inclure les aliments archivés
+                    </label>
+                    <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                      Permet à l'IA de savoir ce qui a été consommé récemment pour identifier vos besoins de réapprovisionnement.
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                    <Package className="w-3.5 h-3.5 text-blue-600" />
-                    Essentiels du quotidien
-                  </label>
-                  <div className="flex items-start gap-2.5 p-2.5 bg-gray-50 rounded-xl border border-gray-200/80">
-                    <input
-                      type="checkbox"
-                      id="aiIncludePantryBasics"
-                      checked={aiIncludePantryBasics}
-                      onChange={(e) => setAiIncludePantryBasics(e.target.checked)}
-                      className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
-                    />
+                {/* Option Essentiels du quotidien */}
+                <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+                  <input
+                    type="checkbox"
+                    id="aiIncludePantryBasics"
+                    checked={aiIncludePantryBasics}
+                    onChange={(e) => setAiIncludePantryBasics(e.target.checked)}
+                    className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  />
+                  <div>
                     <label
                       htmlFor="aiIncludePantryBasics"
-                      className="text-xs text-gray-700 leading-snug cursor-pointer select-none"
+                      className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
                     >
-                      Ajouter les indispensables de la maison (pain, beurre, lait, fruits...)
+                      <Package className="w-3.5 h-3.5 text-blue-600" />
+                      Essentiels du quotidien
                     </label>
+                    <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                      Ajouter les indispensables de base de la maison (pain, beurre, lait, fruits...).
+                    </p>
                   </div>
                 </div>
               </div>
@@ -987,6 +1027,7 @@ export function ShoppingListPage() {
                   servings: aiServings,
                   maxBudget: parsedBudget && parsedBudget > 0 ? parsedBudget : null,
                   includePantryBasics: aiIncludePantryBasics,
+                  includeArchivedItems: aiIncludeArchivedItems,
                   targetRecipeIds: aiSelectedRecipeIds.length > 0 ? aiSelectedRecipeIds : undefined,
                   userPrompt: aiUserPrompt.trim() || undefined,
                 });
