@@ -346,15 +346,15 @@ export function ShoppingListPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Button
+            variant="outline"
             onClick={() => setIsAiModalOpen(true)}
-            className="flex items-center bg-gradient-to-r from-purple-600 via-indigo-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white shadow-md shadow-indigo-500/20"
+            className="flex items-center"
           >
-            <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
+            <Sparkles className="w-4 h-4 mr-2 text-primary-600" />
             Génération Auto (IA)
           </Button>
 
           <Button
-            variant="outline"
             onClick={() => setIsCreateListModalOpen(true)}
             className="flex items-center"
           >
@@ -419,13 +419,14 @@ export function ShoppingListPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button
+                variant="outline"
                 onClick={() => setIsAiModalOpen(true)}
-                className="flex items-center bg-gradient-to-r from-purple-600 via-indigo-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white shadow-md shadow-indigo-500/20"
+                className="flex items-center"
               >
-                <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
-                Générer ma liste automatiquement (IA)
+                <Sparkles className="w-4 h-4 mr-2 text-primary-600" />
+                Génération Auto (IA)
               </Button>
-              <Button variant="outline" onClick={() => setIsCreateListModalOpen(true)}>
+              <Button onClick={() => setIsCreateListModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Créer manuellement
               </Button>
@@ -738,13 +739,12 @@ export function ShoppingListPage() {
         size="lg"
       >
         <div className="space-y-6">
-          {/* Bannière explicative d'optimisation */}
-          <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-emerald-50 border border-indigo-100 rounded-2xl p-4 text-xs text-gray-700 space-y-2">
-            <div className="flex items-center gap-2 text-indigo-900 font-semibold text-sm">
-              <Sparkles className="w-4 h-4 text-indigo-600" />
-              <span>Optimisation intelligente des courses</span>
-            </div>
-            <p className="text-gray-600 leading-relaxed">
+          {/* Explication d'optimisation */}
+          <div className="space-y-1">
+            <h4 className="font-semibold text-sm text-gray-900">
+              Optimisation intelligente des courses
+            </h4>
+            <p className="text-xs text-gray-600 leading-relaxed">
               L'IA croise vos recettes prévues avec les stocks réels de votre frigo (<strong>{fridgeItems.length} aliments en stock</strong>). Elle applique le bon sens culinaire (équivalences gruyère / emmental, stocks partiels), déduit ce que vous possédez déjà et mutualise les quantités en conditionnements de supermarché (ex: 1kg de spaghettis pour 2 plats).
             </p>
           </div>
@@ -992,10 +992,8 @@ export function ShoppingListPage() {
                 });
               }}
               loading={generateAiListMutation.isPending}
-              className="bg-gradient-to-r from-purple-600 via-indigo-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white shadow-md shadow-indigo-500/20"
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Générer la liste optimisée
+              Générer la liste
             </Button>
           </div>
         </div>
