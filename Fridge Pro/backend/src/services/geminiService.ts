@@ -538,12 +538,14 @@ export const generateShoppingListWithAI = async (params: {
     }[];
   }[];
   targetRecipeIds?: string[];
+  excludedRecipeIds?: string[];
   daysCount?: number;
   servings?: number;
   maxBudget?: number | null;
   includePantryBasics?: boolean;
   includeArchivedItems?: boolean;
   suggestNewRecipes?: boolean;
+  suggestedRecipesCount?: number;
   allowRepeatMeals?: boolean;
   userPrompt?: string;
 }): Promise<GeneratedShoppingList> => {
@@ -552,9 +554,23 @@ export const generateShoppingListWithAI = async (params: {
     params.servings && params.servings > 0 ? Math.round(params.servings) : 2;
   const days =
     params.daysCount && params.daysCount > 0 ? Math.round(params.daysCount) : 4;
+  const numSuggestions =
+    params.suggestedRecipesCount && params.suggestedRecipesCount > 0
+      ? Math.round(params.suggestedRecipesCount)
+      : 2;
+
+  const excludedIds = new Set(params.excludedRecipeIds || []);
+  const availableCandidateRecipes = params.allRecipes.filter(
+    (r) => !excludedIds.has(r.id)
+  );
+  const excludedRecipesList = params.allRecipes.filter((r) =>
+    excludedIds.has(r.id)
+  );
 
   const targetRecipes = params.targetRecipeIds?.length
-    ? params.allRecipes.filter((r) => params.targetRecipeIds!.includes(r.id))
+    ? availableCandidateRecipes.filter((r) =>
+        params.targetRecipeIds!.includes(r.id)
+      )
     : [];
 
   const isSweetOrDessertRecipe = (title: string, desc?: string | null) => {
@@ -638,8 +654,8 @@ ${r.ingredients
 `;
   } else {
     recipesContext = `
-L'utilisateur n'a pas imposé de recettes fixes. Voici son carnet de recettes disponibles (${params.allRecipes.length} recettes au total) :
-${params.allRecipes
+L'utilisateur n'a pas imposé de recettes fixes. Voici son carnet de recettes disponibles autorisées (${availableCandidateRecipes.length} recettes) :
+${availableCandidateRecipes
   .map((r, idx) => {
     const isSweet = isSweetOrDessertRecipe(r.title, r.description);
     const tag = isSweet
@@ -655,6 +671,14 @@ Ingrédients : ${r.ingredients
   })
   .join("\n\n")}
 
+${
+  excludedRecipesList.length > 0
+    ? `RECETTES FORMELLEMENT EXCLUES PAR L'UTILISATEUR (${excludedRecipesList.length} recettes) :
+${excludedRecipesList.map((r) => `- "${r.title}"`).join("\n")}
+CONSIGNE OBLIGATOIRE : L'utilisateur refuse expressément de manger ces recettes cette semaine. Tu as l'INTERDICTION FORMELLE de sélectionner l'une de ces recettes !
+`
+    : ""
+}
 Consignes impératives de sélection des recettes :
 - L'utilisateur souhaite planifier EXACTEMENT ${days} repas pour ${targetServings} personne(s).
 - EXCLUSION FORMELLE DES RECETTES SUCRÉES : Les ${days} repas sont STRICTEMENT des déjeuners et dîners salés. INTERDICTION FORMELLE de choisir un gâteau, banana bread, crêpes sucrées, pancakes, crumble ou tout dessert comme repas principal !
@@ -721,7 +745,7 @@ RÈGLES D'OR ABSOLUES :
 6. SUGGESTIONS CRÉATIVES DE NOUVELLES RECETTES POUR RENTABILISER LES ACHATS :
    ${
      params.suggestNewRecipes !== false
-       ? `- En plus des repas planifiés, propose dans "suggestedNewRecipes" entre 2 et 4 NOUVELLES IDÉES DE RECETTES qui réutilisent et rentabilisent les conditionnements achetés ou surplus d'ingrédients (ex: "Vous achetez 1kg de spaghettis : 500g pour les carbo + suggestion de Spaghettis à la viande hachée avec le surplus", ou "Avec le reste de barquette de viande hachée, suggestion de Légumes farcis au four").
+       ? `- En plus des repas planifiés, propose dans "suggestedNewRecipes" EXACTEMENT ${numSuggestions} NOUVELLE(S) IDÉE(S) DE RECETTE(S) qui réutilisent et rentabilisent les conditionnements achetés ou surplus d'ingrédients (ex: "Vous achetez 1kg de spaghettis : 500g pour les carbo + suggestion de Spaghettis à la viande hachée avec le surplus", ou "Avec le reste de barquette de viande hachée, suggestion de Légumes farcis au four").
    - Chaque suggestion doit contenir :
      * "title" : Nom du plat proposé
      * "description" : Explication courte et appétissante
@@ -790,7 +814,7 @@ Nombre de repas prévus : EXACTEMENT ${days} repas (à couvrir sans omettre aucu
 Nombre de personnes par repas : ${targetServings} personne(s).
 Règle : 1 recette = 1 repas pour 2 personnes (sauf si un nombre différent de portions est précisé dans la recette).
 ${params.allowRepeatMeals !== false ? "Option active : Mutualisation des quantités et batch cooking multi-repas autorisés si gros formats achetés.\n" : ""}
-${params.suggestNewRecipes !== false ? "Option active : Suggérer de nouvelles idées de recettes pour rentabiliser les conditionnements achetés.\n" : ""}
+${params.suggestNewRecipes !== false ? `Option active : Suggérer exactement ${numSuggestions} nouvelle(s) idée(s) de recettes pour rentabiliser les conditionnements achetés.\n` : ""}
 ${params.maxBudget ? `Budget max souhaité : ${params.maxBudget} €\n` : ""}
 ${
   params.includePantryBasics
