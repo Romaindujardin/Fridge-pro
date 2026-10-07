@@ -134,6 +134,8 @@ export interface GetHistoryResponse {
 }
 
 // Types recettes
+export type RecipeCategory = "petit-dejeuner" | "repas" | "dessert" | "autre";
+
 export interface Recipe {
   id: string;
   title: string;
@@ -144,6 +146,7 @@ export interface Recipe {
   servings: number;
   difficulty: "easy" | "medium" | "hard";
   imageUrl?: string;
+  category?: RecipeCategory;
   source?: string;
   createdById?: string;
   createdBy?: {
@@ -182,6 +185,7 @@ export interface CreateRecipeRequest {
   cookTime?: number;
   servings: number;
   difficulty: "easy" | "medium" | "hard";
+  category?: RecipeCategory;
   ingredients: {
     ingredientId?: string;
     ingredientName?: string;
@@ -274,6 +278,7 @@ export interface GenerateShoppingListAIRequest {
   targetRecipeIds?: string[];
   excludedRecipeIds?: string[];
   daysCount?: number;
+  dessertsCount?: number;
   servings?: number;
   maxBudget?: number | null;
   includePantryBasics?: boolean;

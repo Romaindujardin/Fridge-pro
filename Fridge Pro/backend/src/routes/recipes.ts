@@ -60,6 +60,7 @@ const createRecipeSchema = z.object({
   servings: z.number().int().positive().default(4),
   difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
   imageUrl: z.string().optional(),
+  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).default("repas"),
   ingredients: z
     .array(
       z.object({
@@ -94,6 +95,7 @@ const updateRecipeSchema = z.object({
   servings: z.number().int().positive().optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   imageUrl: z.string().nullable().optional(),
+  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).optional(),
   ingredients: z
     .array(
       z.object({
@@ -118,6 +120,7 @@ const updateRecipeSchema = z.object({
 
 const filterSchema = z.object({
   search: z.string().optional(),
+  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   maxPrepTime: z.coerce.number().int().positive().optional(),
   makeable: z.coerce.boolean().optional(),
@@ -181,6 +184,7 @@ function formatRecipeWithUserData(
     servings: recipe.servings,
     difficulty: recipe.difficulty,
     imageUrl: recipe.imageUrl,
+    category: recipe.category || "repas",
     createdAt: recipe.createdAt,
     createdById: recipe.createdById,
     createdBy: recipe.createdBy,
@@ -196,7 +200,7 @@ function formatRecipeWithUserData(
 
 /**
  * GET /recipes
- * Listing paginé avec filtres (recherche, difficulté, réalisable, etc.).
+ * Listing paginé avec filtres (recherche, catégorie, difficulté, réalisable, etc.).
  */
 router.get(
   "/",
@@ -204,7 +208,7 @@ router.get(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const filters = filterSchema.parse(req.query);
-      const { search, difficulty, maxPrepTime, makeable, page, limit } =
+      const { search, category, difficulty, maxPrepTime, makeable, page, limit } =
         filters;
       const skip = (page - 1) * limit;
 
@@ -216,6 +220,10 @@ router.get(
 
       // Filtrage ultra-rapide en mémoire (évite les aller-retours SQL lents)
       let filtered = baseRecipes;
+
+      if (category) {
+        filtered = filtered.filter((r) => (r.category || "repas") === category);
+      }
 
       if (difficulty) {
         filtered = filtered.filter((r) => r.difficulty === difficulty);
@@ -565,6 +573,7 @@ router.post(
         servings,
         difficulty,
         imageUrl,
+        category,
         ingredients,
       } = createRecipeSchema.parse(req.body);
 
@@ -626,6 +635,7 @@ router.post(
           servings,
           difficulty,
           imageUrl,
+          category: category || "repas",
           source: "user",
           createdById: req.userId,
           ingredients: {
@@ -658,6 +668,7 @@ router.post(
         servings: recipe.servings,
         difficulty: recipe.difficulty,
         imageUrl: recipe.imageUrl,
+        category: recipe.category || "repas",
         createdAt: recipe.createdAt,
         createdById: recipe.createdById,
         createdBy: recipe.createdBy,
@@ -719,6 +730,7 @@ router.put(
         servings,
         difficulty,
         imageUrl,
+        category,
         ingredients,
       } = updateRecipeSchema.parse(req.body);
 
@@ -744,6 +756,7 @@ router.put(
       if (servings !== undefined) updateData.servings = servings;
       if (difficulty !== undefined) updateData.difficulty = difficulty;
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (category !== undefined) updateData.category = category;
 
       let recipe;
 

@@ -10,6 +10,7 @@ export const recipeService = {
   // Récupérer toutes les recettes
   async getRecipes(params?: {
     search?: string;
+    category?: string;
     difficulty?: string;
     makeable?: boolean;
     favorites?: boolean;
@@ -19,6 +20,7 @@ export const recipeService = {
     try {
       const queryParams = new URLSearchParams();
       if (params?.search) queryParams.append("search", params.search);
+      if (params?.category) queryParams.append("category", params.category);
       if (params?.difficulty)
         queryParams.append("difficulty", params.difficulty);
       if (params?.makeable) queryParams.append("makeable", "true");

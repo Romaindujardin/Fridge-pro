@@ -94,6 +94,7 @@ const createRecipeSchema = z.object({
   difficulty: z.enum(["easy", "medium", "hard"], {
     invalid_type_error: "Choisissez une difficulté",
   }),
+  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).default("repas"),
   ingredients: z
     .array(
       z.object({
@@ -122,6 +123,7 @@ export function RecipesPage() {
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get("search") || "");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showOnlyMakeable, setShowOnlyMakeable] = useState(false);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [showOnlyAI, setShowOnlyAI] = useState(false);
@@ -175,6 +177,7 @@ export function RecipesPage() {
       cookTime: 0,
       servings: 4,
       difficulty: "medium",
+      category: "repas",
       ingredients: [
         {
           ingredientName: "",
@@ -470,8 +473,13 @@ export function RecipesPage() {
       ? recipe.createdById === currentUser?.id
       : true;
 
+    const matchesCategory = selectedCategory
+      ? (recipe.category || "repas") === selectedCategory
+      : true;
+
     return (
       matchesSearch &&
+      matchesCategory &&
       matchesDifficulty &&
       matchesMakeable &&
       matchesFavorite &&
@@ -517,6 +525,36 @@ export function RecipesPage() {
     }
   };
 
+  const getCategoryBadgeInfo = (category?: string) => {
+    switch (category) {
+      case "petit-dejeuner":
+        return {
+          label: "Petit-déjeuner",
+          icon: "🍳",
+          bg: "bg-amber-100 text-amber-900 border-amber-200",
+        };
+      case "dessert":
+        return {
+          label: "Dessert",
+          icon: "🍰",
+          bg: "bg-pink-100 text-pink-900 border-pink-200",
+        };
+      case "autre":
+        return {
+          label: "Autre",
+          icon: "🥨",
+          bg: "bg-purple-100 text-purple-900 border-purple-200",
+        };
+      case "repas":
+      default:
+        return {
+          label: "Repas",
+          icon: "🍽️",
+          bg: "bg-emerald-100 text-emerald-900 border-emerald-200",
+        };
+    }
+  };
+
   const deletableRecipe = selectedRecipe;
 
   const openCreateModal = () => {
@@ -525,6 +563,7 @@ export function RecipesPage() {
       title: "",
       description: "",
       difficulty: "medium",
+      category: "repas",
       prepTime: 0,
       cookTime: 0,
       servings: 4,
@@ -541,6 +580,7 @@ export function RecipesPage() {
       title: recipe.title,
       description: recipe.description || "",
       difficulty: recipe.difficulty,
+      category: (recipe.category as any) || "repas",
       prepTime: recipe.prepTime ?? 0,
       cookTime: recipe.cookTime ?? 0,
       servings: recipe.servings,
@@ -613,6 +653,34 @@ export function RecipesPage() {
               <X className="w-4 h-4" />
             </button>
           )}
+        </div>
+
+        {/* Catégories principales */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none text-xs">
+          {[
+            { id: "", label: "Toutes", icon: null },
+            { id: "repas", label: "Repas", icon: "🍽️" },
+            { id: "petit-dejeuner", label: "Petit-déjeuner", icon: "🍳" },
+            { id: "dessert", label: "Desserts & Goûters", icon: "🍰" },
+            { id: "autre", label: "Autres", icon: "🥨" },
+          ].map((cat) => {
+            const isSelected = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id || "all"}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                  isSelected
+                    ? "bg-primary-600 text-white shadow-xs"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {cat.icon && <span>{cat.icon}</span>}
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Chips de filtres tactiles et scrollables */}
@@ -772,7 +840,7 @@ export function RecipesPage() {
                   </span>
                 </div>
 
-                {/* Badge difficulté & auteur */}
+                {/* Badge difficulté, catégorie & auteur */}
                 <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
                   <span
                     className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold shadow-xs ${getDifficultyColor(
@@ -780,6 +848,14 @@ export function RecipesPage() {
                     )}`}
                   >
                     {getDifficultyLabel(recipe.difficulty)}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold shadow-xs border ${
+                      getCategoryBadgeInfo(recipe.category).bg
+                    }`}
+                  >
+                    {getCategoryBadgeInfo(recipe.category).icon}{" "}
+                    {getCategoryBadgeInfo(recipe.category).label}
                   </span>
                   {recipe.source === "ai_generated" && (
                     <span className="px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 shadow-xs">
@@ -1105,7 +1181,7 @@ export function RecipesPage() {
           })}
           className="space-y-6 max-h-[80vh] overflow-y-auto pr-1"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Titre *
@@ -1121,6 +1197,21 @@ export function RecipesPage() {
                   {createErrors.title.message}
                 </p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Catégorie *
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-medium"
+                {...createRegister("category")}
+              >
+                <option value="repas">🍽️ Repas (déjeuner / dîner)</option>
+                <option value="petit-dejeuner">🍳 Petit-déjeuner</option>
+                <option value="dessert">🍰 Dessert & Goûter</option>
+                <option value="autre">🥨 Autre / Encas</option>
+              </select>
             </div>
 
             <div>
@@ -1535,6 +1626,14 @@ export function RecipesPage() {
                     )}`}
                   >
                     {getDifficultyLabel(selectedRecipe.difficulty)}
+                  </span>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                      getCategoryBadgeInfo(selectedRecipe.category).bg
+                    }`}
+                  >
+                    {getCategoryBadgeInfo(selectedRecipe.category).icon}{" "}
+                    {getCategoryBadgeInfo(selectedRecipe.category).label}
                   </span>
                   {selectedRecipe.isFavorite && (
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
