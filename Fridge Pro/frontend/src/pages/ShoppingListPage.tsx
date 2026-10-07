@@ -78,6 +78,36 @@ const addItemSchema = z.object({
 type CreateListForm = z.infer<typeof createListSchema>;
 type AddItemForm = z.infer<typeof addItemSchema>;
 
+const getRecipeCategoryBadge = (category?: string) => {
+  switch (category) {
+    case "petit-dejeuner":
+      return {
+        label: "Petit-déj",
+        color: "bg-amber-100 text-amber-800 border-amber-200",
+        icon: "🍳",
+      };
+    case "dessert":
+      return {
+        label: "Dessert",
+        color: "bg-pink-100 text-pink-800 border-pink-200",
+        icon: "🍰",
+      };
+    case "autre":
+      return {
+        label: "Autre",
+        color: "bg-purple-100 text-purple-800 border-purple-200",
+        icon: "🥨",
+      };
+    case "repas":
+    default:
+      return {
+        label: "Repas",
+        color: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        icon: "🍽️",
+      };
+  }
+};
+
 export function ShoppingListPage() {
   const [isCreateListModalOpen, setIsCreateListModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
@@ -90,6 +120,7 @@ export function ShoppingListPage() {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [aiDaysCount, setAiDaysCount] = useState<number>(4);
+  const [aiDessertsCount, setAiDessertsCount] = useState<number>(0);
   const [aiServings, setAiServings] = useState<number>(2);
   const [aiMaxBudget, setAiMaxBudget] = useState<string>("");
   const [aiIncludePantryBasics, setAiIncludePantryBasics] = useState<boolean>(false);
@@ -798,6 +829,11 @@ export function ShoppingListPage() {
                 <Calendar className="w-4 h-4 text-primary-600" />
                 <span>{aiDaysCount} {aiDaysCount > 1 ? "repas prévus" : "repas prévu"}</span>
               </div>
+              {aiDessertsCount > 0 && (
+                <div className="flex items-center gap-1.5 font-medium text-pink-700">
+                  <span>🍰 {aiDessertsCount} {aiDessertsCount > 1 ? "desserts" : "dessert"}</span>
+                </div>
+              )}
               <div className="flex items-center gap-1.5 font-medium">
                 <Users className="w-4 h-4 text-primary-600" />
                 <span>{aiServings} {aiServings > 1 ? "personnes" : "personne"}</span>
@@ -855,23 +891,23 @@ export function ShoppingListPage() {
           {/* Section personnalisation (accordéon) */}
           {isCustomizeOpen && (
             <div className="space-y-5 pt-1 border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-150">
-              {/* 1. Nombre de repas et portions */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* 1. Nombre de repas, douceurs sucrées et portions */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-primary-600" />
-                    Nombre de repas prévus
+                    Repas prévus (salés)
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5">
                     <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
                       <button
                         type="button"
                         onClick={() => setAiDaysCount((prev) => Math.max(1, prev - 1))}
                         disabled={aiDaysCount <= 1}
-                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Diminuer le nombre de repas"
                       >
-                        <Minus className="h-4 w-4" />
+                        <Minus className="h-3.5 w-3.5" />
                       </button>
                       <input
                         type="number"
@@ -884,42 +920,90 @@ export function ShoppingListPage() {
                             setAiDaysCount(Math.min(30, Math.max(1, val)));
                           }
                         }}
-                        className="w-14 text-center py-2 text-sm font-semibold text-gray-900 border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-12 text-center py-2 text-sm font-semibold text-gray-900 border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <button
                         type="button"
                         onClick={() => setAiDaysCount((prev) => Math.min(30, prev + 1))}
                         disabled={aiDaysCount >= 30}
-                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Augmenter le nombre de repas"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
                     <span className="text-xs font-medium text-gray-600">
-                      {aiDaysCount > 1 ? "repas prévus" : "repas prévu"}
+                      {aiDaysCount > 1 ? "repas" : "repas"}
                     </span>
                   </div>
                   <p className="text-[11px] text-gray-500 mt-1">
-                    1 recette = 1 repas pour 2 (ajusté selon vos portions).
+                    Déjeuners & dîners.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                    <span className="text-sm">🍰</span>
+                    Desserts & douceurs
+                  </label>
+                  <div className="flex items-center gap-2.5">
+                    <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setAiDessertsCount((prev) => Math.max(0, prev - 1))}
+                        disabled={aiDessertsCount <= 0}
+                        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="Diminuer le nombre de desserts"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={aiDessertsCount}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (!isNaN(val)) {
+                            setAiDessertsCount(Math.min(10, Math.max(0, val)));
+                          }
+                        }}
+                        className="w-12 text-center py-2 text-sm font-semibold text-gray-900 border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAiDessertsCount((prev) => Math.min(10, prev + 1))}
+                        disabled={aiDessertsCount >= 10}
+                        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="Augmenter le nombre de desserts"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <span className="text-xs font-medium text-gray-600">
+                      {aiDessertsCount > 1 ? "desserts" : "dessert"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Gâteaux, crêpes, tartes...
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-primary-600" />
-                    Nombre de personnes (portions)
+                    Nombre de personnes
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5">
                     <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
                       <button
                         type="button"
                         onClick={() => setAiServings((prev) => Math.max(1, prev - 1))}
                         disabled={aiServings <= 1}
-                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Diminuer le nombre de personnes"
                       >
-                        <Minus className="h-4 w-4" />
+                        <Minus className="h-3.5 w-3.5" />
                       </button>
                       <input
                         type="number"
@@ -932,16 +1016,16 @@ export function ShoppingListPage() {
                             setAiServings(Math.min(20, Math.max(1, val)));
                           }
                         }}
-                        className="w-14 text-center py-2 text-sm font-semibold text-gray-900 border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-12 text-center py-2 text-sm font-semibold text-gray-900 border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <button
                         type="button"
                         onClick={() => setAiServings((prev) => Math.min(20, prev + 1))}
                         disabled={aiServings >= 20}
-                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Augmenter le nombre de personnes"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
                     <span className="text-xs font-medium text-gray-600">
@@ -949,7 +1033,7 @@ export function ShoppingListPage() {
                     </span>
                   </div>
                   <p className="text-[11px] text-gray-500 mt-1">
-                    Les quantités des ingrédients seront adaptées au nombre de mangeurs.
+                    Portions adaptées.
                   </p>
                 </div>
               </div>
@@ -1204,6 +1288,17 @@ export function ShoppingListPage() {
                             >
                               {recipe.title}
                             </span>
+                            {(() => {
+                              const badge = getRecipeCategoryBadge(recipe.category);
+                              return (
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium inline-flex items-center gap-1 ${badge.color}`}
+                                >
+                                  <span>{badge.icon}</span>
+                                  <span>{badge.label}</span>
+                                </span>
+                              );
+                            })()}
                           </div>
                           <div className="flex items-center gap-2">
                             {isExcluded && (
@@ -1314,6 +1409,17 @@ export function ShoppingListPage() {
                                 >
                                   {recipe.title}
                                 </span>
+                                {(() => {
+                                  const badge = getRecipeCategoryBadge(recipe.category);
+                                  return (
+                                    <span
+                                      className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium inline-flex items-center gap-1 ${badge.color}`}
+                                    >
+                                      <span>{badge.icon}</span>
+                                      <span>{badge.label}</span>
+                                    </span>
+                                  );
+                                })()}
                               </div>
                               <div className="flex items-center gap-2">
                                 {isExcluded && (
@@ -1364,6 +1470,7 @@ export function ShoppingListPage() {
                 const parsedBudget = aiMaxBudget ? parseFloat(aiMaxBudget) : null;
                 generateAiListMutation.mutate({
                   daysCount: aiDaysCount,
+                  dessertsCount: aiDessertsCount,
                   servings: aiServings,
                   maxBudget: parsedBudget && parsedBudget > 0 ? parsedBudget : null,
                   includePantryBasics: aiIncludePantryBasics,

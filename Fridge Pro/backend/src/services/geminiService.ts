@@ -148,6 +148,7 @@ const GENERATED_RECIPE_SCHEMA = z.object({
   prepTime: z.union([z.number(), z.string()]).nullish(),
   cookTime: z.union([z.number(), z.string()]).nullish(),
   difficulty: z.string().nullish(),
+  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).nullish(),
   ingredients: z
     .array(
       z.object({
@@ -170,6 +171,7 @@ export type GeneratedRecipe = {
   prepTime?: number;
   cookTime?: number;
   difficulty: (typeof DIFFICULTY_VALUES)[number];
+  category?: "petit-dejeuner" | "repas" | "dessert" | "autre";
   ingredients: {
     name: string;
     quantity?: number;
@@ -531,6 +533,7 @@ export const generateShoppingListWithAI = async (params: {
     title: string;
     description?: string | null;
     servings?: number | null;
+    category?: string | null;
     ingredients: {
       name: string;
       quantity?: number | null;
@@ -540,6 +543,7 @@ export const generateShoppingListWithAI = async (params: {
   targetRecipeIds?: string[];
   excludedRecipeIds?: string[];
   daysCount?: number;
+  dessertsCount?: number;
   servings?: number;
   maxBudget?: number | null;
   includePantryBasics?: boolean;
@@ -554,6 +558,10 @@ export const generateShoppingListWithAI = async (params: {
     params.servings && params.servings > 0 ? Math.round(params.servings) : 2;
   const days =
     params.daysCount && params.daysCount > 0 ? Math.round(params.daysCount) : 4;
+  const numDesserts =
+    params.dessertsCount !== undefined && params.dessertsCount !== null
+      ? Math.max(0, Math.round(params.dessertsCount))
+      : 0;
   const numSuggestions =
     params.suggestedRecipesCount && params.suggestedRecipesCount > 0
       ? Math.round(params.suggestedRecipesCount)
@@ -578,6 +586,20 @@ export const generateShoppingListWithAI = async (params: {
     return /g[âa]teau|banana\s*bread|cr[êe]pe(?!s?\s+de\s+sarrasin)|pancake|crumble|cookie|muffin|brownie|dessert|fondant|mousse\s*au\s*chocolat|sucr[ée]|pain\s*perdu|brioche\s*perdue|gaufre/i.test(
       text
     );
+  };
+
+  const getCategoryLabel = (
+    cat?: string | null,
+    title?: string,
+    desc?: string | null
+  ) => {
+    if (cat === "dessert") return "DESSERT / DOUCEUR SUCRÉE";
+    if (cat === "petit-dejeuner") return "PETIT-DÉJEUNER";
+    if (cat === "autre") return "AUTRE / ENCAS";
+    if (cat === "repas") return "PLAT PRINCIPAL SALÉ";
+    if (isSweetOrDessertRecipe(title || "", desc))
+      return "DESSERT / DOUCEUR SUCRÉE";
+    return "PLAT PRINCIPAL SALÉ";
   };
 
   const fridgeContext = params.fridgeItems.length
@@ -639,7 +661,7 @@ ${params.archivedItems
 Recettes expressément sélectionnées par l'utilisateur (${targetRecipes.length} recettes à préparer) :
 ${targetRecipes
   .map(
-    (r, idx) => `### Recette ${idx + 1} : "${r.title}" (portion de base : ${r.servings || 2} personnes)
+    (r, idx) => `### Recette ${idx + 1} : "${r.title}" [${getCategoryLabel(r.category, r.title, r.description)}] (portion de base : ${r.servings || 2} personnes)
 ${r.description ? `Description : ${r.description}\n` : ""}Ingrédients requis :
 ${r.ingredients
   .map(
@@ -657,11 +679,8 @@ ${r.ingredients
 L'utilisateur n'a pas imposé de recettes fixes. Voici son carnet de recettes disponibles autorisées (${availableCandidateRecipes.length} recettes) :
 ${availableCandidateRecipes
   .map((r, idx) => {
-    const isSweet = isSweetOrDessertRecipe(r.title, r.description);
-    const tag = isSweet
-      ? "[DESSERT / SUCRÉ - INTERDIT EN PLAT PRINCIPAL DU MIDI/SOIR]"
-      : "[PLAT PRINCIPAL SALÉ]";
-    return `### ${idx + 1}. "${r.title}" ${tag} (${r.servings || 2} pers.) :
+    const catTag = getCategoryLabel(r.category, r.title, r.description);
+    return `### ${idx + 1}. "${r.title}" [${catTag}] (${r.servings || 2} pers.) :
 Ingrédients : ${r.ingredients
       .map(
         (i) =>
@@ -680,8 +699,12 @@ CONSIGNE OBLIGATOIRE : L'utilisateur refuse expressément de manger ces recettes
     : ""
 }
 Consignes impératives de sélection des recettes :
-- L'utilisateur souhaite planifier EXACTEMENT ${days} repas pour ${targetServings} personne(s).
-- EXCLUSION FORMELLE DES RECETTES SUCRÉES : Les ${days} repas sont STRICTEMENT des déjeuners et dîners salés. INTERDICTION FORMELLE de choisir un gâteau, banana bread, crêpes sucrées, pancakes, crumble ou tout dessert comme repas principal !
+- REPAS PRINCIPAUX SALÉS (DÉJEUNERS & DÎNERS) : L'utilisateur souhaite planifier EXACTEMENT ${days} repas salés pour ${targetServings} personne(s). Tu DOIS sélectionner des recettes de catégorie [PLAT PRINCIPAL SALÉ].
+- DESSERTS & RECETTES SUCRÉES : ${
+    numDesserts > 0
+      ? `L'utilisateur demande expressément EXACTEMENT ${numDesserts} recette(s) de dessert / douceur sucrée (choisie(s) parmi la catégorie [DESSERT / DOUCEUR SUCRÉE] ou [PETIT-DÉJEUNER]) pour ses repas et douceurs de la semaine ! Tu DOIS donc sélectionner ${numDesserts} recette(s) de dessert EN PLUS des ${days} repas salés, et inclure leurs ingrédients dans la liste de courses en mutualisant un maximum avec les ingrédients des plats salés (farine, œufs, beurre, lait, sucre, etc.). Fais figurer ce ou ces dessert(s) dans "coveredRecipes" avec la mention "(Dessert de la semaine)".`
+      : `Aucun dessert demandé en extra (${numDesserts} dessert). Ne sélectionne pas de dessert pour les repas du midi/soir.`
+  }
 - RÈGLE DU FOYER : 1 recette standard = 1 repas pour 2 personnes (sauf si un nombre différent de portions est expressément indiqué dans la recette).
 - MUTUALISATION DES QUANTITÉS ET BATCH COOKING NATUREL : Si un plat ou conditionnement acheté est volumineux (ex: 1kg de spaghettis + 1kg de bolo, lasagnes, gratin, chili...), il DOIT couvrir plusieurs repas (2, 3 ou plus selon les portions). Tu n'es ABSOLUMENT PAS limité à 2 repas : n'hésite pas à attribuer 2, 3 ou 4 repas à une même préparation généreuse !
 - Pour chacune des recettes retenues, adapte les proportions pour ${targetServings} personne(s).
@@ -700,11 +723,13 @@ RÈGLES D'OR ABSOLUES :
    - Si un aliment au frigo a une DLC proche, privilégie son utilisation en priorité pour éviter le gaspillage !
    - Inscris TOUS les ingrédients évités grâce au frigo dans "alreadyInFridge" avec une note claire (ex: "Gruyère râpé (utilisé à la place de l'emmental râpé)").
 
-2. REPAS PRINCIPAUX DU MIDI ET SOIR (SALÉS UNIQUEMENT - INTERDICTION DES DESSERTS) :
-   - Les ${days} repas planifiés pour la semaine sont impérativement des DÉJEUNERS et DÎNERS.
-   - IL EST STRICTEMENT INTERDIT de sélectionner des recettes sucrées, gâteaux (ex: Gâteau marbré vanille et chocolat, Banana bread), crêpes sucrées, pancakes, cookies, crumbles ou autres desserts comme plat principal du repas !
-   - Tous les ${days} repas doivent être exclusivement de VRAIS PLATS COMPLETS SALÉS (viandes, poissons, œufs, pâtes, riz, gratins, plats mijotés, légumes, tartes salées, etc.).
-   - Même si le carnet de l'utilisateur contient des desserts, NE LES SÉLECTIONNE JAMAIS comme repas principal du midi ou du soir.
+2. REPAS SALÉS ET GESTION DES DESSERTS / SUCRÉ :
+   - Les ${days} repas principaux planifiés pour la semaine sont impérativement des DÉJEUNERS et DÎNERS salés (viandes, poissons, œufs, pâtes, riz, gratins, plats mijotés, légumes, etc.). N'utilise jamais un dessert comme repas principal du midi ou du soir.
+   ${
+     numDesserts > 0
+       ? `- EN PLUS des ${days} repas salés, intègre EXACTEMENT ${numDesserts} recette(s) de dessert / douceur sucrée choisie(s) dans le carnet ou préparée(s) pour la semaine. Mutualise leurs ingrédients (farine, sucre, lait, œufs, beurre) avec le reste des courses et ajoute ces douceurs dans "coveredRecipes".`
+       : `- Aucun dessert supplémentaire n'est demandé : concentre-toi sur les ${days} repas salés.`
+   }
 
 3. CONDITIONNEMENTS RÉELS ET BATCH COOKING NATUREL (NON LIMITÉ À 2 EXEMPLAIRES) :
    - Ne crée PAS de petites quantités isolées impossibles à acheter en magasin.
@@ -810,8 +835,8 @@ Ne renvoie aucun autre texte que ce JSON.`;
 Demande utilisateur :
 ${params.userPrompt?.trim() || "Crée ma liste de courses optimisée pour la semaine."}
 
-Nombre de repas prévus : EXACTEMENT ${days} repas (à couvrir sans omettre aucun ingrédient).
-Nombre de personnes par repas : ${targetServings} personne(s).
+Nombre de repas principaux salés prévus : EXACTEMENT ${days} repas (à couvrir sans omettre aucun ingrédient).
+${numDesserts > 0 ? `Nombre de desserts / douceurs sucrées souhaité : EXACTEMENT ${numDesserts} dessert(s) (à intégrer en plus des repas salés).\n` : ""}Nombre de personnes par repas : ${targetServings} personne(s).
 Règle : 1 recette = 1 repas pour 2 personnes (sauf si un nombre différent de portions est précisé dans la recette).
 ${params.allowRepeatMeals !== false ? "Option active : Mutualisation des quantités et batch cooking multi-repas autorisés si gros formats achetés.\n" : ""}
 ${params.suggestNewRecipes !== false ? `Option active : Suggérer exactement ${numSuggestions} nouvelle(s) idée(s) de recettes pour rentabiliser les conditionnements achetés.\n` : ""}
