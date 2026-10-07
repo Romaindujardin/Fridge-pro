@@ -134,7 +134,7 @@ export interface GetHistoryResponse {
 }
 
 // Types recettes
-export type RecipeCategory = "petit-dejeuner" | "repas" | "dessert" | "autre";
+export type RecipeCategory = "entree" | "plat" | "repas" | "petit-dejeuner" | "dessert" | "autre";
 
 export interface Recipe {
   id: string;

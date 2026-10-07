@@ -80,30 +80,32 @@ type AddItemForm = z.infer<typeof addItemSchema>;
 
 const getRecipeCategoryBadge = (category?: string) => {
   switch (category) {
+    case "entree":
+      return {
+        label: "Entrée",
+        color: "bg-teal-50 text-teal-800 border-teal-200",
+      };
     case "petit-dejeuner":
       return {
         label: "Petit-déj",
-        color: "bg-amber-100 text-amber-800 border-amber-200",
-        icon: "🍳",
+        color: "bg-amber-50 text-amber-800 border-amber-200",
       };
     case "dessert":
       return {
         label: "Dessert",
-        color: "bg-pink-100 text-pink-800 border-pink-200",
-        icon: "🍰",
+        color: "bg-pink-50 text-pink-800 border-pink-200",
       };
     case "autre":
       return {
         label: "Autre",
-        color: "bg-purple-100 text-purple-800 border-purple-200",
-        icon: "🥨",
+        color: "bg-purple-50 text-purple-800 border-purple-200",
       };
+    case "plat":
     case "repas":
     default:
       return {
         label: "Repas",
-        color: "bg-emerald-100 text-emerald-800 border-emerald-200",
-        icon: "🍽️",
+        color: "bg-emerald-50 text-emerald-800 border-emerald-200",
       };
   }
 };
@@ -831,7 +833,7 @@ export function ShoppingListPage() {
               </div>
               {aiDessertsCount > 0 && (
                 <div className="flex items-center gap-1.5 font-medium text-pink-700">
-                  <span>🍰 {aiDessertsCount} {aiDessertsCount > 1 ? "desserts" : "dessert"}</span>
+                  <span>{aiDessertsCount} {aiDessertsCount > 1 ? "desserts" : "dessert"}</span>
                 </div>
               )}
               <div className="flex items-center gap-1.5 font-medium">
@@ -943,7 +945,6 @@ export function ShoppingListPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                    <span className="text-sm">🍰</span>
                     Desserts & douceurs
                   </label>
                   <div className="flex items-center gap-2.5">
@@ -1292,10 +1293,9 @@ export function ShoppingListPage() {
                               const badge = getRecipeCategoryBadge(recipe.category);
                               return (
                                 <span
-                                  className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium inline-flex items-center gap-1 ${badge.color}`}
+                                  className={`text-[10px] px-2 py-0.5 rounded-full border font-medium inline-flex items-center ${badge.color}`}
                                 >
-                                  <span>{badge.icon}</span>
-                                  <span>{badge.label}</span>
+                                  {badge.label}
                                 </span>
                               );
                             })()}
@@ -1413,10 +1413,9 @@ export function ShoppingListPage() {
                                   const badge = getRecipeCategoryBadge(recipe.category);
                                   return (
                                     <span
-                                      className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium inline-flex items-center gap-1 ${badge.color}`}
+                                      className={`text-[10px] px-2 py-0.5 rounded-full border font-medium inline-flex items-center ${badge.color}`}
                                     >
-                                      <span>{badge.icon}</span>
-                                      <span>{badge.label}</span>
+                                      {badge.label}
                                     </span>
                                   );
                                 })()}

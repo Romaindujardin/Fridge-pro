@@ -105,7 +105,7 @@ model Recipe {
   servings      Int      @default(4)
   difficulty    String   @default("medium") // easy, medium, hard
   imageUrl      String?  // photo stockée en externe
-  category      String   @default("repas") // petit-dejeuner, repas, dessert, autre
+  category      String   @default("repas") // entree, petit-dejeuner, repas, dessert, autre
   source        String?  // "user", "ai_generated", "imported"
   createdById   String?
   createdAt     DateTime @default(now())
