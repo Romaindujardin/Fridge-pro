@@ -94,7 +94,7 @@ const createRecipeSchema = z.object({
   difficulty: z.enum(["easy", "medium", "hard"], {
     invalid_type_error: "Choisissez une difficulté",
   }),
-  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).default("repas"),
+  category: z.enum(["entree", "petit-dejeuner", "repas", "dessert", "autre"]).default("repas"),
   ingredients: z
     .array(
       z.object({
@@ -527,30 +527,32 @@ export function RecipesPage() {
 
   const getCategoryBadgeInfo = (category?: string) => {
     switch (category) {
+      case "entree":
+        return {
+          label: "Entrée",
+          bg: "bg-teal-50 text-teal-800 border-teal-200",
+        };
       case "petit-dejeuner":
         return {
           label: "Petit-déjeuner",
-          icon: "🍳",
-          bg: "bg-amber-100 text-amber-900 border-amber-200",
+          bg: "bg-amber-50 text-amber-800 border-amber-200",
         };
       case "dessert":
         return {
           label: "Dessert",
-          icon: "🍰",
-          bg: "bg-pink-100 text-pink-900 border-pink-200",
+          bg: "bg-pink-50 text-pink-800 border-pink-200",
         };
       case "autre":
         return {
           label: "Autre",
-          icon: "🥨",
-          bg: "bg-purple-100 text-purple-900 border-purple-200",
+          bg: "bg-purple-50 text-purple-800 border-purple-200",
         };
+      case "plat":
       case "repas":
       default:
         return {
           label: "Repas",
-          icon: "🍽️",
-          bg: "bg-emerald-100 text-emerald-900 border-emerald-200",
+          bg: "bg-emerald-50 text-emerald-800 border-emerald-200",
         };
     }
   };
@@ -658,11 +660,12 @@ export function RecipesPage() {
         {/* Catégories principales */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none text-xs">
           {[
-            { id: "", label: "Toutes", icon: null },
-            { id: "repas", label: "Repas", icon: "🍽️" },
-            { id: "petit-dejeuner", label: "Petit-déjeuner", icon: "🍳" },
-            { id: "dessert", label: "Desserts & Goûters", icon: "🍰" },
-            { id: "autre", label: "Autres", icon: "🥨" },
+            { id: "", label: "Toutes" },
+            { id: "entree", label: "Entrée" },
+            { id: "repas", label: "Repas" },
+            { id: "petit-dejeuner", label: "Petit-déjeuner" },
+            { id: "dessert", label: "Dessert" },
+            { id: "autre", label: "Autre" },
           ].map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
@@ -670,13 +673,12 @@ export function RecipesPage() {
                 key={cat.id || "all"}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
                   isSelected
                     ? "bg-primary-600 text-white shadow-xs"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                {cat.icon && <span>{cat.icon}</span>}
                 <span>{cat.label}</span>
               </button>
             );
@@ -854,7 +856,6 @@ export function RecipesPage() {
                       getCategoryBadgeInfo(recipe.category).bg
                     }`}
                   >
-                    {getCategoryBadgeInfo(recipe.category).icon}{" "}
                     {getCategoryBadgeInfo(recipe.category).label}
                   </span>
                   {recipe.source === "ai_generated" && (
@@ -1207,10 +1208,11 @@ export function RecipesPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-medium"
                 {...createRegister("category")}
               >
-                <option value="repas">🍽️ Repas (déjeuner / dîner)</option>
-                <option value="petit-dejeuner">🍳 Petit-déjeuner</option>
-                <option value="dessert">🍰 Dessert & Goûter</option>
-                <option value="autre">🥨 Autre / Encas</option>
+                <option value="entree">Entrée</option>
+                <option value="repas">Repas (déjeuner / dîner)</option>
+                <option value="petit-dejeuner">Petit-déjeuner</option>
+                <option value="dessert">Dessert</option>
+                <option value="autre">Autre</option>
               </select>
             </div>
 
@@ -1632,7 +1634,6 @@ export function RecipesPage() {
                       getCategoryBadgeInfo(selectedRecipe.category).bg
                     }`}
                   >
-                    {getCategoryBadgeInfo(selectedRecipe.category).icon}{" "}
                     {getCategoryBadgeInfo(selectedRecipe.category).label}
                   </span>
                   {selectedRecipe.isFavorite && (

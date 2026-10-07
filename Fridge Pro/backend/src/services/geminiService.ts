@@ -148,7 +148,7 @@ const GENERATED_RECIPE_SCHEMA = z.object({
   prepTime: z.union([z.number(), z.string()]).nullish(),
   cookTime: z.union([z.number(), z.string()]).nullish(),
   difficulty: z.string().nullish(),
-  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).nullish(),
+  category: z.enum(["entree", "petit-dejeuner", "repas", "dessert", "autre"]).nullish(),
   ingredients: z
     .array(
       z.object({
@@ -171,7 +171,7 @@ export type GeneratedRecipe = {
   prepTime?: number;
   cookTime?: number;
   difficulty: (typeof DIFFICULTY_VALUES)[number];
-  category?: "petit-dejeuner" | "repas" | "dessert" | "autre";
+  category?: "entree" | "petit-dejeuner" | "repas" | "dessert" | "autre";
   ingredients: {
     name: string;
     quantity?: number;
@@ -593,6 +593,7 @@ export const generateShoppingListWithAI = async (params: {
     title?: string,
     desc?: string | null
   ) => {
+    if (cat === "entree") return "ENTRÉE";
     if (cat === "dessert") return "DESSERT / DOUCEUR SUCRÉE";
     if (cat === "petit-dejeuner") return "PETIT-DÉJEUNER";
     if (cat === "autre") return "AUTRE / ENCAS";

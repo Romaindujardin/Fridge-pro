@@ -60,7 +60,7 @@ const createRecipeSchema = z.object({
   servings: z.number().int().positive().default(4),
   difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
   imageUrl: z.string().optional(),
-  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).default("repas"),
+  category: z.enum(["entree", "petit-dejeuner", "repas", "dessert", "autre"]).default("repas"),
   ingredients: z
     .array(
       z.object({
@@ -95,7 +95,7 @@ const updateRecipeSchema = z.object({
   servings: z.number().int().positive().optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   imageUrl: z.string().nullable().optional(),
-  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).optional(),
+  category: z.enum(["entree", "petit-dejeuner", "repas", "dessert", "autre"]).optional(),
   ingredients: z
     .array(
       z.object({
@@ -120,7 +120,7 @@ const updateRecipeSchema = z.object({
 
 const filterSchema = z.object({
   search: z.string().optional(),
-  category: z.enum(["petit-dejeuner", "repas", "dessert", "autre"]).optional(),
+  category: z.enum(["entree", "petit-dejeuner", "repas", "dessert", "autre"]).optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   maxPrepTime: z.coerce.number().int().positive().optional(),
   makeable: z.coerce.boolean().optional(),
