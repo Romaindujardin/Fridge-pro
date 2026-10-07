@@ -256,6 +256,30 @@ export interface GenerateRecipeAIResponse {
   recipe: Recipe;
 }
 
+export interface GenerateShoppingListAIRequest {
+  targetRecipeIds?: string[];
+  daysCount?: number;
+  servings?: number;
+  maxBudget?: number | null;
+  includePantryBasics?: boolean;
+  userPrompt?: string;
+  listName?: string;
+}
+
+export interface GenerateShoppingListAIResponse {
+  shoppingList: ShoppingList;
+  summary: {
+    coveredRecipes: string[];
+    alreadyInFridge: {
+      name: string;
+      usedFor?: string;
+      substitutionNote?: string;
+    }[];
+    tips?: string[];
+    estimatedTotalCost?: number;
+  };
+}
+
 // Types API
 export interface ApiResponse<T> {
   success: boolean;

@@ -7,6 +7,7 @@ import { AuthenticatedRequest, authenticateToken } from "../middleware/auth";
 import {
   analyzeReceiptImage,
   generateRecipeFromPrompt,
+  generateShoppingListWithAI,
 } from "../services/geminiService";
 import { invalidateRecipeCache } from "../utils/recipeCache";
 
@@ -538,6 +539,201 @@ router.post(
         message: "Recette générée avec succès",
       });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: error.errors[0].message,
+        });
+      }
+      next(error);
+    }
+  }
+);
+
+// Schema pour la génération intelligente de liste de courses
+const generateShoppingListSchema = z.object({
+  targetRecipeIds: z.array(z.string()).optional(),
+  daysCount: z.coerce.number().int().min(1).max(14).optional().default(4),
+  servings: z.coerce.number().int().min(1).max(20).optional().default(2),
+  maxBudget: z.coerce.number().positive().optional().nullable(),
+  includePantryBasics: z.coerce.boolean().optional().default(false),
+  userPrompt: z.string().optional(),
+  listName: z.string().optional(),
+});
+
+/**
+ * POST /ai/generate-shopping-list
+ * Génère une liste de courses mutualisée et optimisée via l'IA
+ * en croisant le frigo, les recettes et les contraintes de l'utilisateur.
+ */
+router.post(
+  "/generate-shopping-list",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const {
+        targetRecipeIds,
+        daysCount,
+        servings,
+        maxBudget,
+        includePantryBasics,
+        userPrompt,
+        listName: requestedListName,
+      } = generateShoppingListSchema.parse(req.body);
+
+      const userWithKey = await prisma.user.findUnique({
+        where: { id: req.userId! },
+        select: { geminiApiKey: true },
+      });
+      const apiKey = userWithKey?.geminiApiKey || process.env.GEMINI_API_KEY;
+
+      if (!apiKey) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Veuillez renseigner votre clé Gemini API dans votre profil ou les variables d'environnement avant d'utiliser cette fonctionnalité.",
+        });
+      }
+
+      // 1. Récupérer le frigo de l'utilisateur
+      const fridgeItems = await prisma.fridgeItem.findMany({
+        where: { userId: req.userId },
+        include: { ingredient: true },
+        orderBy: { expiryDate: "asc" },
+      });
+
+      // 2. Récupérer les recettes existantes
+      const allRecipes = await prisma.recipe.findMany({
+        include: {
+          ingredients: {
+            include: {
+              ingredient: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      // 3. Appel de Gemini
+      const aiResult = await generateShoppingListWithAI({
+        apiKey,
+        fridgeItems: fridgeItems.map((fi) => ({
+          name: fi.ingredient.name,
+          brand: fi.brand,
+          quantity: fi.quantity,
+          unit: fi.unit,
+          expiryDate: fi.expiryDate,
+        })),
+        allRecipes: allRecipes.map((r) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          ingredients: r.ingredients.map((ri) => ({
+            name: ri.ingredient.name,
+            quantity: ri.quantity,
+            unit: ri.unit,
+          })),
+        })),
+        targetRecipeIds,
+        daysCount,
+        servings,
+        maxBudget,
+        includePantryBasics,
+        userPrompt,
+      });
+
+      // 4. Créer la liste de courses en base de données
+      const finalListName =
+        requestedListName?.trim() || aiResult.listName || "Courses optimisées IA";
+
+      const createdList = await prisma.shoppingList.create({
+        data: {
+          name: finalListName,
+          userId: req.userId!,
+        },
+      });
+
+      // 5. Créer les items de la liste
+      for (const item of aiResult.itemsToBuy) {
+        const rawName = item.name.trim();
+        if (!rawName) continue;
+
+        let ingredient = await prisma.ingredient.findFirst({
+          where: {
+            name: {
+              equals: rawName,
+              mode: "insensitive",
+            },
+          },
+        });
+
+        if (!ingredient) {
+          ingredient = await prisma.ingredient.create({
+            data: {
+              name: rawName,
+            },
+          });
+        }
+
+        await prisma.shoppingListItem.create({
+          data: {
+            shoppingListId: createdList.id,
+            ingredientId: ingredient.id,
+            quantity: item.quantity,
+            unit: item.unit,
+            notes: item.notes,
+          },
+        });
+      }
+
+      // 6. Récupérer la liste complète avec ses items
+      const fullShoppingList = await prisma.shoppingList.findUnique({
+        where: { id: createdList.id },
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          updatedAt: true,
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              unit: true,
+              purchased: true,
+              notes: true,
+              ingredient: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: {
+                    select: {
+                      id: true,
+                      name: true,
+                      color: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: { id: "asc" },
+          },
+        },
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          shoppingList: fullShoppingList,
+          summary: {
+            coveredRecipes: aiResult.coveredRecipes,
+            alreadyInFridge: aiResult.alreadyInFridge,
+            tips: aiResult.tips,
+            estimatedTotalCost: aiResult.estimatedTotalCost,
+          },
+        },
+        message: "Liste de courses générée et optimisée avec succès !",
+      });
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
