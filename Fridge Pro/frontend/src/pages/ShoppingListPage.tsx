@@ -22,6 +22,7 @@ import {
   Search,
   History,
   Minus,
+  Repeat,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -92,6 +93,8 @@ export function ShoppingListPage() {
   const [aiMaxBudget, setAiMaxBudget] = useState<string>("");
   const [aiIncludePantryBasics, setAiIncludePantryBasics] = useState<boolean>(false);
   const [aiIncludeArchivedItems, setAiIncludeArchivedItems] = useState<boolean>(true);
+  const [aiSuggestNewRecipes, setAiSuggestNewRecipes] = useState<boolean>(true);
+  const [aiAllowRepeatMeals, setAiAllowRepeatMeals] = useState<boolean>(true);
   const [aiSelectedRecipeIds, setAiSelectedRecipeIds] = useState<string[]>([]);
   const [aiRecipeSearch, setAiRecipeSearch] = useState<string>("");
   const [aiUserPrompt, setAiUserPrompt] = useState<string>("");
@@ -102,6 +105,28 @@ export function ShoppingListPage() {
     summary: GenerateShoppingListAIResponse["summary"];
   } | null>(null);
   const [isAiSummaryModalOpen, setIsAiSummaryModalOpen] = useState(false);
+  const [generatingRecipeId, setGeneratingRecipeId] = useState<string | null>(null);
+
+  const handleGenerateSuggestedRecipe = async (idea: {
+    title: string;
+    description?: string;
+    mainIngredients?: string[];
+  }) => {
+    try {
+      setGeneratingRecipeId(idea.title);
+      const prompt = `Crée la recette complète : ${idea.title}.${idea.description ? ` Description : ${idea.description}.` : ""}${idea.mainIngredients?.length ? ` Ingrédients clés à inclure : ${idea.mainIngredients.join(", ")}.` : ""}`;
+      await recipeService.generateRecipeWithAI({
+        userPrompt: prompt,
+        servings: aiServings,
+      });
+      queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success(`Recette "${idea.title}" ajoutée à votre carnet !`);
+    } catch (error: any) {
+      toast.error(error?.message || "Erreur lors de la création de la recette");
+    } finally {
+      setGeneratingRecipeId(null);
+    }
+  };
 
   // Récupérer les listes de courses
   const { data: shoppingLists = [], isLoading } = useQuery({
@@ -784,6 +809,18 @@ export function ShoppingListPage() {
                   {aiIncludeArchivedItems ? "Historique inclus" : "Sans historique"}
                 </span>
               </div>
+              {aiAllowRepeatMeals && (
+                <div className="flex items-center gap-1.5 font-medium text-purple-700">
+                  <Repeat className="w-3.5 h-3.5" />
+                  <span>Batch cooking (x2 repas)</span>
+                </div>
+              )}
+              {aiSuggestNewRecipes && (
+                <div className="flex items-center gap-1.5 font-medium text-emerald-700">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Idées recettes surplus</span>
+                </div>
+              )}
             </div>
 
             <button
@@ -921,6 +958,52 @@ export function ShoppingListPage() {
 
               {/* Options supplémentaires (cases à cocher) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Option Cuisiner pour 2 repas (Batch cooking / Restes) */}
+                <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+                  <input
+                    type="checkbox"
+                    id="aiAllowRepeatMeals"
+                    checked={aiAllowRepeatMeals}
+                    onChange={(e) => setAiAllowRepeatMeals(e.target.checked)}
+                    className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  />
+                  <div>
+                    <label
+                      htmlFor="aiAllowRepeatMeals"
+                      className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
+                    >
+                      <Repeat className="w-3.5 h-3.5 text-purple-600" />
+                      Cuisiner pour 2 repas (batch cooking)
+                    </label>
+                    <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                      L'IA peut prévoir de consommer un même plat 2 fois (portions doubles / restes) pour vous simplifier la semaine.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Option Suggestions de nouvelles recettes pour mutualiser */}
+                <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
+                  <input
+                    type="checkbox"
+                    id="aiSuggestNewRecipes"
+                    checked={aiSuggestNewRecipes}
+                    onChange={(e) => setAiSuggestNewRecipes(e.target.checked)}
+                    className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                  />
+                  <div>
+                    <label
+                      htmlFor="aiSuggestNewRecipes"
+                      className="text-xs font-semibold text-gray-800 leading-snug cursor-pointer select-none flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                      Suggérer de nouvelles recettes
+                    </label>
+                    <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                      Idées pour rentabiliser les gros formats et surplus d'ingrédients (ex: paquet 1kg de pâtes, viande hachée...).
+                    </p>
+                  </div>
+                </div>
+
                 {/* Option Aliments archivés */}
                 <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-200/80">
                   <input
@@ -1079,6 +1162,8 @@ export function ShoppingListPage() {
                   maxBudget: parsedBudget && parsedBudget > 0 ? parsedBudget : null,
                   includePantryBasics: aiIncludePantryBasics,
                   includeArchivedItems: aiIncludeArchivedItems,
+                  suggestNewRecipes: aiSuggestNewRecipes,
+                  allowRepeatMeals: aiAllowRepeatMeals,
                   targetRecipeIds: aiSelectedRecipeIds.length > 0 ? aiSelectedRecipeIds : undefined,
                   userPrompt: aiUserPrompt.trim() || undefined,
                 });
@@ -1096,7 +1181,7 @@ export function ShoppingListPage() {
         isOpen={isAiSummaryModalOpen}
         onClose={() => setIsAiSummaryModalOpen(false)}
         title="✨ Votre liste de courses est prête !"
-        size="md"
+        size="lg"
       >
         {aiSummaryData && (
           <div className="space-y-5">
@@ -1106,29 +1191,140 @@ export function ShoppingListPage() {
                 <span>{aiSummaryData.listName}</span>
               </h4>
               <p className="text-xs text-emerald-800">
-                La liste a été créée et ajoutée à vos listes actives avec tous ses articles classés par rayon.
+                La liste a été créée et ajoutée à vos listes actives avec tous ses articles mutualisés et classés par rayon.
               </p>
             </div>
 
-            {/* Recettes couvertes */}
-            {aiSummaryData.summary.coveredRecipes.length > 0 && (
+            {/* Répartition du planning des repas (mealPlan) */}
+            {aiSummaryData.summary.mealPlan && aiSummaryData.summary.mealPlan.length > 0 ? (
               <div>
                 <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <ChefHat className="w-3.5 h-3.5 text-primary-600" />
-                  Plats prévus ({aiSummaryData.summary.coveredRecipes.length})
+                  <Calendar className="w-3.5 h-3.5 text-primary-600" />
+                  Planning des repas prévus ({aiSummaryData.summary.mealPlan.length} repas)
                 </h5>
-                <div className="flex flex-wrap gap-1.5">
-                  {aiSummaryData.summary.coveredRecipes.map((r, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium border border-primary-200"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {aiSummaryData.summary.mealPlan.map((m, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex items-center justify-between text-xs p-2.5 rounded-xl border transition-colors ${
+                        m.isRepeatOrLeftover
+                          ? "bg-amber-50/70 border-amber-200/80 text-amber-950"
+                          : "bg-white border-gray-200/80 text-gray-900"
+                      }`}
                     >
-                      🍽️ {r}
-                    </span>
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                          #{m.mealIndex}
+                        </span>
+                        <span className="font-semibold truncate">{m.dishName}</span>
+                      </div>
+                      {m.isRepeatOrLeftover ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 shrink-0">
+                          <Repeat className="w-2.5 h-2.5" />
+                          2ème repas (batch cooking)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-gray-500 shrink-0">
+                          {m.details || "Repas frais"}
+                        </span>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
+            ) : (
+              aiSummaryData.summary.coveredRecipes.length > 0 && (
+                <div>
+                  <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <ChefHat className="w-3.5 h-3.5 text-primary-600" />
+                    Plats prévus ({aiSummaryData.summary.coveredRecipes.length})
+                  </h5>
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiSummaryData.summary.coveredRecipes.map((r, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium border border-primary-200"
+                      >
+                        🍽️ {r}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
             )}
+
+            {/* Suggestions de nouvelles recettes pour rentabiliser les courses */}
+            {aiSummaryData.summary.suggestedNewRecipes &&
+              aiSummaryData.summary.suggestedNewRecipes.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      Idées de recettes pour mutualiser vos achats ({aiSummaryData.summary.suggestedNewRecipes.length})
+                    </h5>
+                    <span className="text-[11px] text-indigo-600 font-medium">
+                      Zéro gaspillage & gros formats
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {aiSummaryData.summary.suggestedNewRecipes.map((idea, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-indigo-50/50 hover:bg-indigo-50/80 border border-indigo-100 rounded-xl p-3 flex flex-col justify-between transition-colors"
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h6 className="font-bold text-xs text-indigo-950 flex items-center gap-1.5">
+                              <span>🍽️</span>
+                              <span>{idea.title}</span>
+                            </h6>
+                          </div>
+
+                          {idea.whySuggested && (
+                            <p className="text-[11px] text-indigo-700 font-medium bg-white/80 border border-indigo-100 rounded-lg px-2 py-1 mb-2">
+                              💡 {idea.whySuggested}
+                            </p>
+                          )}
+
+                          {idea.description && (
+                            <p className="text-[11px] text-gray-600 mb-2 leading-relaxed">
+                              {idea.description}
+                            </p>
+                          )}
+
+                          {idea.mainIngredients && idea.mainIngredients.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-2.5">
+                              {idea.mainIngredients.map((ing, iIdx) => (
+                                <span
+                                  key={iIdx}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-white text-gray-700 border border-gray-200"
+                                >
+                                  {ing}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t border-indigo-100/60 flex justify-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-[11px] py-1 px-2.5 h-auto text-indigo-700 border-indigo-200 hover:bg-indigo-100/70"
+                            onClick={() => handleGenerateSuggestedRecipe(idea)}
+                            loading={generatingRecipeId === idea.title}
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Ajouter à mes recettes
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             {/* Ingrédients économisés grâce au frigo */}
             {aiSummaryData.summary.alreadyInFridge.length > 0 && (

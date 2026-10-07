@@ -558,6 +558,8 @@ const generateShoppingListSchema = z.object({
   maxBudget: z.coerce.number().positive().optional().nullable(),
   includePantryBasics: z.coerce.boolean().optional().default(false),
   includeArchivedItems: z.coerce.boolean().optional().default(true),
+  suggestNewRecipes: z.coerce.boolean().optional().default(true),
+  allowRepeatMeals: z.coerce.boolean().optional().default(true),
   userPrompt: z.string().optional(),
   listName: z.string().optional(),
 });
@@ -579,6 +581,8 @@ router.post(
         maxBudget,
         includePantryBasics,
         includeArchivedItems,
+        suggestNewRecipes,
+        allowRepeatMeals,
         userPrompt,
         listName: requestedListName,
       } = generateShoppingListSchema.parse(req.body);
@@ -672,6 +676,8 @@ router.post(
         maxBudget,
         includePantryBasics,
         includeArchivedItems,
+        suggestNewRecipes,
+        allowRepeatMeals,
         userPrompt,
       });
 
@@ -759,6 +765,8 @@ router.post(
           shoppingList: fullShoppingList,
           summary: {
             coveredRecipes: aiResult.coveredRecipes,
+            mealPlan: aiResult.mealPlan,
+            suggestedNewRecipes: aiResult.suggestedNewRecipes,
             alreadyInFridge: aiResult.alreadyInFridge,
             tips: aiResult.tips,
             estimatedTotalCost: aiResult.estimatedTotalCost,

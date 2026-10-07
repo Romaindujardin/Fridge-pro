@@ -256,6 +256,20 @@ export interface GenerateRecipeAIResponse {
   recipe: Recipe;
 }
 
+export interface MealPlanItem {
+  mealIndex: number;
+  dishName: string;
+  isRepeatOrLeftover: boolean;
+  details?: string;
+}
+
+export interface SuggestedRecipeIdea {
+  title: string;
+  description?: string;
+  mainIngredients?: string[];
+  whySuggested?: string;
+}
+
 export interface GenerateShoppingListAIRequest {
   targetRecipeIds?: string[];
   daysCount?: number;
@@ -263,6 +277,8 @@ export interface GenerateShoppingListAIRequest {
   maxBudget?: number | null;
   includePantryBasics?: boolean;
   includeArchivedItems?: boolean;
+  suggestNewRecipes?: boolean;
+  allowRepeatMeals?: boolean;
   userPrompt?: string;
   listName?: string;
 }
@@ -271,6 +287,8 @@ export interface GenerateShoppingListAIResponse {
   shoppingList: ShoppingList;
   summary: {
     coveredRecipes: string[];
+    mealPlan?: MealPlanItem[];
+    suggestedNewRecipes?: SuggestedRecipeIdea[];
     alreadyInFridge: {
       name: string;
       usedFor?: string;
