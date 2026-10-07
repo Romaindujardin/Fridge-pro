@@ -553,7 +553,7 @@ router.post(
 // Schema pour la génération intelligente de liste de courses
 const generateShoppingListSchema = z.object({
   targetRecipeIds: z.array(z.string()).optional(),
-  daysCount: z.coerce.number().int().min(1).max(14).optional().default(4),
+  daysCount: z.coerce.number().int().min(1).max(30).optional().default(4),
   servings: z.coerce.number().int().min(1).max(20).optional().default(2),
   maxBudget: z.coerce.number().positive().optional().nullable(),
   includePantryBasics: z.coerce.boolean().optional().default(false),
@@ -659,6 +659,7 @@ router.post(
           id: r.id,
           title: r.title,
           description: r.description,
+          servings: r.servings,
           ingredients: r.ingredients.map((ri) => ({
             name: ri.ingredient.name,
             quantity: ri.quantity,

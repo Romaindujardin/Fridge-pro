@@ -754,7 +754,7 @@ export function ShoppingListPage() {
               Optimisation intelligente des courses
             </h4>
             <p className="text-xs text-gray-600 leading-relaxed">
-              L'IA croise vos recettes prévues avec les stocks réels de votre frigo (<strong>{fridgeItems.length} aliments en stock</strong>){aiIncludeArchivedItems && (historyData?.pagination?.total ?? 0) > 0 ? ` et votre historique récent (${historyData?.pagination.total} aliments consommés/archivés)` : ""}. Elle applique le bon sens culinaire (équivalences gruyère / emmental, stocks partiels), déduit ce que vous possédez déjà et mutualise les quantités en conditionnements de supermarché (ex: 1kg de spaghettis pour 2 plats).
+              L'IA croise vos recettes prévues avec les stocks réels de votre frigo (<strong>{fridgeItems.length} aliments en stock</strong>){aiIncludeArchivedItems && (historyData?.pagination?.total ?? 0) > 0 ? ` et vos consommations (${historyData?.pagination.total} archivés)` : ""}. Règle du foyer : 1 recette = 1 repas pour 2 (adapté selon vos portions). Elle déduit vos stocks et mutualise les formats de magasin sans omettre d'ingrédients.
             </p>
           </div>
 
@@ -763,11 +763,11 @@ export function ShoppingListPage() {
             <div className="flex flex-wrap items-center gap-4 text-gray-700">
               <div className="flex items-center gap-1.5 font-medium">
                 <Calendar className="w-4 h-4 text-primary-600" />
-                <span>{aiDaysCount} jours / repas</span>
+                <span>{aiDaysCount} {aiDaysCount > 1 ? "repas prévus" : "repas prévu"}</span>
               </div>
               <div className="flex items-center gap-1.5 font-medium">
                 <Users className="w-4 h-4 text-primary-600" />
-                <span>{aiServings} personnes</span>
+                <span>{aiServings} {aiServings > 1 ? "personnes" : "personne"}</span>
               </div>
               <div className="flex items-center gap-1.5 font-medium">
                 <ChefHat className="w-4 h-4 text-primary-600" />
@@ -803,24 +803,42 @@ export function ShoppingListPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-primary-600" />
-                    Nombre de jours / repas
+                    Nombre de repas prévus
                   </label>
                   <div className="flex items-center gap-2">
-                    {[2, 3, 4, 5, 7].map((days) => (
-                      <button
-                        key={days}
-                        type="button"
-                        onClick={() => setAiDaysCount(days)}
-                        className={`px-3 py-1.5 text-xs rounded-lg font-medium border transition-all ${
-                          aiDaysCount === days
-                            ? "bg-primary-50 border-primary-500 text-primary-700 shadow-sm"
-                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        {days}j
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setAiDaysCount((prev) => Math.max(1, prev - 1))}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition active:scale-95 shadow-2xs"
+                      title="Diminuer"
+                    >
+                      -
+                    </button>
+
+                    <select
+                      value={aiDaysCount}
+                      onChange={(e) => setAiDaysCount(Number(e.target.value))}
+                      className="flex-1 px-3 py-2 text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded-xl shadow-2xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer min-w-[130px]"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21].map((n) => (
+                        <option key={n} value={n}>
+                          {n} {n === 1 ? "repas (1 plat)" : `${n} repas`}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => setAiDaysCount((prev) => Math.min(30, prev + 1))}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition active:scale-95 shadow-2xs"
+                      title="Augmenter"
+                    >
+                      +
+                    </button>
                   </div>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    1 recette = 1 repas pour 2 (ajusté selon vos portions).
+                  </p>
                 </div>
 
                 <div>
@@ -829,21 +847,39 @@ export function ShoppingListPage() {
                     Nombre de personnes (portions)
                   </label>
                   <div className="flex items-center gap-2">
-                    {[1, 2, 4, 6].map((serv) => (
-                      <button
-                        key={serv}
-                        type="button"
-                        onClick={() => setAiServings(serv)}
-                        className={`px-3 py-1.5 text-xs rounded-lg font-medium border transition-all ${
-                          aiServings === serv
-                            ? "bg-primary-50 border-primary-500 text-primary-700 shadow-sm"
-                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        {serv} pers.
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setAiServings((prev) => Math.max(1, prev - 1))}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition active:scale-95 shadow-2xs"
+                      title="Diminuer"
+                    >
+                      -
+                    </button>
+
+                    <select
+                      value={aiServings}
+                      onChange={(e) => setAiServings(Number(e.target.value))}
+                      className="flex-1 px-3 py-2 text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded-xl shadow-2xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer min-w-[130px]"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((s) => (
+                        <option key={s} value={s}>
+                          {s} {s === 1 ? "personne (1 part)" : `${s} personnes`}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => setAiServings((prev) => Math.min(20, prev + 1))}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition active:scale-95 shadow-2xs"
+                      title="Augmenter"
+                    >
+                      +
+                    </button>
                   </div>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Les quantités des ingrédients seront adaptées au nombre de mangeurs.
+                  </p>
                 </div>
               </div>
 

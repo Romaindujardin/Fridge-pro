@@ -490,6 +490,7 @@ export const generateShoppingListWithAI = async (params: {
     id: string;
     title: string;
     description?: string | null;
+    servings?: number | null;
     ingredients: {
       name: string;
       quantity?: number | null;
@@ -556,7 +557,7 @@ ${params.archivedItems
 Recettes expressément sélectionnées par l'utilisateur (${targetRecipes.length} recettes à préparer) :
 ${targetRecipes
   .map(
-    (r, idx) => `### Recette ${idx + 1} : "${r.title}"
+    (r, idx) => `### Recette ${idx + 1} : "${r.title}" (portion de base : ${r.servings || 2} personnes)
 ${r.description ? `Description : ${r.description}\n` : ""}Ingrédients requis :
 ${r.ingredients
   .map(
@@ -573,23 +574,29 @@ ${r.ingredients
     recipesContext = `
 L'utilisateur n'a pas imposé de recettes fixes. Voici son carnet de recettes disponibles (${params.allRecipes.length} recettes au total) :
 ${params.allRecipes
-  .slice(0, 35)
   .map(
-    (r) =>
-      `- "${r.title}" (Ingrédients clés : ${r.ingredients
-        .slice(0, 8)
-        .map((i) => i.name)
-        .join(", ")})`
+    (r, idx) =>
+      `### ${idx + 1}. "${r.title}" (${r.servings || 2} pers.) :
+Ingrédients : ${r.ingredients
+        .map(
+          (i) =>
+            `${i.name}${i.quantity ? ` (${i.quantity} ${i.unit || ""})` : ""}`
+        )
+        .join(", ")}`
   )
-  .join("\n")}
+  .join("\n\n")}
 
-Consigne : Choisis judicieusement environ ${days} recettes parmi son carnet qui se marient bien, plaisent à l'utilisateur et maximisent la réutilisation des mêmes ingrédients frais ou de base pour éviter le gaspillage.
+Consignes impératives de sélection des recettes :
+- L'utilisateur souhaite planifier EXACTEMENT ${days} repas pour ${targetServings} personne(s).
+- RÈGLE DU FOYER : 1 RECETTE = 1 REPAS POUR 2 PERSONNES (sauf si un nombre différent de portions est expressément indiqué dans la recette).
+- Tu dois sélectionner assez de recettes de son carnet pour couvrir précisément les ${days} repas demandés (par exemple ${days} recettes si chaque recette fait 1 repas pour le foyer).
+- Pour chacune des recettes retenues, adapte les proportions pour ${targetServings} personne(s).
 `;
   }
 
   const systemPrompt = `
 Tu es un majordome et chef cuisinier expert en optimisation de courses ménagères et gestion intelligente de frigo.
-Ton objectif est de créer une liste de courses ultra-optimisée, réaliste et économique pour ${targetServings} personne(s).
+Ton objectif est de créer une liste de courses ultra-optimisée, exhaustive, réaliste et économique pour ${targetServings} personne(s).
 
 RÈGLES D'OR ABSOLUES :
 1. BON SENS CULINAIRE ET ÉQUIVALENCES DU FRIGO :
@@ -618,7 +625,12 @@ RÈGLES D'OR ABSOLUES :
    - Si un historique d'aliments consommés/archivés est fourni, analyse-le pour comprendre ce que le foyer consomme couramment et ce qui est récemment tombé en rupture de stock.
    - Si un ingrédient de base essentiel ou un aliment récurrent apprécié a été récemment terminé/consommé et n'est plus dans le frigo actuel, tu peux judicieusement proposer son réapprovisionnement dans la liste de courses si cela répond aux recettes ou aux besoins du foyer.
 
-4. CLASSEMENT PAR RAYONS :
+4. EXHAUSTIVITÉ ET COUVERTURE COMPLÈTE DES ${days} REPAS :
+   - RÈGLE FONDAMENTALE : 1 RECETTE = 1 REPAS POUR 2 PERSONNES (sauf si un nombre différent de portions est expressément indiqué dans la recette).
+   - Tu dois obligatoirement couvrir l'ensemble des ${days} repas demandés. Dans "coveredRecipes", liste précisément toutes les recettes retenues (il doit y en avoir assez pour faire les ${days} repas).
+   - NE TE LIMITE JAMAIS ARTIFICIELLEMENT EN NOMBRE D'ARTICLES ! Ne te restreins pas à 10 ou 11 aliments : ajoute ABSOLUMENT TOUS les ingrédients nécessaires pour réaliser l'intégralité des ${days} repas (légumes, viandes/poissons, crèmes, fromages, épicerie salée/sucrée, sauces, herbes) qui ne sont pas déjà au frigo. Si les recettes nécessitent 18, 22 ou 28 ingrédients manquants, la liste DOIT contenir tous ces 18, 22 ou 28 articles !
+
+5. CLASSEMENT PAR RAYONS :
    - Indique pour chaque article son rayon de supermarché parmi : "Fruits & Légumes", "Boucherie & Poissonnerie", "Produits Frais & Crémerie", "Épicerie salée", "Épicerie sucrée", "Boissons", "Surgelés".
 
 Réponds STRICTEMENT avec un JSON valide suivant ce format :
@@ -653,8 +665,9 @@ Ne renvoie aucun autre texte que ce JSON.`;
 Demande utilisateur :
 ${params.userPrompt?.trim() || "Crée ma liste de courses optimisée pour la semaine."}
 
-Nombre de personnes / portions : ${targetServings} personne(s).
-Nombre de jours / repas prévus : ${days} repas/jours.
+Nombre de repas prévus : EXACTEMENT ${days} repas (à couvrir sans omettre aucun ingrédient).
+Nombre de personnes par repas : ${targetServings} personne(s).
+Règle : 1 recette = 1 repas pour 2 personnes (sauf si un nombre différent de portions est précisé dans la recette).
 ${params.maxBudget ? `Budget max souhaité : ${params.maxBudget} €\n` : ""}
 ${
   params.includePantryBasics
