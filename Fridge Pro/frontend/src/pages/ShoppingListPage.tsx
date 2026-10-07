@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
   Search,
   History,
+  Minus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -805,36 +806,43 @@ export function ShoppingListPage() {
                     <Calendar className="w-3.5 h-3.5 text-primary-600" />
                     Nombre de repas prévus
                   </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAiDaysCount((prev) => Math.max(1, prev - 1))}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition active:scale-95 shadow-2xs"
-                      title="Diminuer"
-                    >
-                      -
-                    </button>
-
-                    <select
-                      value={aiDaysCount}
-                      onChange={(e) => setAiDaysCount(Number(e.target.value))}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded-xl shadow-2xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer min-w-[130px]"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21].map((n) => (
-                        <option key={n} value={n}>
-                          {n} {n === 1 ? "repas (1 plat)" : `${n} repas`}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => setAiDaysCount((prev) => Math.min(30, prev + 1))}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition active:scale-95 shadow-2xs"
-                      title="Augmenter"
-                    >
-                      +
-                    </button>
+                  <div className="flex items-center gap-3">
+                    <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setAiDaysCount((prev) => Math.max(1, prev - 1))}
+                        disabled={aiDaysCount <= 1}
+                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="Diminuer le nombre de repas"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        max="30"
+                        value={aiDaysCount}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (!isNaN(val)) {
+                            setAiDaysCount(Math.min(30, Math.max(1, val)));
+                          }
+                        }}
+                        className="w-14 text-center py-2 text-sm font-semibold text-gray-900 border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAiDaysCount((prev) => Math.min(30, prev + 1))}
+                        disabled={aiDaysCount >= 30}
+                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="Augmenter le nombre de repas"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <span className="text-xs font-medium text-gray-600">
+                      {aiDaysCount > 1 ? "repas prévus" : "repas prévu"}
+                    </span>
                   </div>
                   <p className="text-[11px] text-gray-500 mt-1">
                     1 recette = 1 repas pour 2 (ajusté selon vos portions).
@@ -846,36 +854,43 @@ export function ShoppingListPage() {
                     <Users className="w-3.5 h-3.5 text-primary-600" />
                     Nombre de personnes (portions)
                   </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAiServings((prev) => Math.max(1, prev - 1))}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition active:scale-95 shadow-2xs"
-                      title="Diminuer"
-                    >
-                      -
-                    </button>
-
-                    <select
-                      value={aiServings}
-                      onChange={(e) => setAiServings(Number(e.target.value))}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded-xl shadow-2xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer min-w-[130px]"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((s) => (
-                        <option key={s} value={s}>
-                          {s} {s === 1 ? "personne (1 part)" : `${s} personnes`}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => setAiServings((prev) => Math.min(20, prev + 1))}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold transition active:scale-95 shadow-2xs"
-                      title="Augmenter"
-                    >
-                      +
-                    </button>
+                  <div className="flex items-center gap-3">
+                    <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setAiServings((prev) => Math.max(1, prev - 1))}
+                        disabled={aiServings <= 1}
+                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="Diminuer le nombre de personnes"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={aiServings}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (!isNaN(val)) {
+                            setAiServings(Math.min(20, Math.max(1, val)));
+                          }
+                        }}
+                        className="w-14 text-center py-2 text-sm font-semibold text-gray-900 border-x border-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAiServings((prev) => Math.min(20, prev + 1))}
+                        disabled={aiServings >= 20}
+                        className="px-3 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="Augmenter le nombre de personnes"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <span className="text-xs font-medium text-gray-600">
+                      {aiServings > 1 ? "personnes" : "personne"}
+                    </span>
                   </div>
                   <p className="text-[11px] text-gray-500 mt-1">
                     Les quantités des ingrédients seront adaptées au nombre de mangeurs.
