@@ -294,6 +294,7 @@ export function RecipesPage() {
         cookTime: values.cookTime ?? undefined,
         servings: values.servings,
         difficulty: values.difficulty,
+        category: values.category,
         ingredients: values.ingredients.map((ingredient) => ({
           ingredientName: ingredient.ingredientName.trim(),
           quantity: ingredient.quantity,
@@ -338,6 +339,7 @@ export function RecipesPage() {
         cookTime: values.cookTime ?? undefined,
         servings: values.servings,
         difficulty: values.difficulty,
+        category: values.category,
         ingredients: values.ingredients.map((ingredient) => ({
           ingredientName: ingredient.ingredientName.trim(),
           quantity: ingredient.quantity,
