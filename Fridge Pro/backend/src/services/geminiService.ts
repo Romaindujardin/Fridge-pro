@@ -419,6 +419,28 @@ ${recipesContext ? `\n${recipesContext}` : ""}
 const GENERATED_SHOPPING_LIST_SCHEMA = z.object({
   listName: z.string().default("Courses de la semaine"),
   coveredRecipes: z.array(z.string()).default([]),
+  mealPlan: z
+    .array(
+      z.object({
+        mealIndex: z.number().nullish(),
+        dishName: z.string(),
+        isRepeatOrLeftover: z.boolean().nullish().default(false),
+        details: z.string().nullish(),
+      })
+    )
+    .nullish()
+    .default([]),
+  suggestedNewRecipes: z
+    .array(
+      z.object({
+        title: z.string(),
+        description: z.string().nullish().default(""),
+        mainIngredients: z.array(z.string()).nullish().default([]),
+        whySuggested: z.string().nullish().default(""),
+      })
+    )
+    .nullish()
+    .default([]),
   itemsToBuy: z
     .array(
       z.object({
@@ -447,6 +469,18 @@ const GENERATED_SHOPPING_LIST_SCHEMA = z.object({
 export type GeneratedShoppingList = {
   listName: string;
   coveredRecipes: string[];
+  mealPlan?: {
+    mealIndex?: number;
+    dishName: string;
+    isRepeatOrLeftover?: boolean;
+    details?: string;
+  }[];
+  suggestedNewRecipes?: {
+    title: string;
+    description?: string;
+    mainIngredients?: string[];
+    whySuggested?: string;
+  }[];
   itemsToBuy: {
     name: string;
     quantity: number;
@@ -503,6 +537,8 @@ export const generateShoppingListWithAI = async (params: {
   maxBudget?: number | null;
   includePantryBasics?: boolean;
   includeArchivedItems?: boolean;
+  suggestNewRecipes?: boolean;
+  allowRepeatMeals?: boolean;
   userPrompt?: string;
 }): Promise<GeneratedShoppingList> => {
   const model = getModel(params.apiKey);
@@ -589,7 +625,7 @@ Ingrédients : ${r.ingredients
 Consignes impératives de sélection des recettes :
 - L'utilisateur souhaite planifier EXACTEMENT ${days} repas pour ${targetServings} personne(s).
 - RÈGLE DU FOYER : 1 RECETTE = 1 REPAS POUR 2 PERSONNES (sauf si un nombre différent de portions est expressément indiqué dans la recette).
-- Tu dois sélectionner assez de recettes de son carnet pour couvrir précisément les ${days} repas demandés (par exemple ${days} recettes si chaque recette fait 1 repas pour le foyer).
+- Tu dois sélectionner assez de recettes de son carnet pour couvrir précisément les ${days} repas demandés (par exemple ${days} repas complets).
 - Pour chacune des recettes retenues, adapte les proportions pour ${targetServings} personne(s).
 `;
   }
@@ -625,18 +661,49 @@ RÈGLES D'OR ABSOLUES :
    - Si un historique d'aliments consommés/archivés est fourni, analyse-le pour comprendre ce que le foyer consomme couramment et ce qui est récemment tombé en rupture de stock.
    - Si un ingrédient de base essentiel ou un aliment récurrent apprécié a été récemment terminé/consommé et n'est plus dans le frigo actuel, tu peux judicieusement proposer son réapprovisionnement dans la liste de courses si cela répond aux recettes ou aux besoins du foyer.
 
-4. EXHAUSTIVITÉ ET COUVERTURE COMPLÈTE DES ${days} REPAS :
+4. PLANIFICATION DES ${days} REPAS ET CUISINE EN DOUBLE PORTION (BATCH COOKING) :
    - RÈGLE FONDAMENTALE : 1 RECETTE = 1 REPAS POUR 2 PERSONNES (sauf si un nombre différent de portions est expressément indiqué dans la recette).
-   - Tu dois obligatoirement couvrir l'ensemble des ${days} repas demandés. Dans "coveredRecipes", liste précisément toutes les recettes retenues (il doit y en avoir assez pour faire les ${days} repas).
-   - NE TE LIMITE JAMAIS ARTIFICIELLEMENT EN NOMBRE D'ARTICLES ! Ne te restreins pas à 10 ou 11 aliments : ajoute ABSOLUMENT TOUS les ingrédients nécessaires pour réaliser l'intégralité des ${days} repas (légumes, viandes/poissons, crèmes, fromages, épicerie salée/sucrée, sauces, herbes) qui ne sont pas déjà au frigo. Si les recettes nécessitent 18, 22 ou 28 ingrédients manquants, la liste DOIT contenir tous ces 18, 22 ou 28 articles !
+   ${
+     params.allowRepeatMeals !== false
+       ? `- TU PEUX PLANIFIER DE MANGER 2 FOIS LE MÊME PLAT (ex: "Lasagnes - Dîner soir 1" et "Lasagnes - Déjeuner midi 2", ou restes). C'est très avantageux et pratique pour le foyer, car cela évite de cuisiner à chaque repas !
+   - Si tu prévois qu'un plat est mangé 2 fois, adapte les quantités de la recette pour 2 repas complets et note-le clairement dans "coveredRecipes" (ex: "Lasagnes traditionnelles (x2 repas)") et dans "mealPlan".`
+       : `- Prévois des repas distincts sans répétition.`
+   }
+   - Tu dois obligatoirement couvrir l'ensemble des ${days} repas demandés.
+   - NE TE LIMITE JAMAIS ARTIFICIELLEMENT EN NOMBRE D'ARTICLES ! Ne te restreins pas à 10 ou 11 aliments : ajoute ABSOLUMENT TOUS les ingrédients nécessaires pour réaliser l'intégralité des ${days} repas (légumes, viandes/poissons, crèmes, fromages, épicerie salée/sucrée, sauces, herbes) qui ne sont pas déjà au frigo.
 
-5. CLASSEMENT PAR RAYONS :
+5. SUGGESTIONS CRÉATIVES DE NOUVELLES RECETTES POUR RENTABILISER LES ACHATS :
+   ${
+     params.suggestNewRecipes !== false
+       ? `- En plus des repas planifiés, propose dans "suggestedNewRecipes" entre 2 et 4 NOUVELLES IDÉES DE RECETTES qui réutilisent et rentabilisent les conditionnements achetés ou surplus d'ingrédients (ex: "Vous achetez 1kg de spaghettis : 500g pour les carbo + suggestion de Spaghettis à la viande hachée avec le surplus", ou "Avec le reste de barquette de viande hachée, suggestion de Légumes farcis au four").
+   - Chaque suggestion doit contenir :
+     * "title" : Nom du plat proposé
+     * "description" : Explication courte et appétissante
+     * "mainIngredients" : Liste des ingrédients achetés réutilisés
+     * "whySuggested" : Explication claire de la mutualisation / rentabilisation du conditionnement supermarché.`
+       : `- Laisse "suggestedNewRecipes" vide ([]).`
+   }
+
+6. CLASSEMENT PAR RAYONS :
    - Indique pour chaque article son rayon de supermarché parmi : "Fruits & Légumes", "Boucherie & Poissonnerie", "Produits Frais & Crémerie", "Épicerie salée", "Épicerie sucrée", "Boissons", "Surgelés".
 
 Réponds STRICTEMENT avec un JSON valide suivant ce format :
 {
   "listName": "Courses de la semaine (nom évocateur)",
-  "coveredRecipes": ["Nom Recette 1", "Nom Recette 2"],
+  "coveredRecipes": ["Tagliatelles carbonara (x2 repas)", "Salade César"],
+  "mealPlan": [
+    { "mealIndex": 1, "dishName": "Tagliatelles carbonara", "isRepeatOrLeftover": false, "details": "Préparé en portion double pour 2 repas" },
+    { "mealIndex": 2, "dishName": "Tagliatelles carbonara", "isRepeatOrLeftover": true, "details": "Deuxième repas (restes/batch cooking)" },
+    { "mealIndex": 3, "dishName": "Salade César", "isRepeatOrLeftover": false, "details": "Repas frais du soir" }
+  ],
+  "suggestedNewRecipes": [
+    {
+      "title": "Spaghettis bolo express",
+      "description": "Utilise les 500g de spaghettis restants du paquet de 1kg avec la viande hachée achetée.",
+      "mainIngredients": ["Spaghettis", "Viande hachée"],
+      "whySuggested": "Rentabilise le paquet de 1kg de spaghettis et mutualise la viande."
+    }
+  ],
   "itemsToBuy": [
     {
       "name": "Spaghettis",
@@ -655,7 +722,7 @@ Réponds STRICTEMENT avec un JSON valide suivant ce format :
     }
   ],
   "tips": [
-    "Format familial 1kg de pâtes choisi pour mutualiser les deux recettes."
+    "Format familial 1kg de pâtes choisi pour mutualiser les recettes."
   ],
   "estimatedTotalCost": 28.50
 }
@@ -668,6 +735,8 @@ ${params.userPrompt?.trim() || "Crée ma liste de courses optimisée pour la sem
 Nombre de repas prévus : EXACTEMENT ${days} repas (à couvrir sans omettre aucun ingrédient).
 Nombre de personnes par repas : ${targetServings} personne(s).
 Règle : 1 recette = 1 repas pour 2 personnes (sauf si un nombre différent de portions est précisé dans la recette).
+${params.allowRepeatMeals !== false ? "Option active : Possibilité de cuisiner pour 2 repas (batch cooking / restes).\n" : ""}
+${params.suggestNewRecipes !== false ? "Option active : Suggérer de nouvelles idées de recettes pour rentabiliser les conditionnements achetés.\n" : ""}
 ${params.maxBudget ? `Budget max souhaité : ${params.maxBudget} €\n` : ""}
 ${
   params.includePantryBasics
@@ -710,6 +779,18 @@ ${archivedContext ? `${archivedContext}\n\n` : ""}${recipesContext}
   return {
     listName: raw.listName.trim() || "Courses optimisées IA",
     coveredRecipes: raw.coveredRecipes.map((r) => r.trim()).filter(Boolean),
+    mealPlan: raw.mealPlan?.map((m, idx) => ({
+      mealIndex: m.mealIndex || idx + 1,
+      dishName: m.dishName.trim(),
+      isRepeatOrLeftover: !!m.isRepeatOrLeftover,
+      details: m.details?.trim() || undefined,
+    })),
+    suggestedNewRecipes: raw.suggestedNewRecipes?.map((s) => ({
+      title: s.title.trim(),
+      description: s.description?.trim() || "",
+      mainIngredients: s.mainIngredients?.map((i) => i.trim()).filter(Boolean) || [],
+      whySuggested: s.whySuggested?.trim() || "",
+    })),
     itemsToBuy: raw.itemsToBuy.map((item) => ({
       name: item.name.trim(),
       quantity: normalizeQty(item.quantity),
