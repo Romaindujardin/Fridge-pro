@@ -878,7 +878,12 @@ router.post(
         ingredients: { name: string; quantity?: number; unit?: string }[];
       }> = [];
       if (suggestNewRecipes) {
-        const existingRecipeContext = allRecipes.map((recipe) => ({
+        const requestedNewRecipes = Math.min(
+          10,
+          Math.max(1, suggestedRecipesCount || 2),
+        );
+
+        const initialRecipeContext = allRecipes.map((recipe) => ({
           id: recipe.id,
           title: recipe.title,
           description: recipe.description,
@@ -888,81 +893,62 @@ router.post(
             unit: ingredient.unit,
           })),
         }));
-        const isNovelTitle = (title: string) => {
-          const candidateTokens = normalizeIngredient(title)
-            .split(" ")
-            .filter((token) => token.length > 3);
-          const comparisonRecipes = [
-            ...allRecipes,
+
+        for (let index = 0; index < requestedNewRecipes; index++) {
+          // Mise en mémoire cumulative : carnet d'origine + recettes déjà générées lors des tours précédents
+          const memoryContext = [
+            ...initialRecipeContext,
             ...generatedRecipes.map((recipe) => ({
+              id: recipe.id,
               title: recipe.title,
               description: recipe.description,
+              ingredients: recipe.ingredients,
             })),
           ];
-          return comparisonRecipes.every((recipe) => {
-            const existingTokens = normalizeIngredient(recipe.title).split(" ");
-            const shared = candidateTokens.filter((token) =>
-              existingTokens.includes(token),
-            );
-            return shared.length < 2;
-          });
-        };
-        const calculatedShoppingContext = basePlanningPlan.itemsToBuy
-          .map((item) => `${item.name} (${item.quantity} ${item.unit})`)
-          .join(", ");
-        const usedFridgeNames = new Set(
-          basePlanningPlan.alreadyInFridge.map((item) =>
-            normalizeIngredient(item.name),
-          ),
-        );
-        const unusedFridgeContext = fridgeItems
-          .filter(
-            (item) =>
-              !usedFridgeNames.has(normalizeIngredient(item.ingredient.name)),
-          )
-          .map(
-            (item) => `${item.ingredient.name} (${item.quantity} ${item.unit})`,
-          )
-          .join(", ");
 
-        const requestedNewRecipes = Math.min(
-          10,
-          Math.max(1, suggestedRecipesCount || 2),
-        );
-        const noveltyFamilies = [
-          "un plat de légumes ou de légumineuses",
-          "un plat de poisson ou de fruits de mer",
-          "un plat de riz ou de céréales d'inspiration étrangère",
-          "un plat mijoté ou une préparation en sauce sans pâtes",
-          "une préparation rôtie ou farcie à base de légumes",
-          "un plat froid complet ou une assiette composée sans wraps",
-          "une soupe ou un plat végétal consistant",
-          "un plat de pommes de terre ou de semoule",
-          "une préparation au four sans pâte ni fromage comme ingrédient principal",
-          "un plat de légumineuses différent du chili",
-        ];
-        const ideaSlots = Array.from(
-          { length: requestedNewRecipes },
-          (_, index) =>
-            aiResult.suggestedNewRecipes?.[index] || {
-              title: `Nouvelle idée ${index + 1}`,
-              description: "",
-              mainIngredients: [],
-              whySuggested: "",
-            },
-        );
+          const existingTitles = new Set(
+            memoryContext.map((r) => normalizeIngredient(r.title)),
+          );
 
-        for (const [index, idea] of ideaSlots.entries()) {
-          let generated:
+          const idea = aiResult.suggestedNewRecipes?.[index];
+          const basePrompt = idea?.title
+            ? `Voici les habitudes de consommation et les recettes actuelles du foyer (${memoryContext.length} recettes enregistrées). En t'inspirant de cette idée : "${idea.title}" (${idea.description || ""}), génère 1 nouvelle recette salée complète et originale qui apporte du renouveau et change des recettes déjà existantes dans son carnet. Ingrédients clés à valoriser : ${(idea.mainIngredients || []).join(", ")}. Exclure tout dessert ou plat sucré.`
+            : `Voici les habitudes de consommation et les recettes actuelles du foyer (${memoryContext.length} recettes enregistrées). Génère 1 nouvelle recette salée originale et savoureuse qui change de ses habitudes et apporte un vrai renouveau culinaire. Exclure tout dessert ou plat sucré.`;
+
+          let candidate:
             | Awaited<ReturnType<typeof generateRecipeFromPrompt>>
             | undefined;
-          for (let attempt = 0; attempt < 4 && !generated; attempt++) {
-            const forbiddenTitles = [
-              ...allRecipes.map((recipe) => recipe.title),
-              ...generatedRecipes.map((recipe) => recipe.title),
-            ].join(" ; ");
+
+          try {
+            candidate = await generateRecipeFromPrompt({
+              apiKey,
+              servings,
+              fridgeItems: fridgeItems.map((item) => ({
+                name: item.ingredient.name,
+                quantity: item.quantity,
+                unit: item.unit,
+              })),
+              existingRecipes: memoryContext,
+              prompt: basePrompt,
+            });
+          } catch (err) {
+            console.warn(
+              `[shoppingList] Erreur lors de la génération de la recette ${index + 1}:`,
+              err,
+            );
+          }
+
+          // Si collision exacte de titre ou dessert, une tentative de relance avec variation
+          if (
+            candidate &&
+            (existingTitles.has(normalizeIngredient(candidate.title)) ||
+              candidate.category === "dessert" ||
+              /dessert|g[aâ]teau|cookie|sucr[ée]|pain perdu|brioche|pancake/i.test(
+                candidate.title,
+              ))
+          ) {
             try {
-              const candidate = await generateRecipeFromPrompt({
+              candidate = await generateRecipeFromPrompt({
                 apiKey,
                 servings,
                 fridgeItems: fridgeItems.map((item) => ({
@@ -970,46 +956,30 @@ router.post(
                   quantity: item.quantity,
                   unit: item.unit,
                 })),
-                existingRecipes: existingRecipeContext,
-                prompt: `Crée une recette salée réellement nouvelle à partir de cette idée : "${idea.title}".
-Description : ${idea.description || ""}
-Ingrédients à rentabiliser : ${(idea.mainIngredients || []).join(", ")}.
-Achats calculés à rentabiliser : ${calculatedShoppingContext || "aucun achat particulier"}.
-Surplus du frigo encore peu utilisés : ${unusedFridgeContext || "aucun surplus identifié"}.
-Famille obligatoire pour cette recette : ${noveltyFamilies[index % noveltyFamilies.length]}.
-Elle doit être clairement différente de toutes les recettes du carnet fourni : pas une simple variante, pas le même plat avec un autre fromage, et pas un doublon de titre.
-Titres déjà interdits : ${forbiddenTitles}
-Elle doit réutiliser au moins un achat calculé ou un surplus identifié, et expliquer lequel dans la description. Exclure tout dessert, petit-déjeuner et recette sucrée. ${attempt > 0 ? "Change complètement de famille culinaire par rapport à ta proposition précédente et respecte strictement la famille demandée." : ""}`,
+                existingRecipes: memoryContext,
+                prompt: `${basePrompt} Change complètement de plat et d'ingrédient principal par rapport à "${candidate.title}".`,
               });
-
-              if (
-                candidate.category !== "dessert" &&
-                !/dessert|g[aâ]teau|cookie|sucr[ée]|pain perdu|brioche|pancake/i.test(
-                  candidate.title,
-                ) &&
-                isNovelTitle(candidate.title)
-              ) {
-                generated = candidate;
-              }
             } catch {
-              continue;
+              // conservation du candidat précédent si possible
             }
           }
-          if (!generated) continue;
-          generatedRecipes.push({
-            id: `generated-shopping-${Date.now()}-${index}`,
-            title: generated.title,
-            description: generated.description,
-            servings: generated.servings || servings,
-            category: generated.category || "repas",
-            ingredients: generated.ingredients,
-          });
-        }
-        if (generatedRecipes.length < requestedNewRecipes) {
-          return res.status(422).json({
-            success: false,
-            message: `Impossible de générer ${requestedNewRecipes} recettes salées réellement nouvelles. ${generatedRecipes.length} seulement ont passé les contrôles de nouveauté.`,
-          });
+
+          if (
+            candidate &&
+            candidate.category !== "dessert" &&
+            !/dessert|g[aâ]teau|cookie|sucr[ée]|pain perdu|brioche|pancake/i.test(
+              candidate.title,
+            )
+          ) {
+            generatedRecipes.push({
+              id: `generated-shopping-${Date.now()}-${index}`,
+              title: candidate.title,
+              description: candidate.description,
+              servings: candidate.servings || servings,
+              category: candidate.category || "repas",
+              ingredients: candidate.ingredients,
+            });
+          }
         }
       }
 
@@ -1019,9 +989,9 @@ Elle doit réutiliser au moins un achat calculé ou un surplus identifié, et ex
         details: meal.details,
       }));
 
-      // Remplace quelques répétitions artificielles par les nouvelles recettes
-      // réellement générées, tout en conservant chaque recette explicitement choisie.
-      if (generatedRecipes.length) {
+      // Si l'utilisateur a expressément désactivé la répétition, on remplace
+      // les doublons par les nouvelles recettes générées.
+      if (!allowRepeatMeals && generatedRecipes.length) {
         for (const generated of generatedRecipes) {
           const seenDishes = new Set<string>();
           const replacementIndex = planningHints.findIndex((hint, index) => {

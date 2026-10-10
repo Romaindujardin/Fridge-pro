@@ -1684,7 +1684,7 @@ export function ShoppingListPage() {
                               <div className="flex items-center gap-2">
                                 {isExcluded && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-medium">
-                                    ⛔ Exclue
+                                    Exclue
                                   </span>
                                 )}
                                 <span className="text-[10px] text-gray-400">

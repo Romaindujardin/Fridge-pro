@@ -236,7 +236,7 @@ ${params.fridgeItems
     if (targetRecipe) {
       recipesContext = `
 Recette existante expressément ciblée par l'utilisateur : "${targetRecipe.title}"
-${targetRecipe.description ? `Description d'origine : ${targetRecipe.description}\n` : ""}- Ingrédients d'origine : ${targetRecipe.ingredients
+${targetRecipe.description ? `Description d'origine : ${targetRecipe.description}\n` : ""}- Ingrédients d'origine : ${(targetRecipe.ingredients || [])
         .map(
           (ing) =>
             `${ing.name}${
@@ -257,7 +257,7 @@ ${params.existingRecipes
   .slice(0, 30)
   .map(
     (r) =>
-      `- "${r.title}" (Ingrédients clés : ${r.ingredients
+      `- "${r.title}" (Ingrédients clés : ${(r.ingredients || [])
         .slice(0, 6)
         .map((i) => i.name)
         .join(", ")})`
@@ -271,7 +271,7 @@ ${params.existingRecipes
   .slice(0, 40)
   .map(
     (r) =>
-      `- "${r.title}" (Ingrédients clés : ${r.ingredients
+      `- "${r.title}" (Ingrédients clés : ${(r.ingredients || [])
         .slice(0, 8)
         .map((i) => i.name)
         .join(", ")})`
