@@ -11,6 +11,7 @@ const prisma = new PrismaClient();
 const listSelect = {
   id: true,
   name: true,
+  aiSummary: true,
   createdAt: true,
   updatedAt: true,
   items: {
@@ -49,15 +50,20 @@ const addItemSchema = z.object({
   ingredientId: z.string().optional(),
   name: z.string().optional(),
   ingredientName: z.string().optional(),
-  quantity: z
-    .preprocess(
-      parseDecimalNumber,
-      z.number({
+  quantity: z.preprocess(
+    parseDecimalNumber,
+    z
+      .number({
         invalid_type_error: "La quantité doit être un nombre",
-      }).positive("La quantité doit être supérieure à 0")
-    ),
+      })
+      .positive("La quantité doit être supérieure à 0"),
+  ),
   unit: z.string().optional().default("pièce"),
-  notes: z.string().nullable().optional().transform((val) => val ?? undefined),
+  notes: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val ?? undefined),
 });
 
 const updateItemSchema = addItemSchema.partial().extend({
@@ -104,7 +110,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /**
@@ -142,7 +148,7 @@ router.post(
       }
       next(error);
     }
-  }
+  },
 );
 
 /**
@@ -180,7 +186,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /**
@@ -214,7 +220,7 @@ router.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /**
@@ -296,7 +302,8 @@ router.post(
         item = await prisma.shoppingListItem.update({
           where: { id: existingItem.id },
           data: {
-            quantity: Math.round((existingItem.quantity + body.quantity) * 1000) / 1000,
+            quantity:
+              Math.round((existingItem.quantity + body.quantity) * 1000) / 1000,
             unit: effectiveUnit,
             notes: body.notes,
           },
@@ -343,7 +350,7 @@ router.post(
       }
       next(error);
     }
-  }
+  },
 );
 
 /**
@@ -425,7 +432,7 @@ router.put(
       }
       next(error);
     }
-  }
+  },
 );
 
 /**
@@ -490,7 +497,7 @@ router.patch(
       }
       next(error);
     }
-  }
+  },
 );
 
 /**
@@ -535,7 +542,7 @@ router.delete(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 export default router;

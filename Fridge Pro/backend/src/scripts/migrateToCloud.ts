@@ -17,7 +17,9 @@ import { execSync } from "child_process";
 const localPrisma = new PrismaClient();
 
 async function main() {
-  console.log("📦 Étape 1 : Export des données depuis la base de données locale...");
+  console.log(
+    "📦 Étape 1 : Export des données depuis la base de données locale...",
+  );
 
   const users = await localPrisma.user.findMany();
   const categories = await localPrisma.category.findMany();
@@ -68,15 +70,22 @@ async function main() {
   console.log(`   - Recettes : ${recipes.length}`);
   console.log(`   - Historique d'achats : ${purchaseHistory.length}`);
 
-  const targetUrl = process.env.TARGET_DATABASE_URL || process.env.CLOUD_DATABASE_URL;
+  const targetUrl =
+    process.env.TARGET_DATABASE_URL || process.env.CLOUD_DATABASE_URL;
 
   if (!targetUrl) {
-    console.log("\n💡 Pour migrer ces données vers votre base Neon en ligne, exécutez :");
-    console.log('   TARGET_DATABASE_URL="postgresql://user:pass@ep-xyz.aws.neon.tech/neondb?sslmode=require" npx tsx src/scripts/migrateToCloud.ts');
+    console.log(
+      "\n💡 Pour migrer ces données vers votre base Neon en ligne, exécutez :",
+    );
+    console.log(
+      '   TARGET_DATABASE_URL="postgresql://user:pass@ep-xyz.aws.neon.tech/neondb?sslmode=require" npx tsx src/scripts/migrateToCloud.ts',
+    );
     return;
   }
 
-  console.log("\n☁️ Étape 2 : Initialisation du schéma sur la base Neon distante...");
+  console.log(
+    "\n☁️ Étape 2 : Initialisation du schéma sur la base Neon distante...",
+  );
   try {
     execSync("npx prisma db push --skip-generate", {
       env: { ...process.env, DATABASE_URL: targetUrl },
@@ -147,7 +156,9 @@ async function main() {
     }
 
     // 6. Ingrédients de recettes
-    console.log(`  -> Import de ${recipeIngredients.length} liaisons recette-ingrédient...`);
+    console.log(
+      `  -> Import de ${recipeIngredients.length} liaisons recette-ingrédient...`,
+    );
     for (const ri of recipeIngredients) {
       await cloudPrisma.recipeIngredient.upsert({
         where: { id: ri.id },
@@ -157,7 +168,9 @@ async function main() {
     }
 
     // 7. Historique d'achat
-    console.log(`  -> Import de ${purchaseHistory.length} historiques d'achats...`);
+    console.log(
+      `  -> Import de ${purchaseHistory.length} historiques d'achats...`,
+    );
     for (const ph of purchaseHistory) {
       await cloudPrisma.purchaseHistory.upsert({
         where: { id: ph.id },
@@ -171,8 +184,8 @@ async function main() {
       const { items, ...listData } = sl;
       await cloudPrisma.shoppingList.upsert({
         where: { id: listData.id },
-        update: listData,
-        create: listData,
+        update: listData as any,
+        create: listData as any,
       });
       if (items && items.length > 0) {
         for (const it of items) {
@@ -194,7 +207,9 @@ async function main() {
       });
     }
 
-    console.log("\n🎉 TOUTES LES DONNÉES ONT ÉTÉ TRANSFÉRÉES SUR NEON AVEC SUCCÈS !");
+    console.log(
+      "\n🎉 TOUTES LES DONNÉES ONT ÉTÉ TRANSFÉRÉES SUR NEON AVEC SUCCÈS !",
+    );
   } catch (error) {
     console.error("❌ Erreur pendant l'importation sur Neon :", error);
   } finally {

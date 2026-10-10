@@ -14,7 +14,7 @@ export const shoppingListService = {
     try {
       const response = await api.get("/shopping-lists");
       const data = handleApiResponse<{ shoppingLists: ShoppingList[] }>(
-        response
+        response,
       );
       return data.shoppingLists;
     } catch (error) {
@@ -35,12 +35,12 @@ export const shoppingListService = {
 
   // Créer une nouvelle liste de courses
   async createShoppingList(
-    data: CreateShoppingListRequest
+    data: CreateShoppingListRequest,
   ): Promise<ShoppingList> {
     try {
       const response = await api.post("/shopping-lists", data);
       const payload = handleApiResponse<{ shoppingList: ShoppingList }>(
-        response
+        response,
       );
       return payload.shoppingList;
     } catch (error) {
@@ -61,7 +61,7 @@ export const shoppingListService = {
   // Ajouter un élément à une liste de courses
   async addItemToShoppingList(
     listId: string,
-    item: AddShoppingListItemRequest
+    item: AddShoppingListItemRequest,
   ): Promise<ShoppingListItem> {
     try {
       const response = await api.post(`/shopping-lists/${listId}/items`, item);
@@ -76,12 +76,12 @@ export const shoppingListService = {
   async updateShoppingListItem(
     listId: string,
     itemId: string,
-    updates: Partial<AddShoppingListItemRequest & { purchased: boolean }>
+    updates: Partial<AddShoppingListItemRequest & { purchased: boolean }>,
   ): Promise<ShoppingListItem> {
     try {
       const response = await api.put(
         `/shopping-lists/${listId}/items/${itemId}`,
-        updates
+        updates,
       );
       const data = handleApiResponse<{ item: ShoppingListItem }>(response);
       return data.item;
@@ -94,7 +94,7 @@ export const shoppingListService = {
   async deleteShoppingListItem(listId: string, itemId: string): Promise<void> {
     try {
       const response = await api.delete(
-        `/shopping-lists/${listId}/items/${itemId}`
+        `/shopping-lists/${listId}/items/${itemId}`,
       );
       return handleApiResponse<void>(response);
     } catch (error) {
@@ -106,12 +106,12 @@ export const shoppingListService = {
   async toggleItemPurchased(
     listId: string,
     itemId: string,
-    purchased: boolean
+    purchased: boolean,
   ): Promise<ShoppingListItem> {
     try {
       const response = await api.patch(
         `/shopping-lists/${listId}/items/${itemId}`,
-        { purchased }
+        { purchased },
       );
       const data = handleApiResponse<{ item: ShoppingListItem }>(response);
       return data.item;
@@ -123,7 +123,7 @@ export const shoppingListService = {
   // Générer une liste de courses à partir d'une recette
   async generateFromRecipe(
     recipeId: string,
-    listName?: string
+    listName?: string,
   ): Promise<ShoppingList> {
     try {
       const response = await api.post("/shopping-lists/generate-from-recipe", {
@@ -138,10 +138,25 @@ export const shoppingListService = {
 
   // Générer une liste de courses mutualisée et intelligente avec l'IA
   async generateShoppingListWithAI(
-    payload: GenerateShoppingListAIRequest
+    payload: GenerateShoppingListAIRequest,
   ): Promise<GenerateShoppingListAIResponse> {
     try {
       const response = await api.post("/ai/generate-shopping-list", payload);
+      return handleApiResponse<GenerateShoppingListAIResponse>(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  async replaceShoppingListSuggestion(
+    listId: string,
+    suggestionIndex: number,
+  ): Promise<GenerateShoppingListAIResponse> {
+    try {
+      const response = await api.post(
+        `/ai/shopping-lists/${listId}/replace-suggestion`,
+        { suggestionIndex },
+      );
       return handleApiResponse<GenerateShoppingListAIResponse>(response);
     } catch (error) {
       return handleApiError(error);
