@@ -134,7 +134,13 @@ export interface GetHistoryResponse {
 }
 
 // Types recettes
-export type RecipeCategory = "entree" | "plat" | "repas" | "petit-dejeuner" | "dessert" | "autre";
+export type RecipeCategory =
+  | "entree"
+  | "plat"
+  | "repas"
+  | "petit-dejeuner"
+  | "dessert"
+  | "autre";
 
 export interface Recipe {
   id: string;
@@ -212,6 +218,7 @@ export interface ShoppingList {
   createdAt: string;
   updatedAt: string;
   items: ShoppingListItem[];
+  aiSummary?: ShoppingListAISummary | null;
 }
 
 export interface ShoppingListItem {
@@ -304,6 +311,21 @@ export interface GenerateShoppingListAIResponse {
     }[];
     tips?: string[];
     estimatedTotalCost?: number;
+  };
+}
+
+export interface ShoppingListAISummary {
+  version?: number;
+  summary: GenerateShoppingListAIResponse["summary"];
+  planning?: {
+    generatedRecipes?: unknown[];
+    targetRecipeIds?: string[];
+    excludedRecipeIds?: string[];
+    daysCount?: number;
+    servings?: number;
+    allowRepeatMeals?: boolean;
+    includePantryBasics?: boolean;
+    mealHints?: MealPlanItem[];
   };
 }
 

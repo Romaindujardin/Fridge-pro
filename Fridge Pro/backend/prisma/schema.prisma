@@ -156,6 +156,7 @@ model ShoppingList {
   id        String   @id @default(uuid())
   userId    String
   name      String
+  aiSummary Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

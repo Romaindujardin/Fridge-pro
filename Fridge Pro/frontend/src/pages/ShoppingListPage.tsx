@@ -24,6 +24,9 @@ import {
   Minus,
   Repeat,
   Ban,
+  Eye,
+  RefreshCw,
+  Layers3,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -40,6 +43,7 @@ import type {
   Ingredient,
   GenerateShoppingListAIRequest,
   GenerateShoppingListAIResponse,
+  ShoppingListAISummary,
 } from "@/types";
 
 // Convertit et normalise un nombre décimal (gère virgule et point)
@@ -68,8 +72,9 @@ const addItemSchema = z.object({
   name: z.string().optional(),
   quantity: z.preprocess(
     parseDecimalNumber,
-    z.number({ invalid_type_error: "La quantité doit être un nombre valide" })
-      .positive("La quantité doit être supérieure à 0")
+    z
+      .number({ invalid_type_error: "La quantité doit être un nombre valide" })
+      .positive("La quantité doit être supérieure à 0"),
   ),
   unit: z.string().optional(),
   notes: z.string().optional(),
@@ -110,6 +115,90 @@ const getRecipeCategoryBadge = (category?: string) => {
   }
 };
 
+const normalizeShoppingText = (text?: string | null): string => {
+  return (text || "")
+    .toLowerCase()
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+};
+
+const getShoppingSection = (item: ShoppingList["items"][number]): string => {
+  const category = normalizeShoppingText(item.ingredient.category?.name);
+  const name = normalizeShoppingText(item.ingredient.name);
+
+  // 1. Catégorie officielle en base de données si existante
+  if (/fruit|legume/.test(category)) return "Fruits & légumes";
+  if (/viande|boucherie|poisson/.test(category)) return "Boucherie & poissonnerie";
+  if (/lait|crem|fromage/.test(category)) return "Produits frais & crémerie";
+  if (/boisson/.test(category)) return "Boissons";
+  if (/surgel/.test(category)) return "Surgelés";
+  if (/gateau|dejeuner|sucr/.test(category)) return "Épicerie sucrée";
+  if (/feculent|conserve|sec|sauce|aperitif|sale/.test(category)) return "Épicerie salée";
+
+  // 2. Détection stricte sur le nom de l'ingrédient (sans scanner les notes de recettes)
+  if (
+    /\b(eau|eaux|coca|cola|soda|sodas|jus|boisson|boissons|biere|bieres|vin|vins|cafe|cafes|the|thes|sirop|sirops|ice tea|oasis|sprite|fanta|schweppes|perrier|evian|volvic|cristaline)\b/.test(
+      name,
+    )
+  ) {
+    return "Boissons";
+  }
+  if (
+    /(fruits?|legumes?|salades?|tomates?|oignons?|courgettes?|carottes?|poireaux?|poivrons?|champignons?|pommes? de terre|patates?|avocats?|concombres?|radis|brocolis?|choux?|navets?|celeri|aubergines?|epinards?|haricots? vert|ails?|\bail\b|echalotes?|persil|basilic|menthe|coriandre|ciboulette|estragon|thym|romarin|gingembre|\bpommes?\b|\bpoires?\b|bananes?|fraises?|framboises?|citrons?|oranges?|clementines?|mandarines?|raisins?|\bpeches?\b|abricots?)/.test(
+      name,
+    )
+  ) {
+    return "Fruits & légumes";
+  }
+  if (
+    /(poulets?|dindes?|canards?|volailles?|boeufs?|\bsteaks?\b|viandes?|haches?|porcs?|veaux?|agneaux?|lardons?|bacons?|jambons?|saucisses?|merguez|chipolatas?|chorizos?|charcuteries?|tenders?|nuggets?|poissons?|saumons?|cabillauds?|thons?|colins?|merlus?|crevettes?|gambas|moules?|saint-jacques|crabes?|fruits? de mer|escalopes?)/.test(
+      name,
+    )
+  ) {
+    return "Boucherie & poissonnerie";
+  }
+  if (
+    /(\blaits?\b|cremes?|beurres?|oeufs?|fromages?|gorgonzola|mozzarella|parmesan|grana|gruyere|comte|cheddar|mascarpone|ricotta|feta|chevres?|yaourts?|yogourts?|fromage blanc|petit suisse|cantal|reblochon|beaufort|emmental|roquefort|\bbleus?\b|\bbries?\b|camembert|saint-nectaire|maroilles|pecorino|burrata)/.test(
+      name,
+    )
+  ) {
+    return "Produits frais & crémerie";
+  }
+  if (/(surgels?|glaces?|sorbets?)/.test(name)) {
+    return "Surgelés";
+  }
+  if (
+    /(pains? burger|pains? a burger|pains? hamburger|pains? de mie|tortillas?|wraps?|pains? pita|pains? kebab|naans?|\bbaguettes?\b|\bpains?\b)/.test(
+      name,
+    ) &&
+    !/(pain au chocolat|pains au chocolat|pain d'epice|pain perdu)/.test(name)
+  ) {
+    return "Épicerie salée";
+  }
+  if (
+    /(sucres?|chocolats?|cacao|biscuits?|gateaux?|cookies?|muffins?|confitures?|miel|nutella|pate a tartiner|compotes?|cereales?|muesli|brioches?|croissants?|pains? au chocolat|bonbons?|caramels?|vanille)/.test(
+      name,
+    )
+  ) {
+    return "Épicerie sucrée";
+  }
+  return "Épicerie salée";
+};
+
+const groupShoppingItems = (items: ShoppingList["items"]) => {
+  const groups = new Map<string, ShoppingList["items"]>();
+  for (const item of items) {
+    const section = getShoppingSection(item);
+    const current = groups.get(section) || [];
+    current.push(item);
+    groups.set(section, current);
+  }
+  return [...groups.entries()];
+};
+
 export function ShoppingListPage() {
   const [isCreateListModalOpen, setIsCreateListModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
@@ -125,16 +214,21 @@ export function ShoppingListPage() {
   const [aiDessertsCount, setAiDessertsCount] = useState<number>(0);
   const [aiServings, setAiServings] = useState<number>(2);
   const [aiMaxBudget, setAiMaxBudget] = useState<string>("");
-  const [aiIncludePantryBasics, setAiIncludePantryBasics] = useState<boolean>(false);
-  const [aiIncludeArchivedItems, setAiIncludeArchivedItems] = useState<boolean>(true);
+  const [aiIncludePantryBasics, setAiIncludePantryBasics] =
+    useState<boolean>(false);
+  const [aiIncludeArchivedItems, setAiIncludeArchivedItems] =
+    useState<boolean>(true);
   const [aiSuggestNewRecipes, setAiSuggestNewRecipes] = useState<boolean>(true);
-  const [aiSuggestedRecipesCount, setAiSuggestedRecipesCount] = useState<number>(2);
+  const [aiSuggestedRecipesCount, setAiSuggestedRecipesCount] =
+    useState<number>(2);
   const [aiAllowRepeatMeals, setAiAllowRepeatMeals] = useState<boolean>(true);
   const [aiSelectedRecipeIds, setAiSelectedRecipeIds] = useState<string[]>([]);
   const [aiRecipeSearch, setAiRecipeSearch] = useState<string>("");
-  const [aiEnableExcludeRecipes, setAiEnableExcludeRecipes] = useState<boolean>(false);
+  const [aiEnableExcludeRecipes, setAiEnableExcludeRecipes] =
+    useState<boolean>(false);
   const [aiExcludedRecipeIds, setAiExcludedRecipeIds] = useState<string[]>([]);
-  const [aiExcludeRecipeSearch, setAiExcludeRecipeSearch] = useState<string>("");
+  const [aiExcludeRecipeSearch, setAiExcludeRecipeSearch] =
+    useState<string>("");
   const [aiUserPrompt, setAiUserPrompt] = useState<string>("");
 
   // Modale récapitulatif post-génération IA
@@ -143,7 +237,13 @@ export function ShoppingListPage() {
     summary: GenerateShoppingListAIResponse["summary"];
   } | null>(null);
   const [isAiSummaryModalOpen, setIsAiSummaryModalOpen] = useState(false);
-  const [generatingRecipeId, setGeneratingRecipeId] = useState<string | null>(null);
+  const [aiSummaryListId, setAiSummaryListId] = useState<string | null>(null);
+  const [generatingRecipeId, setGeneratingRecipeId] = useState<string | null>(
+    null,
+  );
+  const [replacingSuggestionIndex, setReplacingSuggestionIndex] = useState<
+    number | null
+  >(null);
 
   const handleGenerateSuggestedRecipe = async (idea: {
     title: string;
@@ -163,6 +263,42 @@ export function ShoppingListPage() {
       toast.error(error?.message || "Erreur lors de la création de la recette");
     } finally {
       setGeneratingRecipeId(null);
+    }
+  };
+
+  const openPersistedSummary = (list: ShoppingList) => {
+    if (!list.aiSummary) return;
+    setAiSummaryListId(list.id);
+    setAiSummaryData({
+      listName: list.name,
+      summary: list.aiSummary.summary,
+    });
+    setIsAiSummaryModalOpen(true);
+  };
+
+  const handleReplaceSuggestedRecipe = async (index: number) => {
+    if (!aiSummaryData) return;
+    const list = shoppingLists.find((item) => item.id === aiSummaryListId);
+    if (!list) {
+      toast.error("Impossible de retrouver la liste associée");
+      return;
+    }
+    try {
+      setReplacingSuggestionIndex(index);
+      const result = await shoppingListService.replaceShoppingListSuggestion(
+        list.id,
+        index,
+      );
+      setAiSummaryData({
+        listName: result.shoppingList.name,
+        summary: result.summary,
+      });
+      queryClient.invalidateQueries({ queryKey: ["shoppingLists"] });
+      toast.success("La recette et la liste associée ont été recalculées");
+    } catch (error: any) {
+      toast.error(error?.message || "Impossible de remplacer cette recette");
+    } finally {
+      setReplacingSuggestionIndex(null);
     }
   };
 
@@ -233,6 +369,7 @@ export function ShoppingListPage() {
       setAiSelectedRecipeIds([]);
       setAiExcludedRecipeIds([]);
       setAiEnableExcludeRecipes(false);
+      setAiSummaryListId(data.shoppingList.id);
       setAiSummaryData({
         listName: data.shoppingList.name,
         summary: data.summary,
@@ -243,7 +380,7 @@ export function ShoppingListPage() {
     onError: (error: any) => {
       toast.error(
         error?.message ||
-          "Erreur lors de la génération IA de la liste de courses"
+          "Erreur lors de la génération IA de la liste de courses",
       );
     },
   });
@@ -387,7 +524,7 @@ export function ShoppingListPage() {
   const handleToggleItem = (
     listId: string,
     itemId: string,
-    purchased: boolean
+    purchased: boolean,
   ) => {
     toggleItemMutation.mutate({ listId, itemId, purchased: !purchased });
   };
@@ -401,11 +538,11 @@ export function ShoppingListPage() {
   // Calculer les statistiques
   const totalItems = shoppingLists.reduce(
     (acc, list) => acc + list.items.length,
-    0
+    0,
   );
   const purchasedItems = shoppingLists.reduce(
     (acc, list) => acc + list.items.filter((item) => item.purchased).length,
-    0
+    0,
   );
 
   return (
@@ -447,7 +584,9 @@ export function ShoppingListPage() {
               <h3 className="text-xl sm:text-3xl font-bold text-emerald-600 mb-0.5 sm:mb-1">
                 {shoppingLists.length}
               </h3>
-              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">Listes actives</p>
+              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">
+                Listes actives
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -458,7 +597,9 @@ export function ShoppingListPage() {
               <h3 className="text-xl sm:text-3xl font-bold text-blue-600 mb-0.5 sm:mb-1">
                 {totalItems}
               </h3>
-              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">Articles total</p>
+              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">
+                Articles total
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -469,7 +610,9 @@ export function ShoppingListPage() {
               <h3 className="text-xl sm:text-3xl font-bold text-amber-600 mb-0.5 sm:mb-1">
                 {purchasedItems}
               </h3>
-              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">Articles achetés</p>
+              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">
+                Articles achetés
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -512,7 +655,7 @@ export function ShoppingListPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {shoppingLists.map((list) => {
             const completedItems = list.items.filter(
-              (item) => item.purchased
+              (item) => item.purchased,
             ).length;
             const totalListItems = list.items.length;
             const completionRate =
@@ -530,6 +673,17 @@ export function ShoppingListPage() {
                       </p>
                     </div>
                     <div className="flex space-x-1">
+                      {list.aiSummary && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openPersistedSummary(list)}
+                          title="Ouvrir le planning et les recettes"
+                          aria-label="Ouvrir le planning et les recettes"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -578,61 +732,80 @@ export function ShoppingListPage() {
                       <p className="text-sm">Liste vide</p>
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {list.items.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                            item.purchased
-                              ? "bg-green-50 border-green-200"
-                              : "bg-gray-50 border-gray-200"
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <button
-                              onClick={() =>
-                                handleToggleItem(
-                                  list.id,
-                                  item.id,
-                                  item.purchased
-                                )
-                              }
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                item.purchased
-                                  ? "bg-green-600 border-green-600 text-white"
-                                  : "border-gray-300 hover:border-green-600"
-                              }`}
-                            >
-                              {item.purchased && <Check className="w-3 h-3" />}
-                            </button>
-
-                            <div>
-                              <div
-                                className={`font-medium ${
-                                  item.purchased
-                                    ? "line-through text-gray-500"
-                                    : "text-gray-900"
-                                }`}
-                              >
-                                {item.ingredient.name}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {item.quantity} {item.unit}
-                                {item.notes && ` • ${item.notes}`}
-                              </div>
+                    <div className="space-y-4 max-h-[28rem] overflow-y-auto pr-1">
+                      {groupShoppingItems(list.items).map(
+                        ([section, sectionItems]) => (
+                          <section key={section}>
+                            <div className="sticky top-0 z-[1] flex items-center gap-2 bg-white/95 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-500 backdrop-blur-sm">
+                              <Layers3 className="h-3.5 w-3.5 text-primary-600" />
+                              {section}
+                              <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px]">
+                                {sectionItems.length}
+                              </span>
                             </div>
-                          </div>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteItem(list.id, item.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
+                            <div className="space-y-2">
+                              {sectionItems.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className={`flex items-center justify-between gap-2 rounded-lg border p-3 transition-colors ${
+                                    item.purchased
+                                      ? "bg-green-50 border-green-200"
+                                      : "bg-gray-50 border-gray-200"
+                                  }`}
+                                >
+                                  <div className="flex min-w-0 items-center gap-3">
+                                    <button
+                                      onClick={() =>
+                                        handleToggleItem(
+                                          list.id,
+                                          item.id,
+                                          item.purchased,
+                                        )
+                                      }
+                                      className={`h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                                        item.purchased
+                                          ? "bg-green-600 border-green-600 text-white"
+                                          : "border-gray-300 hover:border-green-600"
+                                      }`}
+                                      aria-label={
+                                        item.purchased
+                                          ? "Marquer comme non acheté"
+                                          : "Marquer comme acheté"
+                                      }
+                                    >
+                                      {item.purchased && (
+                                        <Check className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                    <div className="min-w-0">
+                                      <div
+                                        className={`truncate font-medium ${item.purchased ? "line-through text-gray-500" : "text-gray-900"}`}
+                                      >
+                                        {item.ingredient.name}
+                                      </div>
+                                      <div className="break-words text-xs text-gray-500 sm:text-sm">
+                                        {item.quantity} {item.unit}
+                                        {item.notes && ` • ${item.notes}`}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      handleDeleteItem(list.id, item.id)
+                                    }
+                                    className="shrink-0 text-red-600 hover:text-red-700"
+                                    aria-label={`Supprimer ${item.ingredient.name}`}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </section>
+                        ),
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -735,14 +908,18 @@ export function ShoppingListPage() {
                       className="w-full text-left px-4 py-2.5 hover:bg-emerald-50/60 transition-colors flex items-center justify-between"
                     >
                       <div>
-                        <div className="font-medium text-gray-900 text-sm">{ingredient.name}</div>
+                        <div className="font-medium text-gray-900 text-sm">
+                          {ingredient.name}
+                        </div>
                         {ingredient.category?.name && (
                           <div className="text-xs text-gray-500">
                             {ingredient.category?.name}
                           </div>
                         )}
                       </div>
-                      <span className="text-xs text-emerald-600 font-medium">Choisir</span>
+                      <span className="text-xs text-emerald-600 font-medium">
+                        Choisir
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -754,7 +931,8 @@ export function ShoppingListPage() {
               </p>
             )}
             <p className="mt-1 text-xs text-gray-500">
-              Tapez n'importe quel article (alimentaire ou produit du quotidien comme de la lessive)
+              Tapez n'importe quel article (alimentaire ou produit du quotidien
+              comme de la lessive)
             </p>
           </div>
 
@@ -811,7 +989,7 @@ export function ShoppingListPage() {
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
         title="Génération automatique de liste (IA)"
-        size="lg"
+        size="xl"
       >
         <div className="space-y-6">
           {/* Explication d'optimisation */}
@@ -820,7 +998,15 @@ export function ShoppingListPage() {
               Optimisation intelligente des courses
             </h4>
             <p className="text-xs text-gray-600 leading-relaxed">
-              L'IA croise vos recettes prévues avec les stocks réels de votre frigo (<strong>{fridgeItems.length} aliments en stock</strong>){aiIncludeArchivedItems && (historyData?.pagination?.total ?? 0) > 0 ? ` et vos consommations (${historyData?.pagination.total} archivés)` : ""}. Règle du foyer : 1 recette = 1 repas pour 2 (adapté selon vos portions). Elle déduit vos stocks et mutualise les formats de magasin sans omettre d'ingrédients.
+              L'IA croise vos recettes prévues avec les stocks réels de votre
+              frigo (<strong>{fridgeItems.length} aliments en stock</strong>)
+              {aiIncludeArchivedItems &&
+              (historyData?.pagination?.total ?? 0) > 0
+                ? ` et vos consommations (${historyData?.pagination.total} archivés)`
+                : ""}
+              . Règle du foyer : 1 recette = 1 repas pour 2 (adapté selon vos
+              portions). Elle déduit vos stocks et mutualise les formats de
+              magasin sans omettre d'ingrédients.
             </p>
           </div>
 
@@ -829,16 +1015,24 @@ export function ShoppingListPage() {
             <div className="flex flex-wrap items-center gap-4 text-gray-700">
               <div className="flex items-center gap-1.5 font-medium">
                 <Calendar className="w-4 h-4 text-primary-600" />
-                <span>{aiDaysCount} {aiDaysCount > 1 ? "repas prévus" : "repas prévu"}</span>
+                <span>
+                  {aiDaysCount}{" "}
+                  {aiDaysCount > 1 ? "repas prévus" : "repas prévu"}
+                </span>
               </div>
               {aiDessertsCount > 0 && (
                 <div className="flex items-center gap-1.5 font-medium text-pink-700">
-                  <span>{aiDessertsCount} {aiDessertsCount > 1 ? "desserts" : "dessert"}</span>
+                  <span>
+                    {aiDessertsCount}{" "}
+                    {aiDessertsCount > 1 ? "desserts" : "dessert"}
+                  </span>
                 </div>
               )}
               <div className="flex items-center gap-1.5 font-medium">
                 <Users className="w-4 h-4 text-primary-600" />
-                <span>{aiServings} {aiServings > 1 ? "personnes" : "personne"}</span>
+                <span>
+                  {aiServings} {aiServings > 1 ? "personnes" : "personne"}
+                </span>
               </div>
               <div className="flex items-center gap-1.5 font-medium">
                 <ChefHat className="w-4 h-4 text-primary-600" />
@@ -849,9 +1043,13 @@ export function ShoppingListPage() {
                 </span>
               </div>
               <div className="flex items-center gap-1.5 font-medium">
-                <History className={`w-4 h-4 ${aiIncludeArchivedItems ? "text-primary-600" : "text-gray-400"}`} />
+                <History
+                  className={`w-4 h-4 ${aiIncludeArchivedItems ? "text-primary-600" : "text-gray-400"}`}
+                />
                 <span>
-                  {aiIncludeArchivedItems ? "Historique inclus" : "Sans historique"}
+                  {aiIncludeArchivedItems
+                    ? "Historique inclus"
+                    : "Sans historique"}
                 </span>
               </div>
               {aiAllowRepeatMeals && (
@@ -886,7 +1084,9 @@ export function ShoppingListPage() {
               className="text-primary-700 hover:text-primary-800 font-semibold flex items-center gap-1 underline underline-offset-2 ml-auto"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              {isCustomizeOpen ? "Réduire les options" : "Personnaliser les critères"}
+              {isCustomizeOpen
+                ? "Réduire les options"
+                : "Personnaliser les critères"}
             </button>
           </div>
 
@@ -904,7 +1104,9 @@ export function ShoppingListPage() {
                     <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
                       <button
                         type="button"
-                        onClick={() => setAiDaysCount((prev) => Math.max(1, prev - 1))}
+                        onClick={() =>
+                          setAiDaysCount((prev) => Math.max(1, prev - 1))
+                        }
                         disabled={aiDaysCount <= 1}
                         className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Diminuer le nombre de repas"
@@ -926,7 +1128,9 @@ export function ShoppingListPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => setAiDaysCount((prev) => Math.min(30, prev + 1))}
+                        onClick={() =>
+                          setAiDaysCount((prev) => Math.min(30, prev + 1))
+                        }
                         disabled={aiDaysCount >= 30}
                         className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Augmenter le nombre de repas"
@@ -951,7 +1155,9 @@ export function ShoppingListPage() {
                     <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
                       <button
                         type="button"
-                        onClick={() => setAiDessertsCount((prev) => Math.max(0, prev - 1))}
+                        onClick={() =>
+                          setAiDessertsCount((prev) => Math.max(0, prev - 1))
+                        }
                         disabled={aiDessertsCount <= 0}
                         className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Diminuer le nombre de desserts"
@@ -973,7 +1179,9 @@ export function ShoppingListPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => setAiDessertsCount((prev) => Math.min(10, prev + 1))}
+                        onClick={() =>
+                          setAiDessertsCount((prev) => Math.min(10, prev + 1))
+                        }
                         disabled={aiDessertsCount >= 10}
                         className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Augmenter le nombre de desserts"
@@ -999,7 +1207,9 @@ export function ShoppingListPage() {
                     <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-2xs">
                       <button
                         type="button"
-                        onClick={() => setAiServings((prev) => Math.max(1, prev - 1))}
+                        onClick={() =>
+                          setAiServings((prev) => Math.max(1, prev - 1))
+                        }
                         disabled={aiServings <= 1}
                         className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Diminuer le nombre de personnes"
@@ -1021,7 +1231,9 @@ export function ShoppingListPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => setAiServings((prev) => Math.min(20, prev + 1))}
+                        onClick={() =>
+                          setAiServings((prev) => Math.min(20, prev + 1))
+                        }
                         disabled={aiServings >= 20}
                         className="px-2.5 py-2 text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="Augmenter le nombre de personnes"
@@ -1056,7 +1268,8 @@ export function ShoppingListPage() {
                   className="text-xs py-2 bg-white"
                 />
                 <p className="text-[11px] text-gray-500 mt-1">
-                  L'IA privilégiera les conditionnements économiques et ingrédients abordables.
+                  L'IA privilégiera les conditionnements économiques et
+                  ingrédients abordables.
                 </p>
               </div>
 
@@ -1080,7 +1293,10 @@ export function ShoppingListPage() {
                       Mutualiser les quantités (batch cooking)
                     </label>
                     <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                      Si un gros conditionnement est acheté (ex: 1kg de pâtes + 1kg bolo, grand gratin, chili...), rentabiliser en couvrant plusieurs repas (2, 3 ou plus selon les portions).
+                      Si un gros conditionnement est acheté (ex: 1kg de pâtes +
+                      1kg bolo, grand gratin, chili...), rentabiliser en
+                      couvrant plusieurs repas (2, 3 ou plus selon les
+                      portions).
                     </p>
                   </div>
                 </div>
@@ -1104,7 +1320,9 @@ export function ShoppingListPage() {
                         Suggérer de nouvelles recettes
                       </label>
                       <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                        Idées pour rentabiliser les gros formats et surplus d'ingrédients (ex: paquet 1kg de pâtes, viande hachée...).
+                        Idées pour rentabiliser les gros formats et surplus
+                        d'ingrédients (ex: paquet 1kg de pâtes, viande
+                        hachée...).
                       </p>
                     </div>
                   </div>
@@ -1118,7 +1336,9 @@ export function ShoppingListPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            setAiSuggestedRecipesCount((prev) => Math.max(1, prev - 1))
+                            setAiSuggestedRecipesCount((prev) =>
+                              Math.max(1, prev - 1),
+                            )
                           }
                           disabled={aiSuggestedRecipesCount <= 1}
                           className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -1135,7 +1355,10 @@ export function ShoppingListPage() {
                             const val = parseInt(e.target.value);
                             if (!isNaN(val)) {
                               setAiSuggestedRecipesCount(
-                                Math.min(Math.max(1, aiDaysCount), Math.max(1, val))
+                                Math.min(
+                                  Math.max(1, aiDaysCount),
+                                  Math.max(1, val),
+                                ),
                               );
                             }
                           }}
@@ -1145,10 +1368,12 @@ export function ShoppingListPage() {
                           type="button"
                           onClick={() =>
                             setAiSuggestedRecipesCount((prev) =>
-                              Math.min(Math.max(1, aiDaysCount), prev + 1)
+                              Math.min(Math.max(1, aiDaysCount), prev + 1),
                             )
                           }
-                          disabled={aiSuggestedRecipesCount >= Math.max(1, aiDaysCount)}
+                          disabled={
+                            aiSuggestedRecipesCount >= Math.max(1, aiDaysCount)
+                          }
                           className="px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
                           aria-label="Augmenter les suggestions"
                         >
@@ -1165,7 +1390,9 @@ export function ShoppingListPage() {
                     type="checkbox"
                     id="aiIncludeArchivedItems"
                     checked={aiIncludeArchivedItems}
-                    onChange={(e) => setAiIncludeArchivedItems(e.target.checked)}
+                    onChange={(e) =>
+                      setAiIncludeArchivedItems(e.target.checked)
+                    }
                     className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                   />
                   <div>
@@ -1177,7 +1404,8 @@ export function ShoppingListPage() {
                       Inclure les aliments archivés
                     </label>
                     <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                      Permet à l'IA de savoir ce qui a été consommé récemment pour identifier vos besoins de réapprovisionnement.
+                      Permet à l'IA de savoir ce qui a été consommé récemment
+                      pour identifier vos besoins de réapprovisionnement.
                     </p>
                   </div>
                 </div>
@@ -1200,7 +1428,9 @@ export function ShoppingListPage() {
                       Essentiels du quotidien & boissons
                     </label>
                     <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                      Boissons habituelles (Coca-Cola, jus, eau), petit-déj (pain, brioche, café, lait, beurre), encas et fruits, notamment ceux en rupture.
+                      Boissons habituelles (Coca-Cola, jus, eau), petit-déj
+                      (pain, brioche, café, lait, beurre), encas et fruits,
+                      notamment ceux en rupture.
                     </p>
                   </div>
                 </div>
@@ -1225,7 +1455,9 @@ export function ShoppingListPage() {
                 </div>
 
                 <p className="text-[11px] text-gray-500">
-                  Par défaut, l'IA choisit les meilleures recettes selon votre frigo. Vous pouvez cocher ci-dessous celles que vous voulez absolument cuisiner.
+                  Par défaut, l'IA choisit les meilleures recettes selon votre
+                  frigo. Vous pouvez cocher ci-dessous celles que vous voulez
+                  absolument cuisiner.
                 </p>
 
                 <div className="relative">
@@ -1242,12 +1474,15 @@ export function ShoppingListPage() {
                   {recipes
                     .filter((r) =>
                       aiRecipeSearch.trim()
-                        ? r.title.toLowerCase().includes(aiRecipeSearch.toLowerCase())
-                        : true
+                        ? r.title
+                            .toLowerCase()
+                            .includes(aiRecipeSearch.toLowerCase())
+                        : true,
                     )
                     .map((recipe) => {
                       const isExcluded =
-                        aiEnableExcludeRecipes && aiExcludedRecipeIds.includes(recipe.id);
+                        aiEnableExcludeRecipes &&
+                        aiExcludedRecipeIds.includes(recipe.id);
                       const isSelected =
                         aiSelectedRecipeIds.includes(recipe.id) && !isExcluded;
                       return (
@@ -1257,8 +1492,8 @@ export function ShoppingListPage() {
                             isExcluded
                               ? "bg-gray-100/80 opacity-50 cursor-not-allowed select-none"
                               : isSelected
-                              ? "bg-primary-50/70 cursor-pointer"
-                              : "hover:bg-gray-50 cursor-pointer"
+                                ? "bg-primary-50/70 cursor-pointer"
+                                : "hover:bg-gray-50 cursor-pointer"
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
@@ -1270,10 +1505,15 @@ export function ShoppingListPage() {
                                 if (isExcluded) return;
                                 if (isSelected) {
                                   setAiSelectedRecipeIds(
-                                    aiSelectedRecipeIds.filter((id) => id !== recipe.id)
+                                    aiSelectedRecipeIds.filter(
+                                      (id) => id !== recipe.id,
+                                    ),
                                   );
                                 } else {
-                                  setAiSelectedRecipeIds([...aiSelectedRecipeIds, recipe.id]);
+                                  setAiSelectedRecipeIds([
+                                    ...aiSelectedRecipeIds,
+                                    recipe.id,
+                                  ]);
                                 }
                               }}
                               className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer disabled:cursor-not-allowed"
@@ -1283,14 +1523,16 @@ export function ShoppingListPage() {
                                 isExcluded
                                   ? "line-through text-gray-400"
                                   : isSelected
-                                  ? "text-primary-900 font-semibold"
-                                  : "text-gray-800"
+                                    ? "text-primary-900 font-semibold"
+                                    : "text-gray-800"
                               }`}
                             >
                               {recipe.title}
                             </span>
                             {(() => {
-                              const badge = getRecipeCategoryBadge(recipe.category);
+                              const badge = getRecipeCategoryBadge(
+                                recipe.category,
+                              );
                               return (
                                 <span
                                   className={`text-[10px] px-2 py-0.5 rounded-full border font-medium inline-flex items-center ${badge.color}`}
@@ -1352,7 +1594,9 @@ export function ShoppingListPage() {
                 </div>
 
                 <p className="text-[11px] text-gray-500">
-                  Par défaut, toutes vos recettes sont éligibles. Cochez ci-dessous celles que vous refusez de cuisiner : elles seront grisées dans la liste ci-dessus et interdites à l'IA.
+                  Par défaut, toutes vos recettes sont éligibles. Cochez
+                  ci-dessous celles que vous refusez de cuisiner : elles seront
+                  grisées dans la liste ci-dessus et interdites à l'IA.
                 </p>
 
                 {aiEnableExcludeRecipes && (
@@ -1362,7 +1606,9 @@ export function ShoppingListPage() {
                       <Input
                         placeholder="Filtrer les recettes à exclure..."
                         value={aiExcludeRecipeSearch}
-                        onChange={(e) => setAiExcludeRecipeSearch(e.target.value)}
+                        onChange={(e) =>
+                          setAiExcludeRecipeSearch(e.target.value)
+                        }
                         className="pl-8 text-xs py-1.5 bg-white"
                       />
                     </div>
@@ -1371,16 +1617,22 @@ export function ShoppingListPage() {
                       {recipes
                         .filter((r) =>
                           aiExcludeRecipeSearch.trim()
-                            ? r.title.toLowerCase().includes(aiExcludeRecipeSearch.toLowerCase())
-                            : true
+                            ? r.title
+                                .toLowerCase()
+                                .includes(aiExcludeRecipeSearch.toLowerCase())
+                            : true,
                         )
                         .map((recipe) => {
-                          const isExcluded = aiExcludedRecipeIds.includes(recipe.id);
+                          const isExcluded = aiExcludedRecipeIds.includes(
+                            recipe.id,
+                          );
                           return (
                             <label
                               key={recipe.id}
                               className={`flex items-center justify-between px-3 py-2 text-xs cursor-pointer transition-colors ${
-                                isExcluded ? "bg-rose-50/80" : "hover:bg-gray-50"
+                                isExcluded
+                                  ? "bg-rose-50/80"
+                                  : "hover:bg-gray-50"
                               }`}
                             >
                               <div className="flex items-center gap-2.5">
@@ -1390,13 +1642,18 @@ export function ShoppingListPage() {
                                   onChange={() => {
                                     if (isExcluded) {
                                       setAiExcludedRecipeIds(
-                                        aiExcludedRecipeIds.filter((id) => id !== recipe.id)
+                                        aiExcludedRecipeIds.filter(
+                                          (id) => id !== recipe.id,
+                                        ),
                                       );
                                     } else {
-                                      setAiExcludedRecipeIds([...aiExcludedRecipeIds, recipe.id]);
+                                      setAiExcludedRecipeIds([
+                                        ...aiExcludedRecipeIds,
+                                        recipe.id,
+                                      ]);
                                       // Retirer de la sélection des recettes ci-dessus
                                       setAiSelectedRecipeIds((prev) =>
-                                        prev.filter((id) => id !== recipe.id)
+                                        prev.filter((id) => id !== recipe.id),
                                       );
                                     }
                                   }}
@@ -1404,13 +1661,17 @@ export function ShoppingListPage() {
                                 />
                                 <span
                                   className={`font-medium ${
-                                    isExcluded ? "text-rose-900 font-semibold" : "text-gray-800"
+                                    isExcluded
+                                      ? "text-rose-900 font-semibold"
+                                      : "text-gray-800"
                                   }`}
                                 >
                                   {recipe.title}
                                 </span>
                                 {(() => {
-                                  const badge = getRecipeCategoryBadge(recipe.category);
+                                  const badge = getRecipeCategoryBadge(
+                                    recipe.category,
+                                  );
                                   return (
                                     <span
                                       className={`text-[10px] px-2 py-0.5 rounded-full border font-medium inline-flex items-center ${badge.color}`}
@@ -1466,18 +1727,26 @@ export function ShoppingListPage() {
             <Button
               type="button"
               onClick={() => {
-                const parsedBudget = aiMaxBudget ? parseFloat(aiMaxBudget) : null;
+                const parsedBudget = aiMaxBudget
+                  ? parseFloat(aiMaxBudget)
+                  : null;
                 generateAiListMutation.mutate({
                   daysCount: aiDaysCount,
                   dessertsCount: aiDessertsCount,
                   servings: aiServings,
-                  maxBudget: parsedBudget && parsedBudget > 0 ? parsedBudget : null,
+                  maxBudget:
+                    parsedBudget && parsedBudget > 0 ? parsedBudget : null,
                   includePantryBasics: aiIncludePantryBasics,
                   includeArchivedItems: aiIncludeArchivedItems,
                   suggestNewRecipes: aiSuggestNewRecipes,
-                  suggestedRecipesCount: aiSuggestNewRecipes ? aiSuggestedRecipesCount : undefined,
+                  suggestedRecipesCount: aiSuggestNewRecipes
+                    ? aiSuggestedRecipesCount
+                    : undefined,
                   allowRepeatMeals: aiAllowRepeatMeals,
-                  targetRecipeIds: aiSelectedRecipeIds.length > 0 ? aiSelectedRecipeIds : undefined,
+                  targetRecipeIds:
+                    aiSelectedRecipeIds.length > 0
+                      ? aiSelectedRecipeIds
+                      : undefined,
                   excludedRecipeIds:
                     aiEnableExcludeRecipes && aiExcludedRecipeIds.length > 0
                       ? aiExcludedRecipeIds
@@ -1508,40 +1777,52 @@ export function ShoppingListPage() {
                 <span>{aiSummaryData.listName}</span>
               </h4>
               <p className="text-xs text-emerald-800">
-                La liste a été créée et ajoutée à vos listes actives avec tous ses articles mutualisés et classés par rayon.
+                La liste a été créée et ajoutée à vos listes actives avec tous
+                ses articles mutualisés et classés par rayon.
               </p>
             </div>
 
             {/* Répartition du planning des repas (mealPlan) */}
-            {aiSummaryData.summary.mealPlan && aiSummaryData.summary.mealPlan.length > 0 ? (
+            {aiSummaryData.summary.mealPlan &&
+            aiSummaryData.summary.mealPlan.length > 0 ? (
               <div>
                 <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-primary-600" />
-                  Planning des repas prévus ({aiSummaryData.summary.mealPlan.length} repas)
+                  Planning des repas prévus (
+                  {aiSummaryData.summary.mealPlan.length} repas)
                 </h5>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {aiSummaryData.summary.mealPlan.map((m, idx) => (
                     <div
                       key={idx}
-                      className={`flex items-center justify-between text-xs p-2.5 rounded-xl border transition-colors ${
+                      className={`flex flex-col gap-2 rounded-xl border p-3 text-xs transition-colors sm:flex-row sm:items-start sm:justify-between ${
                         m.isRepeatOrLeftover
                           ? "bg-amber-50/70 border-amber-200/80 text-amber-950"
                           : "bg-white border-gray-200/80 text-gray-900"
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                      <div className="flex min-w-0 items-start gap-2 pr-1">
                         <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
                           #{m.mealIndex}
                         </span>
-                        <span className="font-semibold truncate">{m.dishName}</span>
+                        <span className="break-words font-semibold leading-snug">
+                          {m.dishName}
+                        </span>
                       </div>
                       {m.isRepeatOrLeftover ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 shrink-0">
-                          <Repeat className="w-2.5 h-2.5" />
-                          {m.details || "Multi-repas / batch cooking"}
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">
+                          <Repeat className="w-3 h-3" />
+                          {(() => {
+                            const trimmed = (m.details || "").trim();
+                            if (/^x\d+$/i.test(trimmed)) return trimmed;
+                            const match =
+                              trimmed.match(/Service\s+(\d+)/i) ||
+                              trimmed.match(/x\s*(\d+)/i);
+                            return match ? `x${match[1]}` : "x2";
+                          })()}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-gray-500 shrink-0">
+                        <span className="text-[10px] leading-tight text-gray-500 sm:max-w-[45%] sm:text-right">
                           {m.details || "Repas frais"}
                         </span>
                       )}
@@ -1577,7 +1858,8 @@ export function ShoppingListPage() {
                   <div className="flex items-center justify-between">
                     <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                      Idées de recettes pour mutualiser vos achats ({aiSummaryData.summary.suggestedNewRecipes.length})
+                      Idées de recettes pour mutualiser vos achats (
+                      {aiSummaryData.summary.suggestedNewRecipes.length})
                     </h5>
                     <span className="text-[11px] text-indigo-600 font-medium">
                       Zéro gaspillage & gros formats
@@ -1585,60 +1867,76 @@ export function ShoppingListPage() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {aiSummaryData.summary.suggestedNewRecipes.map((idea, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-indigo-50/50 hover:bg-indigo-50/80 border border-indigo-100 rounded-xl p-3 flex flex-col justify-between transition-colors"
-                      >
-                        <div>
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h6 className="font-bold text-xs text-indigo-950 flex items-center gap-1.5">
-                              <span>🍽️</span>
-                              <span>{idea.title}</span>
-                            </h6>
+                    {aiSummaryData.summary.suggestedNewRecipes.map(
+                      (idea, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-indigo-50/50 hover:bg-indigo-50/80 border border-indigo-100 rounded-xl p-3 flex flex-col justify-between transition-colors"
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h6 className="font-bold text-xs text-indigo-950 flex items-center gap-1.5">
+                                <span>🍽️</span>
+                                <span>{idea.title}</span>
+                              </h6>
+                            </div>
+
+                            {idea.whySuggested && (
+                              <p className="text-[11px] text-indigo-700 font-medium bg-white/80 border border-indigo-100 rounded-lg px-2 py-1 mb-2">
+                                💡 {idea.whySuggested}
+                              </p>
+                            )}
+
+                            {idea.description && (
+                              <p className="text-[11px] text-gray-600 mb-2 leading-relaxed">
+                                {idea.description}
+                              </p>
+                            )}
+
+                            {idea.mainIngredients &&
+                              idea.mainIngredients.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-2.5">
+                                  {idea.mainIngredients.map((ing, iIdx) => (
+                                    <span
+                                      key={iIdx}
+                                      className="text-[10px] px-1.5 py-0.5 rounded bg-white text-gray-700 border border-gray-200"
+                                    >
+                                      {ing}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                           </div>
 
-                          {idea.whySuggested && (
-                            <p className="text-[11px] text-indigo-700 font-medium bg-white/80 border border-indigo-100 rounded-lg px-2 py-1 mb-2">
-                              💡 {idea.whySuggested}
-                            </p>
-                          )}
-
-                          {idea.description && (
-                            <p className="text-[11px] text-gray-600 mb-2 leading-relaxed">
-                              {idea.description}
-                            </p>
-                          )}
-
-                          {idea.mainIngredients && idea.mainIngredients.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-2.5">
-                              {idea.mainIngredients.map((ing, iIdx) => (
-                                <span
-                                  key={iIdx}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-white text-gray-700 border border-gray-200"
-                                >
-                                  {ing}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                          <div className="flex flex-col gap-2 border-t border-indigo-100/60 pt-2 sm:flex-row sm:justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-auto min-h-9 w-full px-2.5 py-1 text-[11px] text-indigo-700 border-indigo-200 hover:bg-indigo-100/70 sm:w-auto"
+                              onClick={() => handleReplaceSuggestedRecipe(idx)}
+                              loading={replacingSuggestionIndex === idx}
+                            >
+                              <RefreshCw className="mr-1 h-3 w-3" />
+                              Changer cette recette
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto min-h-9 w-full px-2.5 py-1 text-[11px] text-indigo-700 sm:w-auto"
+                              onClick={() =>
+                                handleGenerateSuggestedRecipe(idea)
+                              }
+                              loading={generatingRecipeId === idea.title}
+                            >
+                              <Plus className="mr-1 h-3 w-3" />
+                              Ajouter au carnet
+                            </Button>
+                          </div>
                         </div>
-
-                        <div className="pt-2 border-t border-indigo-100/60 flex justify-end">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="text-[11px] py-1 px-2.5 h-auto text-indigo-700 border-indigo-200 hover:bg-indigo-100/70"
-                            onClick={() => handleGenerateSuggestedRecipe(idea)}
-                            loading={generatingRecipeId === idea.title}
-                          >
-                            <Plus className="w-3 h-3 mr-1" />
-                            Ajouter à mes recettes
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 </div>
               )}
@@ -1648,11 +1946,15 @@ export function ShoppingListPage() {
               <div>
                 <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5 text-emerald-600" />
-                  Économisé grâce à votre frigo ({aiSummaryData.summary.alreadyInFridge.length})
+                  Économisé grâce à votre frigo (
+                  {aiSummaryData.summary.alreadyInFridge.length})
                 </h5>
                 <div className="bg-gray-50 border border-gray-200/80 rounded-xl p-3 space-y-2 max-h-40 overflow-y-auto text-xs">
                   {aiSummaryData.summary.alreadyInFridge.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-gray-700">
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 text-gray-700"
+                    >
                       <span className="text-emerald-600 font-bold">✓</span>
                       <div>
                         <strong className="text-gray-900">{item.name}</strong>
@@ -1673,14 +1975,18 @@ export function ShoppingListPage() {
               {aiSummaryData.summary.estimatedTotalCost !== undefined && (
                 <div className="flex items-center gap-1.5 text-gray-700 font-medium">
                   <DollarSign className="w-4 h-4 text-emerald-600" />
-                  <span>Budget estimé : ~{aiSummaryData.summary.estimatedTotalCost} €</span>
+                  <span>
+                    Budget estimé : ~{aiSummaryData.summary.estimatedTotalCost}{" "}
+                    €
+                  </span>
                 </div>
               )}
-              {aiSummaryData.summary.tips && aiSummaryData.summary.tips.length > 0 && (
-                <div className="w-full text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl p-2.5">
-                  💡 {aiSummaryData.summary.tips[0]}
-                </div>
-              )}
+              {aiSummaryData.summary.tips &&
+                aiSummaryData.summary.tips.length > 0 && (
+                  <div className="w-full text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl p-2.5">
+                    💡 {aiSummaryData.summary.tips[0]}
+                  </div>
+                )}
             </div>
 
             <div className="flex justify-end pt-2">
