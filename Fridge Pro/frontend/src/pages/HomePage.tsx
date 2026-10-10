@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   Plus,
   TrendingUp,
@@ -11,9 +12,14 @@ import {
   ScanLine,
   ArrowRight,
   Coins,
+  Calendar,
+  Snowflake,
+  Check,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { FreshnessBadge } from "@/components/ui/FreshnessBadge";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,18 +27,104 @@ import { fridgeService } from "@/services/fridgeService";
 import { recipeService } from "@/services/recipeService";
 import { shoppingListService } from "@/services/shoppingListService";
 import { formatImageUrl } from "@/utils/imageUtils";
+import { isItemFrozen } from "@/utils/frozenUtils";
+import type { FridgeItem } from "@/types";
 
 export function HomePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"suggested" | "favorites">("suggested");
+  const [expiryModalItem, setExpiryModalItem] = useState<FridgeItem | null>(null);
+  const [quickExpiryDate, setQuickExpiryDate] = useState("");
   const queryClient = useQueryClient();
 
-  // Récupérer les données du dashboard
+  // Récupérer les données du dashboard (toujours fraîches au montage)
   const { data: fridgeItems = [], isError: fridgeError } = useQuery({
     queryKey: ["fridgeItems"],
     queryFn: fridgeService.getFridgeItems,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      fridgeService.updateFridgeItem(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fridgeItems"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Aliment mis à jour !");
+      setExpiryModalItem(null);
+    },
+    onError: () => {
+      toast.error("Erreur lors de la modification");
+    },
+  });
+
+  const finishMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      fridgeService.finishFridgeItem(id, { status: "consumed", finishAll: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fridgeItems"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["purchaseHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Aliment marqué comme consommé !");
+    },
+    onError: () => {
+      toast.error("Erreur lors de la mise à jour");
+    },
+  });
+
+  const handleFreezeItem = async (item: FridgeItem) => {
+    let categories: any[] = [];
+    try {
+      categories = await fridgeService.getCategories();
+    } catch {
+      // continuer
+    }
+    let freezerCat = categories.find(
+      (c) =>
+        c.name.toLowerCase().includes("surgele") ||
+        c.name.toLowerCase().includes("surgelé") ||
+        c.name.toLowerCase().includes("congel")
+    );
+    let freezerCatId = freezerCat?.id;
+    if (!freezerCatId) {
+      try {
+        const newCat = await fridgeService.createCategory({
+          name: "Surgelés",
+          color: "#06b6d4",
+          icon: "🧊",
+        });
+        freezerCatId = newCat.id;
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+      } catch {
+        // continuer
+      }
+    }
+
+    updateMutation.mutate({
+      id: item.id,
+      data: {
+        categoryId: freezerCatId,
+        expiryDate: "",
+        addedDate: new Date().toISOString(),
+      },
+    });
+    toast.success(`"${item.ingredient.name}" mis en congélation !`);
+  };
+
+  const handleQuickExpirySave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!expiryModalItem) return;
+    updateMutation.mutate({
+      id: expiryModalItem.id,
+      data: {
+        expiryDate: quickExpiryDate || "",
+      },
+    });
+  };
 
   const { data: suggestedRecipes = [], isError: recipesError } = useQuery({
     queryKey: ["suggestedRecipes"],
@@ -71,15 +163,24 @@ export function HomePage() {
       : 0,
   };
 
-  // Aliments avec date de péremption, triés par date la plus proche (les plus urgents en premier)
+  // Aliments avec date de péremption, en excluant formellement les surgelés/congelés (non périssables à court terme),
+  // triés par date la plus proche (les plus urgents en premier)
   const expiringItems = useMemo(() => {
     return [...fridgeItems]
-      .filter((item) => !!item.expiryDate)
+      .filter((item) => !isItemFrozen(item) && !!item.expiryDate)
       .sort(
         (a, b) =>
           new Date(a.expiryDate!).getTime() - new Date(b.expiryDate!).getTime()
       );
   }, [fridgeItems]);
+
+  const urgentItemsCount = useMemo(() => {
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    return expiringItems.filter(
+      (item) => new Date(item.expiryDate!) <= sevenDaysFromNow
+    ).length;
+  }, [expiringItems]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -243,12 +344,14 @@ export function HomePage() {
                   Aliments qui périment bientôt
                   {expiringItems.length > 0 && (
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                      {expiringItems.length}
+                      {urgentItemsCount > 0
+                        ? `${urgentItemsCount} urgent${urgentItemsCount > 1 ? "s" : ""}`
+                        : expiringItems.length}
                     </span>
                   )}
                 </CardTitle>
                 <p className="text-xs text-gray-500">
-                  Consommez ces ingrédients en priorité pour éviter le gaspillage alimentaire
+                  Consommez ces ingrédients en priorité pour éviter le gaspillage alimentaire (les aliments surgelés sont exclus)
                 </p>
               </div>
             </div>
@@ -266,10 +369,10 @@ export function HomePage() {
           {expiringItems.length === 0 ? (
             <div className="text-center py-6 text-gray-500">
               <p className="text-sm font-medium text-gray-700 mb-1">
-                Aucun aliment avec date de péremption renseignée
+                Aucun aliment périssable avec date renseignée
               </p>
               <p className="text-xs text-gray-500 mb-3">
-                Ajoutez des dates de péremption à vos aliments pour les suivre automatiquement ici.
+                Vos aliments surgelés sont bien conservés et aucun autre produit ne requiert d'attention immédiate.
               </p>
               <Button asChild variant="outline" size="sm">
                 <Link to="/fridge">Ajouter des dates dans mon frigo</Link>
@@ -335,6 +438,59 @@ export function HomePage() {
                       showDays={true}
                       className="w-full justify-center py-1 text-xs"
                     />
+
+                    {/* Actions rapides directement depuis le dashboard */}
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setExpiryModalItem(item);
+                          setQuickExpiryDate(
+                            item.expiryDate
+                              ? new Date(item.expiryDate).toISOString().split("T")[0]
+                              : ""
+                          );
+                        }}
+                        className="flex-1 h-7 text-[11px] px-1 text-gray-600 hover:text-amber-700 hover:bg-amber-50"
+                        title="Modifier ou retirer la date de péremption"
+                      >
+                        <Calendar className="w-3.5 h-3.5 mr-1 text-amber-500 shrink-0" />
+                        <span>Date</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFreezeItem(item)}
+                        className="flex-1 h-7 text-[11px] px-1 text-gray-600 hover:text-cyan-700 hover:bg-cyan-50"
+                        title="Mettre en congélation (l'aliment ne sera plus périssable)"
+                      >
+                        <Snowflake className="w-3.5 h-3.5 mr-1 text-cyan-500 shrink-0" />
+                        <span>Congeler</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (
+                            confirm(
+                              `Marquer "${item.ingredient.name}" comme consommé ?`
+                            )
+                          ) {
+                            finishMutation.mutate({ id: item.id });
+                          }
+                        }}
+                        className="h-7 w-7 p-0 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 shrink-0"
+                        title="Marquer comme consommé"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
 
                     <Button
                       asChild
@@ -524,6 +680,97 @@ export function HomePage() {
           )}
         </CardContent>
       </Card>
+    {/* Modal d'action rapide : Changer la date de péremption depuis le Dashboard */}
+      <Modal
+        isOpen={!!expiryModalItem}
+        onClose={() => setExpiryModalItem(null)}
+        title={`Date de péremption : ${expiryModalItem?.ingredient?.name || ""}`}
+        size="sm"
+      >
+        <form onSubmit={handleQuickExpirySave} className="space-y-4">
+          <Input
+            label="Date limite de consommation"
+            type="date"
+            value={quickExpiryDate}
+            onChange={(e) => setQuickExpiryDate(e.target.value)}
+          />
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Raccourcis rapides :
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 3);
+                  setQuickExpiryDate(d.toISOString().split("T")[0]);
+                }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+              >
+                +3 jours
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 7);
+                  setQuickExpiryDate(d.toISOString().split("T")[0]);
+                }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+              >
+                +1 semaine
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 14);
+                  setQuickExpiryDate(d.toISOString().split("T")[0]);
+                }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+              >
+                +2 semaines
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setMonth(d.getMonth() + 1);
+                  setQuickExpiryDate(d.toISOString().split("T")[0]);
+                }}
+                className="text-xs px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+              >
+                +1 mois
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickExpiryDate("")}
+                className="text-xs px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors"
+              >
+                Aucune date
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setExpiryModalItem(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              loading={updateMutation.isPending}
+            >
+              Enregistrer
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

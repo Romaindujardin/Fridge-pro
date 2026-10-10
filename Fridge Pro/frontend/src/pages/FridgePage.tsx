@@ -38,6 +38,7 @@ import type {
   Ingredient,
   Category,
 } from "@/types";
+import { isItemFrozen } from "@/utils/frozenUtils";
 
 // Hook de debouncing pour fluidifier la recherche et éviter les spams d'API
 function useDebounce<T>(value: T, delay: number): T {
@@ -828,11 +829,7 @@ export function FridgePage() {
     });
   };
 
-  // Détecte si un aliment est dans la catégorie surgelé / congélation
-  const isItemFrozen = (item: FridgeItem) => {
-    const catName = (item.ingredient?.category?.name || "").toLowerCase();
-    return catName.includes("surgele") || catName.includes("surgelé") || catName.includes("congel");
-  };
+  // Détecte si un aliment est dans la catégorie surgelé / congélation (utilise utilitaire partagé)
 
   // Action rapide : Mettre en congélation
   const handleFreezeItem = async (item: FridgeItem) => {
@@ -888,10 +885,17 @@ export function FridgePage() {
   // Action rapide : Changer catégorie
   const handleQuickCategorySelect = (categoryId: string) => {
     if (!categoryModalItem) return;
+    const cat = categories.find((c) => c.id === categoryId);
+    const isFreezer = cat && (
+      cat.name.toLowerCase().includes("surgele") ||
+      cat.name.toLowerCase().includes("surgelé") ||
+      cat.name.toLowerCase().includes("congel")
+    );
     updateMutation.mutate({
       id: categoryModalItem.id,
       data: {
         categoryId,
+        ...(isFreezer ? { expiryDate: "" } : {}),
       },
     });
     setCategoryModalItem(null);
@@ -1035,6 +1039,13 @@ export function FridgePage() {
       return;
     }
 
+    const chosenCat = categories.find((c) => c.id === data.categoryId);
+    const isChosenCatFrozen = chosenCat && (
+      chosenCat.name.toLowerCase().includes("surgele") ||
+      chosenCat.name.toLowerCase().includes("surgelé") ||
+      chosenCat.name.toLowerCase().includes("congel")
+    );
+
     const itemData: AddFridgeItemRequest = {
       ingredientId,
       itemCount: typeof data.itemCount === "number" ? data.itemCount : 1,
@@ -1044,7 +1055,11 @@ export function FridgePage() {
       brand: typeof data.brand === "string" && data.brand.trim() ? data.brand.trim() : undefined,
       price: typeof data.price === "number" ? data.price : undefined,
       categoryId: typeof data.categoryId === "string" && data.categoryId ? data.categoryId : undefined,
-      expiryDate: typeof data.expiryDate === "string" && data.expiryDate ? data.expiryDate : undefined,
+      expiryDate: isChosenCatFrozen
+        ? ""
+        : typeof data.expiryDate === "string"
+        ? data.expiryDate
+        : "",
       notes: typeof data.notes === "string" && data.notes ? data.notes : undefined,
     };
 

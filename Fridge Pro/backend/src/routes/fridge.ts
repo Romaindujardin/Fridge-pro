@@ -77,7 +77,7 @@ const fridgeItemSchema = z.object({
     ),
   name: z.string().optional(),
   addedDate: z.string().optional(),
-  expiryDate: z.string().optional(),
+  expiryDate: z.string().optional().nullable(),
   isExpiryEstimated: z.boolean().optional().nullable(),
   notes: z.string().optional(),
 });
@@ -166,7 +166,19 @@ router.post(
       });
 
       let expiryDate: Date | undefined;
-      if (body.expiryDate) {
+      const targetCatId = body.categoryId || ingredient.categoryId;
+      let isFrozen = false;
+      if (targetCatId) {
+        const cat = await prisma.category.findUnique({ where: { id: targetCatId } });
+        if (cat) {
+          const cName = cat.name.toLowerCase();
+          if (cName.includes("surgele") || cName.includes("surgelé") || cName.includes("congel")) {
+            isFrozen = true;
+          }
+        }
+      }
+
+      if (body.expiryDate && !isFrozen) {
         expiryDate = parseExpiryDate(body.expiryDate);
       }
 
@@ -822,11 +834,22 @@ router.put(
         });
       }
 
+      let isCategoryFrozen = false;
       if (categoryId !== undefined) {
         await prisma.ingredient.update({
           where: { id: targetIngredientId },
           data: { categoryId: categoryId || null },
         });
+
+        if (categoryId) {
+          const cat = await prisma.category.findUnique({ where: { id: categoryId } });
+          if (cat) {
+            const cName = cat.name.toLowerCase();
+            if (cName.includes("surgele") || cName.includes("surgelé") || cName.includes("congel")) {
+              isCategoryFrozen = true;
+            }
+          }
+        }
       }
 
       if (addedDateInput !== undefined) {
@@ -837,13 +860,17 @@ router.put(
       }
 
       if (expiryDateInput !== undefined) {
-        if (expiryDateInput === "") {
+        if (expiryDateInput === "" || expiryDateInput === null || isCategoryFrozen) {
           updateData.expiryDate = null;
           updateData.isExpiryEstimated = false;
         } else {
           updateData.expiryDate = parseExpiryDate(expiryDateInput);
           updateData.isExpiryEstimated = updates.isExpiryEstimated !== undefined ? (updates.isExpiryEstimated ?? false) : false;
         }
+      } else if (isCategoryFrozen) {
+        // Si l'aliment passe en catégorie surgelés et aucune date n'est explicitement requise, effacer la péremption
+        updateData.expiryDate = null;
+        updateData.isExpiryEstimated = false;
       } else if (updates.isExpiryEstimated !== undefined) {
         updateData.isExpiryEstimated = updates.isExpiryEstimated ?? false;
       }

@@ -200,24 +200,6 @@ router.post(
             ? item.estimatedDaysToExpire
             : parseInt(String(item.estimatedDaysToExpire ?? ""), 10);
 
-        const expiryDate =
-          Number.isFinite(daysToExpire) && daysToExpire > 0
-            ? new Date(Date.now() + daysToExpire * 24 * 60 * 60 * 1000)
-            : undefined;
-
-        const priceValue =
-          typeof item.price === "number"
-            ? item.price
-            : parseFloat(
-                String(item.price ?? "")
-                  .replace(",", ".")
-                  .replace(/[^0-9.]/g, ""),
-              );
-        const price =
-          Number.isFinite(priceValue) && priceValue > 0
-            ? priceValue
-            : undefined;
-
         // Détection de la catégorie la plus adaptée
         let matchedCategoryId: string | undefined = undefined;
         if (item.category) {
@@ -234,6 +216,40 @@ router.post(
             matchedCategoryId = found.id;
           }
         }
+
+        const isFrozen =
+          (item.category || "").toLowerCase().includes("surgele") ||
+          (item.category || "").toLowerCase().includes("surgelé") ||
+          (item.category || "").toLowerCase().includes("congel") ||
+          name.toLowerCase().includes("surgel") ||
+          name.toLowerCase().includes("congel") ||
+          (matchedCategoryId
+            ? allCategories.some(
+                (c) =>
+                  c.id === matchedCategoryId &&
+                  (c.name.toLowerCase().includes("surgele") ||
+                    c.name.toLowerCase().includes("surgelé") ||
+                    c.name.toLowerCase().includes("congel"))
+              )
+            : false);
+
+        const expiryDate =
+          !isFrozen && Number.isFinite(daysToExpire) && daysToExpire > 0
+            ? new Date(Date.now() + daysToExpire * 24 * 60 * 60 * 1000)
+            : undefined;
+
+        const priceValue =
+          typeof item.price === "number"
+            ? item.price
+            : parseFloat(
+                String(item.price ?? "")
+                  .replace(",", ".")
+                  .replace(/[^0-9.]/g, "")
+              );
+        const price =
+          Number.isFinite(priceValue) && priceValue > 0
+            ? priceValue
+            : undefined;
 
         let ingredient = await prisma.ingredient.findFirst({
           where: {
