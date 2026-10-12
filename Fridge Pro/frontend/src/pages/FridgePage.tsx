@@ -1477,24 +1477,24 @@ export function FridgePage() {
         </div>
       </div>
 
-      {/* Sélecteur d'onglets façon dock / segmented pill : Mon Frigo / Historique & Dépenses */}
-      <div className="inline-flex p-1 bg-white/80 backdrop-blur-xs rounded-full border border-gray-200/70 shadow-2xs gap-1">
+      {/* Sélecteur d'onglets façon dock / segmented pill : Mon Frigo / Historique & Dépenses (tailles égales 50/50) */}
+      <div className="grid grid-cols-2 p-1 bg-white/90 backdrop-blur-xs rounded-2xl sm:rounded-full border border-[#E8E5DF] shadow-soft-xs gap-1 w-full sm:max-w-md sm:inline-grid">
         <button
           type="button"
           onClick={() => setActiveTab("fridge")}
-          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
+          className={`px-3 sm:px-4 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
             activeTab === "fridge"
-              ? "bg-primary-500 text-white shadow-xs shadow-primary-500/25"
-              : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/60"
+              ? "bg-[#183328] text-white shadow-soft-xs font-bold"
+              : "text-[#6F726D] hover:text-[#1A1C19] hover:bg-[#F2EFE9]"
           }`}
         >
-          <Package className={`w-4 h-4 ${activeTab === "fridge" ? "text-white" : "text-gray-400"}`} />
-          <span>En stock</span>
+          <Package className={`w-4 h-4 shrink-0 ${activeTab === "fridge" ? "text-white" : "text-[#8E918B]"}`} />
+          <span className="truncate">En stock</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+            className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold shrink-0 ${
               activeTab === "fridge"
                 ? "bg-white/20 text-white"
-                : "bg-gray-100 text-gray-600"
+                : "bg-[#F2EFE9] text-[#6F726D]"
             }`}
           >
             {fridgeItems.length}
@@ -1504,20 +1504,20 @@ export function FridgePage() {
         <button
           type="button"
           onClick={() => setActiveTab("history")}
-          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
+          className={`px-3 sm:px-4 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
             activeTab === "history"
-              ? "bg-primary-500 text-white shadow-xs shadow-primary-500/25"
-              : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/60"
+              ? "bg-[#183328] text-white shadow-soft-xs font-bold"
+              : "text-[#6F726D] hover:text-[#1A1C19] hover:bg-[#F2EFE9]"
           }`}
         >
-          <History className={`w-4 h-4 ${activeTab === "history" ? "text-white" : "text-gray-400"}`} />
-          <span>Historique & Dépenses</span>
+          <History className={`w-4 h-4 shrink-0 ${activeTab === "history" ? "text-white" : "text-[#8E918B]"}`} />
+          <span className="truncate">Historique & Dépenses</span>
           {historyData?.stats.totalItems ? (
             <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+              className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold shrink-0 ${
                 activeTab === "history"
                   ? "bg-white/20 text-white"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-[#F2EFE9] text-[#6F726D]"
               }`}
             >
               {historyData.stats.totalItems}
