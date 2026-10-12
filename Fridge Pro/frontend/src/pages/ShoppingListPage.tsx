@@ -550,9 +550,9 @@ export function ShoppingListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Liste de courses</h1>
-          <p className="text-gray-600">
-            Organisez vos achats et ne manquez plus d'ingrédients
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Liste de courses</h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium">
+            Organisez vos achats, cuisinez vos recettes sans aucun oubli
           </p>
         </div>
 
@@ -560,57 +560,57 @@ export function ShoppingListPage() {
           <Button
             variant="outline"
             onClick={() => setIsAiModalOpen(true)}
-            className="flex items-center"
+            className="flex items-center text-xs sm:text-sm px-4 py-2 rounded-full border-purple-200/80 hover:bg-purple-50/60 text-purple-700 shadow-2xs font-semibold"
           >
-            <Sparkles className="w-4 h-4 mr-2 text-primary-600" />
+            <Sparkles className="w-4 h-4 mr-1.5 text-purple-600" />
             Génération Auto (IA)
           </Button>
 
           <Button
             onClick={() => setIsCreateListModalOpen(true)}
-            className="flex items-center"
+            className="flex items-center text-xs sm:text-sm px-4 py-2 rounded-full shadow-md shadow-primary-500/20 font-semibold"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-1.5" />
             Nouvelle liste
           </Button>
         </div>
       </div>
 
-      {/* Statistiques */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-0">
-        <Card hover className="flex flex-col justify-center">
-          <CardContent className="p-3 sm:p-6">
+      {/* Statistiques Bento */}
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-4 mt-0">
+        <Card hover className="flex flex-col justify-center rounded-2xl sm:rounded-3xl border border-gray-100/90 shadow-card hover:-translate-y-0.5 transition-all">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex flex-col items-center justify-center text-center">
-              <h3 className="text-xl sm:text-3xl font-bold text-emerald-600 mb-0.5 sm:mb-1">
+              <h3 className="text-xl sm:text-3xl font-extrabold text-primary-600 mb-0.5 tracking-tight">
                 {shoppingLists.length}
               </h3>
-              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">
+              <p className="text-[10px] sm:text-xs text-gray-500 font-semibold uppercase tracking-wider">
                 Listes actives
               </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card hover className="flex flex-col justify-center">
-          <CardContent className="p-3 sm:p-6">
+        <Card hover className="flex flex-col justify-center rounded-2xl sm:rounded-3xl border border-gray-100/90 shadow-card hover:-translate-y-0.5 transition-all">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex flex-col items-center justify-center text-center">
-              <h3 className="text-xl sm:text-3xl font-bold text-blue-600 mb-0.5 sm:mb-1">
+              <h3 className="text-xl sm:text-3xl font-extrabold text-blue-600 mb-0.5 tracking-tight">
                 {totalItems}
               </h3>
-              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">
+              <p className="text-[10px] sm:text-xs text-gray-500 font-semibold uppercase tracking-wider">
                 Articles total
               </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card hover className="flex flex-col justify-center">
-          <CardContent className="p-3 sm:p-6">
+        <Card hover className="flex flex-col justify-center rounded-2xl sm:rounded-3xl border border-gray-100/90 shadow-card hover:-translate-y-0.5 transition-all">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex flex-col items-center justify-center text-center">
-              <h3 className="text-xl sm:text-3xl font-bold text-amber-600 mb-0.5 sm:mb-1">
+              <h3 className="text-xl sm:text-3xl font-extrabold text-amber-500 mb-0.5 tracking-tight">
                 {purchasedItems}
               </h3>
-              <p className="text-[11px] sm:text-sm text-gray-600 font-medium">
+              <p className="text-[10px] sm:text-xs text-gray-500 font-semibold uppercase tracking-wider">
                 Articles achetés
               </p>
             </div>
@@ -624,27 +624,27 @@ export function ShoppingListPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
         </div>
       ) : shoppingLists.length === 0 ? (
-        <Card>
+        <Card className="rounded-3xl border-dashed">
           <CardContent className="text-center py-12">
-            <div className="text-gray-400 mb-4">
+            <div className="text-gray-300 mb-4">
               <ShoppingCart className="w-16 h-16 mx-auto" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
               Aucune liste de courses
             </h3>
-            <p className="text-gray-500 mb-6">
-              Créez votre première liste pour commencer à organiser vos achats
+            <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+              Créez votre première liste pour commencer à organiser vos achats et générer automatiquement vos ingrédients manquants.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button
                 variant="outline"
                 onClick={() => setIsAiModalOpen(true)}
-                className="flex items-center"
+                className="flex items-center rounded-full px-5 py-2.5 font-semibold text-purple-700 border-purple-200"
               >
-                <Sparkles className="w-4 h-4 mr-2 text-primary-600" />
+                <Sparkles className="w-4 h-4 mr-2 text-purple-600" />
                 Génération Auto (IA)
               </Button>
-              <Button onClick={() => setIsCreateListModalOpen(true)}>
+              <Button onClick={() => setIsCreateListModalOpen(true)} className="rounded-full px-5 py-2.5 font-semibold">
                 <Plus className="w-4 h-4 mr-2" />
                 Créer manuellement
               </Button>
@@ -662,17 +662,17 @@ export function ShoppingListPage() {
               totalListItems > 0 ? (completedItems / totalListItems) * 100 : 0;
 
             return (
-              <Card key={list.id} hover>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
+              <Card key={list.id} hover className="rounded-3xl border border-gray-150/80 bg-white shadow-card hover:shadow-card-hover transition-all duration-200 overflow-hidden flex flex-col justify-between">
+                <CardHeader className="pb-3 px-5 sm:px-6 pt-5 sm:pt-6">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
-                      <CardTitle className="text-lg">{list.name}</CardTitle>
-                      <p className="text-sm text-gray-500">
+                      <CardTitle className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">{list.name}</CardTitle>
+                      <p className="text-xs text-gray-400 font-medium mt-0.5">
                         Créée le{" "}
                         {new Date(list.createdAt).toLocaleDateString("fr-FR")}
                       </p>
                     </div>
-                    <div className="flex space-x-1">
+                    <div className="flex space-x-1 shrink-0">
                       {list.aiSummary && (
                         <Button
                           size="sm"
@@ -680,8 +680,9 @@ export function ShoppingListPage() {
                           onClick={() => openPersistedSummary(list)}
                           title="Ouvrir le planning et les recettes"
                           aria-label="Ouvrir le planning et les recettes"
+                          className="w-8 h-8 p-0 rounded-full border-gray-200 hover:bg-gray-100"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-4 h-4 text-primary-600" />
                         </Button>
                       )}
                       <Button
@@ -694,13 +695,17 @@ export function ShoppingListPage() {
                           setIngredientSearch("");
                           setIsAddItemModalOpen(true);
                         }}
+                        className="w-8 h-8 p-0 rounded-full border-gray-200 hover:bg-gray-100"
+                        title="Ajouter un article"
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-4 h-4 text-gray-700" />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => handleDeleteList(list.id)}
+                        className="w-8 h-8 p-0 rounded-full text-red-500 hover:bg-red-50"
+                        title="Supprimer la liste"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -708,18 +713,18 @@ export function ShoppingListPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent>
+                <CardContent className="px-5 sm:px-6 pb-5 sm:pb-6">
                   {/* Progression */}
                   <div className="mb-4">
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <div className="flex justify-between text-xs text-gray-500 font-semibold mb-1.5">
                       <span>Progression</span>
-                      <span>
-                        {completedItems}/{totalListItems}
+                      <span className="text-primary-700 font-bold">
+                        {completedItems}/{totalListItems} ({Math.round(completionRate)}%)
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-[#E0DCD3] rounded-full h-2.5 overflow-hidden">
                       <div
-                        className="bg-green-600 h-2 rounded-full transition-all"
+                        className="bg-gradient-to-r from-primary-500 to-primary-600 h-2.5 rounded-full transition-all duration-300"
                         style={{ width: `${completionRate}%` }}
                       ></div>
                     </div>
@@ -727,19 +732,19 @@ export function ShoppingListPage() {
 
                   {/* Articles */}
                   {list.items.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500">
-                      <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Liste vide</p>
+                    <div className="text-center py-6 text-gray-400">
+                      <Package className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      <p className="text-xs font-medium">Liste vide</p>
                     </div>
                   ) : (
                     <div className="space-y-4 max-h-[28rem] overflow-y-auto pr-1">
                       {groupShoppingItems(list.items).map(
                         ([section, sectionItems]) => (
                           <section key={section}>
-                            <div className="sticky top-0 z-[1] flex items-center gap-2 bg-white/95 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-500 backdrop-blur-sm">
-                              <Layers3 className="h-3.5 w-3.5 text-primary-600" />
-                              {section}
-                              <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px]">
+                            <div className="sticky top-0 z-[1] flex items-center gap-2 bg-white/95 backdrop-blur-md py-1.5 text-xs font-extrabold uppercase tracking-wider text-gray-400 border-b border-gray-100/80 mb-2">
+                              <Layers3 className="h-3.5 w-3.5 text-primary-500" />
+                              <span>{section}</span>
+                              <span className="rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-[10px] font-bold">
                                 {sectionItems.length}
                               </span>
                             </div>
@@ -747,10 +752,10 @@ export function ShoppingListPage() {
                               {sectionItems.map((item) => (
                                 <div
                                   key={item.id}
-                                  className={`flex items-center justify-between gap-2 rounded-lg border p-3 transition-colors ${
+                                  className={`flex items-center justify-between gap-2.5 rounded-2xl border p-3 transition-all duration-150 ${
                                     item.purchased
-                                      ? "bg-green-50 border-green-200"
-                                      : "bg-gray-50 border-gray-200"
+                                      ? "bg-gray-50/70 border-gray-100 opacity-60"
+                                      : "bg-white border-gray-100/90 hover:border-gray-200 shadow-2xs"
                                   }`}
                                 >
                                   <div className="flex min-w-0 items-center gap-3">
@@ -762,10 +767,10 @@ export function ShoppingListPage() {
                                           item.purchased,
                                         )
                                       }
-                                      className={`h-5 w-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                                      className={`h-7 w-7 sm:h-7.5 sm:w-7.5 shrink-0 rounded-full border-2 flex items-center justify-center transition-all duration-150 active:scale-95 ${
                                         item.purchased
-                                          ? "bg-green-600 border-green-600 text-white"
-                                          : "border-gray-300 hover:border-green-600"
+                                          ? "bg-primary-600 border-primary-600 text-white shadow-soft-xs"
+                                          : "border-[#D0CCC3] hover:border-primary-600 bg-white"
                                       }`}
                                       aria-label={
                                         item.purchased
@@ -774,16 +779,16 @@ export function ShoppingListPage() {
                                       }
                                     >
                                       {item.purchased && (
-                                        <Check className="w-3 h-3" />
+                                        <Check className="w-4 h-4 stroke-[3]" />
                                       )}
                                     </button>
                                     <div className="min-w-0">
                                       <div
-                                        className={`truncate font-medium ${item.purchased ? "line-through text-gray-500" : "text-gray-900"}`}
+                                        className={`truncate font-semibold text-sm ${item.purchased ? "line-through text-gray-400" : "text-gray-900"}`}
                                       >
                                         {item.ingredient.name}
                                       </div>
-                                      <div className="break-words text-xs text-gray-500 sm:text-sm">
+                                      <div className="break-words text-xs text-gray-500">
                                         {item.quantity} {item.unit}
                                         {item.notes && ` • ${item.notes}`}
                                       </div>
@@ -795,7 +800,7 @@ export function ShoppingListPage() {
                                     onClick={() =>
                                       handleDeleteItem(list.id, item.id)
                                     }
-                                    className="shrink-0 text-red-600 hover:text-red-700"
+                                    className="shrink-0 text-gray-400 hover:text-red-500 p-1 h-7 w-7 rounded-full"
                                     aria-label={`Supprimer ${item.ingredient.name}`}
                                   >
                                     <X className="w-4 h-4" />

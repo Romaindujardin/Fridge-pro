@@ -4,17 +4,18 @@
 
 @layer base {
   body {
-    font-family: "Inter", sans-serif;
-    background-color: #f9fafb;
-    color: #111827;
+    font-family: "Geist", "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #F8F6F2;
+    color: #1A1C19;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
+    letter-spacing: -0.015em;
   }
 
   html,
   body,
   #root {
-    height: 100%;
+    min-height: 100%;
     -webkit-overflow-scrolling: touch;
   }
 }
@@ -24,16 +25,16 @@
     text-wrap: balance;
   }
 
-  /* Safe area padding utilities for modern mobile screens (iPhone notch & home bar) */
+  /* Safe area padding utilities for modern mobile screens */
   .pb-safe {
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
 
   .pt-safe {
-    padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
   }
 
-  /* Utility to hide scrollbar while allowing smooth touch scrolling */
+  /* Hide scrollbar while preserving scroll behavior */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -41,5 +42,33 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-}
 
+  /* Glassmorphism panel effects */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid #E8E5DF;
+  }
+
+  .glass-dock {
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid #E8E5DF;
+    box-shadow: 0 12px 32px -8px rgba(24, 51, 40, 0.07), 0 1px 2px rgba(24, 51, 40, 0.03);
+  }
+
+  .bento-card {
+    background: #FFFFFF;
+    border: 1px solid #E8E5DF;
+    box-shadow: 0 1px 3px rgba(24, 51, 40, 0.02), 0 4px 14px rgba(24, 51, 40, 0.02);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .bento-card:hover {
+    border-color: #B5CFC3;
+    box-shadow: 0 6px 20px rgba(24, 51, 40, 0.05), 0 1px 3px rgba(24, 51, 40, 0.02);
+    transform: translateY(-1.5px);
+  }
+}

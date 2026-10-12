@@ -12,11 +12,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-semibold text-stone-700 tracking-tight"
           >
             {label}
           </label>
@@ -25,15 +25,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           type={type}
           id={inputId}
           className={clsx(
-            "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-            error && "border-red-500 focus-visible:ring-red-500",
+            "flex h-11 w-full rounded-xl border border-[#E8E5DF] bg-[#FAF8F5] hover:bg-[#F2EFE9] focus:bg-white px-3.5 py-2 text-sm text-[#1A1C19] transition-all placeholder:text-[#8E918B] focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:opacity-50",
+            error && "border-coral-400 bg-coral-50/20 focus:border-coral-500 focus:ring-coral-500/10",
             className
           )}
           ref={ref}
           {...props}
         />
-        {helper && !error && <p className="text-sm text-gray-500">{helper}</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {helper && !error && <p className="text-xs text-[#6F726D]">{helper}</p>}
+        {error && <p className="text-xs font-medium text-coral-600">{error}</p>}
       </div>
     );
   }

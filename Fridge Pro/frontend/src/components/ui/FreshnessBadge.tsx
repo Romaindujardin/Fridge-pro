@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, AlertTriangle, AlertCircle } from "lucide-react";
+import { Clock, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export interface FreshnessBadgeProps {
   expiryDate?: string | Date | null;
@@ -41,15 +41,15 @@ export function FreshnessBadge({
     const daysAgo = Math.abs(diffDays);
     return (
       <div
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50/90 text-rose-800 border border-rose-200/80 shadow-xs ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-coral-50 text-coral-800 border border-coral-200/80 shadow-soft-xs ${className}`}
       >
-        <span className="relative flex h-2 w-2 shrink-0">
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-coral-500"></span>
         </span>
-        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+        <AlertCircle className="w-3.5 h-3.5 text-coral-600 shrink-0" />
         <span>
           {showDays
-            ? `Expiré (${isEstimated ? "~" : ""}il y a ${daysAgo} j${isEstimated ? " • estimé" : ""})`
+            ? `Expiré (${isEstimated ? "~" : ""}${daysAgo} j${isEstimated ? " • estimé" : ""})`
             : isEstimated
             ? "Expiré (estimé)"
             : "Expiré"}
@@ -62,13 +62,13 @@ export function FreshnessBadge({
   if (diffDays === 0) {
     return (
       <div
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-50/90 text-orange-800 border border-orange-200/80 shadow-xs animate-pulse ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-soft-xs animate-pulse ${className}`}
       >
-        <span className="relative flex h-2 w-2 shrink-0">
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
         </span>
-        <AlertTriangle className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-        <span>{isEstimated ? "Expire vers aujourd'hui (estimé)" : "Expire aujourd'hui"}</span>
+        <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+        <span>{isEstimated ? "Expire aujourd'hui (~estimé)" : "Expire aujourd'hui"}</span>
       </div>
     );
   }
@@ -77,41 +77,36 @@ export function FreshnessBadge({
   if (diffDays <= 3) {
     return (
       <div
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50/90 text-amber-800 border border-amber-200/80 shadow-xs ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50/70 text-amber-900 border border-amber-200/70 shadow-soft-xs ${className}`}
       >
-        <span className="relative flex h-2 w-2 shrink-0">
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
         </span>
-        <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+        <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
         <span>
           {diffDays === 1
             ? isEstimated
-              ? "Expire vers demain (estimé)"
+              ? "Expire demain (~estimé)"
               : "Expire demain"
             : showDays
-            ? `Expire dans ${isEstimated ? "~" : ""}${diffDays} j${isEstimated ? " (estimé)" : ""}`
-            : isEstimated
-            ? "Expire bientôt (estimé)"
+            ? `Dans ${isEstimated ? "~" : ""}${diffDays} j${isEstimated ? " (estimé)" : ""}`
             : "Expire bientôt"}
         </span>
       </div>
     );
   }
 
-  // Frais (plus de 3 jours) - Pas d'emote/icône superflue, style épuré
+  // Frais (plus de 3 jours)
   return (
     <div
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50/90 text-emerald-800 border border-emerald-200/80 shadow-xs ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary-50 text-primary-900 border border-primary-200/70 shadow-soft-xs ${className}`}
     >
-      <span className="relative flex h-2 w-2 shrink-0">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+      <span className="relative flex h-1.5 w-1.5 shrink-0">
+        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-500"></span>
       </span>
       <span>
         {showDays
-          ? `Frais • ${isEstimated ? "~" : ""}${diffDays} j restants${isEstimated ? " (estimé)" : ""}`
-          : isEstimated
-          ? "Frais (estimé)"
+          ? `Frais • ${isEstimated ? "~" : ""}${diffDays} j${isEstimated ? " (~)" : ""}`
           : "Frais"}
       </span>
     </div>

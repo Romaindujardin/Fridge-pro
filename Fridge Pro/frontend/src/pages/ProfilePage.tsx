@@ -120,25 +120,25 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Profil</h1>
-          <p className="text-gray-600">
-            Gérez vos informations personnelles et préférences
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Mon Profil</h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium">
+            Gérez vos informations personnelles, clés IA et préférences
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Informations personnelles */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
+          <Card className="rounded-3xl border border-gray-150/80 bg-white shadow-card overflow-hidden">
+            <CardHeader className="p-5 sm:p-6 pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5" />
+                <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">
+                  <User className="w-5 h-5 text-primary-600" />
                   <span>Informations personnelles</span>
                 </CardTitle>
                 {!isEditing ? (
@@ -146,14 +146,15 @@ export function ProfilePage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsEditing(true)}
+                    className="rounded-full px-4 text-xs font-semibold"
                   >
-                    <Edit3 className="w-4 h-4 mr-2" />
+                    <Edit3 className="w-3.5 h-3.5 mr-1.5" />
                     Modifier
                   </Button>
                 ) : (
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" onClick={handleCancel}>
-                      <X className="w-4 h-4 mr-2" />
+                    <Button variant="outline" size="sm" onClick={handleCancel} className="rounded-full px-4 text-xs font-semibold">
+                      <X className="w-3.5 h-3.5 mr-1.5" />
                       Annuler
                     </Button>
                     <Button
@@ -161,8 +162,9 @@ export function ProfilePage() {
                       type="submit"
                       form="profile-form"
                       loading={isLoading}
+                      className="rounded-full px-4 text-xs font-semibold"
                     >
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className="w-3.5 h-3.5 mr-1.5" />
                       Sauvegarder
                     </Button>
                   </div>
@@ -170,11 +172,11 @@ export function ProfilePage() {
               </div>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="p-5 sm:p-6 pt-2">
               {isEditing ? (
                 <form
                   id="profile-form"
-                  className="space-y-6"
+                  className="space-y-5"
                   onSubmit={form.handleSubmit(handleSave)}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -212,53 +214,53 @@ export function ProfilePage() {
                   />
                 </form>
               ) : (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 gap-4 sm:gap-6 bg-gray-50/60 p-4 rounded-2xl border border-gray-100">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                         Prénom
                       </label>
-                      <p className="mt-1 text-lg text-gray-900">
+                      <p className="mt-1 text-base sm:text-lg font-bold text-gray-900">
                         {user.firstName}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                         Nom
                       </label>
-                      <p className="mt-1 text-lg text-gray-900">
+                      <p className="mt-1 text-base sm:text-lg font-bold text-gray-900">
                         {user.lastName}
                       </p>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
+                  <div className="bg-gray-50/60 p-4 rounded-2xl border border-gray-100">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                       Adresse email
                     </label>
-                    <p className="mt-1 text-lg text-gray-900">{user.email}</p>
+                    <p className="mt-1 text-base sm:text-lg font-bold text-gray-900">{user.email}</p>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
+                  <div className="bg-gray-50/60 p-4 rounded-2xl border border-gray-100">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                       Clé Gemini API
                     </label>
-                    <p className="mt-1 text-lg text-gray-900">
+                    <p className="mt-1 text-base font-bold text-gray-900 font-mono">
                       {user.geminiApiKey
                         ? maskGeminiKey(user.geminiApiKey)
                         : "Aucune clé configurée"}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       Cette clé est utilisée pour scanner les tickets et générer
                       des recettes IA.
                     </p>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
+                  <div className="bg-gray-50/60 p-4 rounded-2xl border border-gray-100">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                       Membre depuis
                     </label>
-                    <p className="mt-1 text-lg text-gray-900">
+                    <p className="mt-1 text-base font-bold text-gray-900">
                       {new Date(user.createdAt).toLocaleDateString("fr-FR", {
                         year: "numeric",
                         month: "long",
@@ -274,71 +276,39 @@ export function ProfilePage() {
 
         {/* Sidebar avec statistiques */}
         <div className="space-y-6">
-          {/* Avatar */}
-          <Card>
+          {/* Avatar Card */}
+          <Card className="rounded-3xl border border-gray-150/80 bg-white shadow-card overflow-hidden">
             <CardContent className="p-6 text-center">
-              <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl font-bold text-primary-600">
+              <div className="w-20 h-20 bg-linear-to-tr from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner ring-4 ring-primary-50">
+                <span className="text-2xl font-extrabold text-primary-700 tracking-tight">
                   {user.firstName.charAt(0)}
                   {user.lastName.charAt(0)}
                 </span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-extrabold text-gray-900 tracking-tight">
                 {user.firstName} {user.lastName}
               </h3>
-              <p className="text-sm text-gray-500">{user.email}</p>
-            </CardContent>
-          </Card>
-
-          {/* Statistiques rapides */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Activity className="w-5 h-5" />
-                <span>Activité</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
-                    Recettes favorites
-                  </span>
-                  <span className="font-medium">-</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
-                    Ingrédients dans le frigo
-                  </span>
-                  <span className="font-medium">-</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
-                    Listes de courses
-                  </span>
-                  <span className="font-medium">-</span>
-                </div>
-              </div>
+              <p className="text-xs text-gray-400 font-medium">{user.email}</p>
             </CardContent>
           </Card>
 
           {/* Sécurité */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Shield className="w-5 h-5" />
-                <span>Sécurité</span>
+          <Card className="rounded-3xl border border-gray-150/80 bg-white shadow-card overflow-hidden">
+            <CardHeader className="p-5 pb-3">
+              <CardTitle className="flex items-center space-x-2 text-base font-bold text-gray-900">
+                <Shield className="w-4 h-4 text-gray-500" />
+                <span>Sécurité & Compte</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Button variant="outline" size="sm" className="w-full">
+            <CardContent className="p-5 pt-0">
+              <div className="space-y-2.5">
+                <Button variant="outline" size="sm" className="w-full rounded-full text-xs font-semibold">
                   Changer le mot de passe
                 </Button>
-                <Button variant="outline" size="sm" className="w-full">
+                <Button variant="outline" size="sm" className="w-full rounded-full text-xs font-semibold">
                   Télécharger mes données
                 </Button>
-                <Button variant="danger" size="sm" className="w-full">
+                <Button variant="danger" size="sm" className="w-full rounded-full text-xs font-semibold">
                   Supprimer mon compte
                 </Button>
               </div>

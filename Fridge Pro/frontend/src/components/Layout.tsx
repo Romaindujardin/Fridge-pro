@@ -17,7 +17,6 @@ export function Layout() {
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
 
-  // Re-synchroniser les requêtes quand l'application revient au premier plan sur mobile (iOS PWA)
   useEffect(() => {
     const handleResume = () => {
       if (document.visibilityState === "visible") {
@@ -33,10 +32,10 @@ export function Layout() {
   }, [queryClient]);
 
   const navigation = [
-    { name: "Accueil", href: "/", icon: Home, shortName: "Accueil" },
-    { name: "Mon Frigo", href: "/fridge", icon: Refrigerator, shortName: "Frigo" },
-    { name: "Recettes", href: "/recipes", icon: ChefHat, shortName: "Recettes" },
-    { name: "Liste de courses", href: "/shopping-list", icon: ShoppingCart, shortName: "Courses" },
+    { name: "Accueil", href: "/", icon: Home },
+    { name: "Mon Frigo", href: "/fridge", icon: Refrigerator },
+    { name: "Recettes", href: "/recipes", icon: ChefHat },
+    { name: "Courses", href: "/shopping-list", icon: ShoppingCart },
   ];
 
   const mobileNavigation = [
@@ -55,22 +54,25 @@ export function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Top Navbar */}
-      <nav className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-gray-200/80 shadow-xs transition-all">
+    <div className="min-h-screen bg-[#F8F6F2] text-[#1A1C19] flex flex-col font-sans selection:bg-primary-100 selection:text-primary-800">
+            {/* Top Navbar */}
+      <nav className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-[#E8E5DF] transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <Link to="/" className="flex items-center group">
-                <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900">
-                  Fridge<span className="text-emerald-600">Pro</span>
+              <Link to="/" className="flex items-center gap-2.5 group">
+                <div className="w-8 h-8 rounded-lg bg-[#183328] text-white flex items-center justify-center shadow-soft-xs group-hover:scale-105 transition-transform">
+                  <Refrigerator className="w-4.5 h-4.5 text-white" />
+                </div>
+                <span className="text-lg sm:text-xl font-bold tracking-tight text-[#1A1C19]">
+                  Fridge<span className="text-primary-600 font-medium ml-0.5">Pro</span>
                 </span>
               </Link>
             </div>
 
             {/* Desktop Navigation links */}
-            <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
+            <div className="hidden md:flex items-center p-1 bg-[#F2EFE9] rounded-xl border border-[#E8E5DF]">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
@@ -78,13 +80,17 @@ export function Layout() {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm transition-all ${
                       active
-                        ? "text-emerald-700 bg-emerald-50 shadow-xs font-semibold"
-                        : "text-gray-600 hover:text-emerald-600 hover:bg-gray-100/80"
+                        ? "text-[#183328] bg-white shadow-soft-xs font-semibold"
+                        : "text-[#6F726D] hover:text-[#1A1C19] hover:bg-white/50 font-medium"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${active ? "text-emerald-600" : "text-gray-400"}`} />
+                    <Icon
+                      className={`w-4 h-4 transition-colors ${
+                        active ? "text-primary-600 stroke-[2.2]" : "text-[#8E918B] stroke-[1.8]"
+                      }`}
+                    />
                     <span>{item.name}</span>
                   </Link>
                 );
@@ -95,46 +101,45 @@ export function Layout() {
             <div className="flex items-center gap-2 sm:gap-3">
               <Link
                 to="/profile"
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-sm transition-all ${
                   isActive("/profile")
-                    ? "text-emerald-700 bg-emerald-50"
-                    : "text-gray-700 hover:text-emerald-600 hover:bg-gray-100"
+                    ? "text-primary-800 bg-primary-50 border border-primary-200/80 font-semibold"
+                    : "text-[#1A1C19] hover:bg-black/5 font-medium"
                 }`}
                 title="Mon Profil"
               >
-                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                  {user?.firstName ? user.firstName.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                <div className="w-7 h-7 rounded-full bg-primary-100 text-primary-800 flex items-center justify-center font-bold text-xs ring-1 ring-primary-300">
+                  {user?.firstName ? user.firstName.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
                 </div>
-                <span className="hidden sm:inline-block font-medium text-gray-800">
+                <span className="hidden sm:inline-block font-semibold text-[#1A1C19] text-xs sm:text-sm">
                   {user ? user.firstName : "Profil"}
                 </span>
               </Link>
 
               <button
                 onClick={logout}
-                className="flex items-center justify-center p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-[#8E918B] hover:text-coral-600 hover:bg-coral-50 transition-colors"
                 title="Déconnexion"
                 aria-label="Déconnexion"
               >
-                <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Main content with generous bottom clearance on mobile so bottom bar never obscures content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-32 pb-safe sm:pb-28 md:pb-8">
+      {/* Main content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-44 sm:pb-36 md:pb-12">
         <Outlet />
-        <div className="h-14 md:hidden pointer-events-none" aria-hidden="true" />
       </main>
 
-      {/* Fixed Mobile Bottom Navigation Bar (thumb-friendly, native app feel) */}
+      {/* Modern Floating Mobile Dock */}
       <nav
         aria-label="Navigation mobile"
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-safe transition-all"
+        className="md:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] inset-x-3 max-w-md mx-auto z-40 bg-white/95 backdrop-blur-2xl border border-[#E8E5DF] rounded-2xl shadow-float transition-all"
       >
-        <div className="grid grid-cols-5 h-14">
+        <div className="grid grid-cols-5 py-1.5 px-1 items-center">
           {mobileNavigation.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -142,28 +147,24 @@ export function Layout() {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`relative flex flex-col items-center justify-center py-1 transition-all select-none ${
-                  active ? "text-emerald-600" : "text-gray-500 hover:text-gray-800"
+                className={`relative flex flex-col items-center justify-center py-1 transition-all select-none rounded-xl ${
+                  active ? "text-primary-800 font-bold" : "text-[#8E918B] hover:text-[#1A1C19]"
                 }`}
               >
-                {/* Active indicator bar */}
-                {active && (
-                  <span className="absolute top-0 w-8 h-1 bg-emerald-600 rounded-full" />
-                )}
                 <div
-                  className={`flex items-center justify-center w-8 h-7 rounded-xl transition-transform ${
-                    active ? "scale-110" : ""
+                  className={`flex items-center justify-center w-8 h-6 rounded-lg transition-all ${
+                    active ? "bg-primary-50 scale-105" : ""
                   }`}
                 >
                   <Icon
-                    className={`w-5 h-5 transition-colors ${
-                      active ? "text-emerald-600 stroke-[2.4]" : "text-gray-400 stroke-[1.8]"
+                    className={`w-4.5 h-4.5 transition-colors ${
+                      active ? "text-primary-600 stroke-[2.2]" : "text-[#8E918B] stroke-[1.8]"
                     }`}
                   />
                 </div>
                 <span
-                  className={`text-[10px] tracking-tight transition-all ${
-                    active ? "font-bold text-emerald-700" : "font-normal text-gray-500"
+                  className={`text-[10px] tracking-tight mt-0.5 transition-all ${
+                    active ? "font-bold text-primary-800" : "font-medium text-[#6F726D]"
                   }`}
                 >
                   {item.name}
@@ -176,4 +177,3 @@ export function Layout() {
     </div>
   );
 }
-

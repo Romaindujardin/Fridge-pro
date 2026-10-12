@@ -8,8 +8,8 @@ import { cn } from "@/utils/cn";
 import { Loader2 } from "lucide-react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
-  size?: "sm" | "md" | "lg";
+  variant?: "primary" | "coral" | "secondary" | "outline" | "ghost" | "danger";
+  size?: "xs" | "sm" | "md" | "lg";
   loading?: boolean;
   asChild?: boolean;
   children: React.ReactNode;
@@ -30,20 +30,28 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+      "inline-flex items-center justify-center font-medium tracking-tight transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] select-none";
 
     const variants = {
-      primary: "bg-primary-600 text-white hover:bg-primary-700",
-      secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300",
-      outline: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
-      ghost: "text-gray-700 hover:bg-gray-100",
-      danger: "bg-red-600 text-white hover:bg-red-700",
+      primary:
+        "bg-[#183328] hover:bg-[#214334] text-white shadow-soft-xs rounded-xl",
+      coral:
+        "bg-coral-500 hover:bg-coral-600 text-white shadow-soft-xs rounded-xl",
+      secondary:
+        "bg-[#F2EFE9] hover:bg-[#E8E4DC] text-[#1A1C19] border border-[#E8E5DF] rounded-xl",
+      outline:
+        "border border-[#E8E5DF] bg-white hover:bg-[#F8F6F2] text-[#1A1C19] rounded-xl shadow-soft-xs",
+      ghost:
+        "text-[#6F726D] hover:text-[#1A1C19] hover:bg-[#F2EFE9]/60 rounded-xl",
+      danger:
+        "bg-coral-600 hover:bg-coral-700 text-white shadow-soft-xs rounded-xl",
     };
 
     const sizes = {
-      sm: "h-8 px-3 text-sm",
-      md: "h-10 px-4 py-2",
-      lg: "h-12 px-6 text-lg",
+      xs: "h-7 px-2.5 text-xs rounded-lg",
+      sm: "h-8 px-3 text-xs sm:text-sm rounded-xl",
+      md: "h-10 px-4 py-2 text-sm rounded-xl",
+      lg: "h-12 px-6 text-base rounded-2xl",
     };
 
     const combinedClassName = cn(
@@ -74,7 +82,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         {...props}
       >
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />}
         {children}
       </button>
     );

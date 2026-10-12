@@ -606,13 +606,13 @@ export function RecipesPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Recettes</h1>
-          <p className="text-xs sm:text-sm text-gray-600">
-            Découvrez des recettes adaptées à vos ingrédients
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Recettes</h1>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium">
+            Découvrez des idées savoureuses adaptées aux ingrédients de votre frigo
           </p>
         </div>
 
@@ -620,14 +620,14 @@ export function RecipesPage() {
           <Button
             variant="outline"
             onClick={() => setIsGenerateModalOpen(true)}
-            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2 text-purple-700 border-purple-200 hover:bg-purple-50"
+            className="flex items-center text-xs sm:text-sm px-4 py-2 rounded-full border-purple-200/80 hover:bg-purple-50/60 text-purple-700 shadow-2xs font-semibold"
           >
             <Sparkles className="w-4 h-4 mr-1.5 text-purple-600" />
             Générer IA
           </Button>
           <Button
             onClick={openCreateModal}
-            className="flex items-center text-xs sm:text-sm px-2.5 sm:px-4 py-1.5 sm:py-2"
+            className="flex items-center text-xs sm:text-sm px-4 py-2 rounded-full shadow-md shadow-primary-500/20 font-semibold"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             Créer recette
@@ -635,8 +635,8 @@ export function RecipesPage() {
         </div>
       </div>
 
-      {/* Filtres et recherche (Mobile First) */}
-      <div className="bg-white rounded-2xl shadow-xs border border-gray-200/80 p-3 sm:p-5 space-y-3">
+      {/* Filtres et recherche (Neo-Bento Filter Hub) */}
+      <div className="bento-card rounded-2xl sm:rounded-3xl border border-gray-200/70 p-4 sm:p-5 space-y-3.5 shadow-card">
         {/* Barre de recherche avec bouton d'effacement */}
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
@@ -645,13 +645,13 @@ export function RecipesPage() {
             placeholder="Rechercher une recette, un ingrédient..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-9 py-2.5 text-sm sm:text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-50/50 shadow-2xs"
+            className="w-full pl-10 pr-10 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200/80 rounded-2xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white/90 shadow-2xs backdrop-blur-xs placeholder:text-gray-400"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+              className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
               aria-label="Effacer la recherche"
             >
               <X className="w-4 h-4" />
@@ -659,7 +659,7 @@ export function RecipesPage() {
           )}
         </div>
 
-        {/* Catégories principales */}
+        {/* Catégories principales sous forme de segmented pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 select-none text-xs">
           {[
             { id: "", label: "Toutes" },
@@ -675,10 +675,10 @@ export function RecipesPage() {
                 key={cat.id || "all"}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
+                className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
                   isSelected
-                    ? "bg-primary-600 text-white shadow-xs"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-primary-500 text-white shadow-xs shadow-primary-500/20"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200/70"
                 }`}
               >
                 <span>{cat.label}</span>
@@ -695,7 +695,7 @@ export function RecipesPage() {
             className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
               showOnlyMakeable
                 ? "bg-emerald-600 text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200/70"
             }`}
           >
             Réalisables
@@ -707,7 +707,7 @@ export function RecipesPage() {
             className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
               showOnlyFavorites
                 ? "bg-red-500 text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200/70"
             }`}
           >
             Favoris
@@ -719,7 +719,7 @@ export function RecipesPage() {
             className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
               showOnlyMyRecipes
                 ? "bg-purple-600 text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200/70"
             }`}
           >
             Mes recettes
@@ -731,7 +731,7 @@ export function RecipesPage() {
             className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all flex items-center shrink-0 ${
               showOnlyAI
                 ? "bg-blue-600 text-white shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200/70"
             }`}
           >
             Recettes IA
@@ -742,10 +742,10 @@ export function RecipesPage() {
             <select
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
-              className={`px-2.5 py-1.5 rounded-full text-xs font-semibold border-none focus:ring-2 focus:ring-emerald-500 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold focus:ring-2 focus:ring-primary-500/20 cursor-pointer ${
                 selectedDifficulty
-                  ? "bg-amber-100 text-amber-900 font-bold"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-amber-100 text-amber-900 font-bold border border-amber-300"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200/70"
               }`}
             >
               <option value="">Difficulté (Toutes)</option>
@@ -758,7 +758,7 @@ export function RecipesPage() {
 
         {/* Compteur de résultats et bouton de réinitialisation */}
         <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
-          <span>
+          <span className="font-medium">
             {filteredRecipes.length} recette{filteredRecipes.length !== 1 ? "s" : ""} trouvée{filteredRecipes.length !== 1 ? "s" : ""}
           </span>
           {(showOnlyMakeable || showOnlyFavorites || showOnlyMyRecipes || showOnlyAI || selectedDifficulty || searchTerm) && (
@@ -772,7 +772,7 @@ export function RecipesPage() {
                 setSelectedDifficulty("");
                 setSearchTerm("");
               }}
-              className="text-emerald-700 hover:underline font-medium"
+              className="text-primary-700 hover:underline font-semibold"
             >
               Réinitialiser
             </button>
@@ -786,205 +786,217 @@ export function RecipesPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
         </div>
       ) : filteredRecipes.length === 0 ? (
-        <Card>
+        <Card className="rounded-3xl border-dashed">
           <CardContent className="text-center py-12">
-            <div className="text-gray-400 mb-4">
+            <div className="text-gray-300 mb-4">
               <ChefHat className="w-16 h-16 mx-auto" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
               Aucune recette trouvée
             </h3>
-            <p className="text-gray-500 mb-6">
-              Essayez de modifier vos filtres ou créez votre première recette
+            <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+              Essayez de modifier vos filtres ou générez une nouvelle idée adaptée à vos ingrédients.
             </p>
             <Button
-              onClick={() => {
-                /* TODO: Create recipe */
-              }}
+              onClick={() => setIsGenerateModalOpen(true)}
+              className="rounded-full px-5 py-2.5 font-semibold"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Créer ma première recette
+              <Sparkles className="w-4 h-4 mr-2" />
+              Générer avec l'IA
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredRecipes.map((recipe) => (
-            <Card
-              key={recipe.id}
-              hover
-              className="cursor-pointer rounded-2xl overflow-hidden shadow-xs border border-gray-200/80 active:scale-[0.99] transition-transform"
-              onClick={() => setSelectedRecipe(recipe)}
-            >
-              {/* Image de la recette */}
-              <div className="relative h-44 sm:h-48 bg-gray-100 rounded-t-2xl overflow-hidden group">
-                {recipe.imageUrl ? (
-                  <img
-                    src={formatImageUrl(recipe.imageUrl)}
-                    alt={recipe.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      const parent = e.currentTarget.parentElement;
-                      if (parent) {
-                        const fallback = parent.querySelector(".img-fallback");
-                        if (fallback) fallback.classList.remove("hidden");
-                      }
-                    }}
-                  />
-                ) : null}
-                <div
-                  className={`w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 group-hover:bg-gray-100 transition-colors img-fallback ${
-                    recipe.imageUrl ? "hidden" : ""
-                  }`}
-                >
-                  <ChefHat className="w-12 h-12 mb-1 text-gray-300" />
-                  <span className="text-xs font-medium text-gray-400 flex items-center">
-                    <Camera className="w-3.5 h-3.5 mr-1" /> Ajouter photo
-                  </span>
-                </div>
-
-                {/* Badge difficulté, catégorie & auteur */}
-                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-                  <span
-                    className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold shadow-xs ${getDifficultyColor(
-                      recipe.difficulty
-                    )}`}
-                  >
-                    {getDifficultyLabel(recipe.difficulty)}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold shadow-xs border ${
-                      getCategoryBadgeInfo(recipe.category).bg
-                    }`}
-                  >
-                    {getCategoryBadgeInfo(recipe.category).label}
-                  </span>
-                  {recipe.source === "ai_generated" && (
-                    <span className="px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 shadow-xs">
-                      IA
-                    </span>
-                  )}
-                  {recipe.createdById === currentUser?.id && (
-                    <span className="px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 shadow-xs">
-                      Ma recette
-                    </span>
-                  )}
-                </div>
-
-                {/* Actions rapides en haut à droite : modifier, photo & favoris */}
-                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditModal(recipe);
-                    }}
-                    title="Modifier la recette"
-                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-xs hover:bg-white text-gray-700 hover:text-emerald-600 shadow-xs transition-all active:scale-95"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTargetRecipeIdForUpload(recipe.id);
-                      cardFileInputRef.current?.click();
-                    }}
-                    title="Ajouter ou modifier la photo"
-                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-xs hover:bg-white text-gray-700 hover:text-emerald-600 shadow-xs transition-all active:scale-95"
-                  >
-                    <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => handleToggleFavorite(recipe.id, e)}
-                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-xs hover:bg-white shadow-xs transition-all active:scale-95"
-                    title={recipe.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
-                  >
-                    <Heart
-                      className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
-                        recipe.isFavorite
-                          ? "fill-red-500 text-red-500"
-                          : "text-gray-400 hover:text-red-500"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          {filteredRecipes.map((recipe) => {
+            const isFullyMakeable = (recipe.missingIngredientsCount || 0) === 0;
+            return (
+              <Card
+                key={recipe.id}
+                hover
+                className="cursor-pointer rounded-3xl overflow-hidden shadow-card hover:shadow-card-hover border border-gray-150/80 bg-white transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between"
+                onClick={() => setSelectedRecipe(recipe)}
+              >
+                <div>
+                  {/* Image de la recette avec overlay dynamique */}
+                  <div className="relative h-48 sm:h-52 bg-gray-100 rounded-t-3xl overflow-hidden group">
+                    {recipe.imageUrl ? (
+                      <img
+                        src={formatImageUrl(recipe.imageUrl)}
+                        alt={recipe.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            const fallback = parent.querySelector(".img-fallback");
+                            if (fallback) fallback.classList.remove("hidden");
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 group-hover:bg-gray-100 transition-colors img-fallback ${
+                        recipe.imageUrl ? "hidden" : ""
                       }`}
-                    />
-                  </button>
-                </div>
-              </div>
+                    >
+                      <ChefHat className="w-12 h-12 mb-1 text-gray-300" />
+                      <span className="text-xs font-semibold text-gray-400 flex items-center">
+                        <Camera className="w-3.5 h-3.5 mr-1" /> Ajouter photo
+                      </span>
+                    </div>
 
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg line-clamp-2">
-                  {recipe.title}
-                </CardTitle>
-                {recipe.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {recipe.description}
-                  </p>
-                )}
-              </CardHeader>
+                    {/* Gradient doux en bas de l'image */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60"></div>
 
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-                  <div className="flex items-center space-x-4">
-                    {recipe.prepTime && (
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4" />
-                        <span>
-                          {recipe.prepTime + (recipe.cookTime || 0)} min
+                    {/* Badges flottants en haut à gauche */}
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs backdrop-blur-xs ${getDifficultyColor(
+                          recipe.difficulty
+                        )}`}
+                      >
+                        {getDifficultyLabel(recipe.difficulty)}
+                      </span>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs backdrop-blur-xs border ${
+                          getCategoryBadgeInfo(recipe.category).bg
+                        }`}
+                      >
+                        {getCategoryBadgeInfo(recipe.category).label}
+                      </span>
+                      {recipe.source === "ai_generated" && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100/90 text-violet-800 shadow-xs border border-violet-200/60">
+                          IA
+                        </span>
+                      )}
+                      {recipe.createdById === currentUser?.id && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100/90 text-purple-800 shadow-xs border border-purple-200/60">
+                          Moi
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Actions rapides en haut à droite : modifier, photo & favoris */}
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditModal(recipe);
+                        }}
+                        title="Modifier la recette"
+                        className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 hover:text-primary-600 shadow-xs transition-all active:scale-95"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTargetRecipeIdForUpload(recipe.id);
+                          cardFileInputRef.current?.click();
+                        }}
+                        title="Ajouter ou modifier la photo"
+                        className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 hover:text-primary-600 shadow-xs transition-all active:scale-95"
+                      >
+                        <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleFavorite(recipe.id, e)}
+                        className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-md hover:bg-white shadow-xs transition-all active:scale-95"
+                        title={recipe.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      >
+                        <Heart
+                          className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
+                            recipe.isFavorite
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-400 hover:text-red-500"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Badge 100% Réalisable flottant sur l'image */}
+                    {isFullyMakeable && (
+                      <div className="absolute bottom-2.5 left-3 z-10">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500 text-white shadow-md">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                          100% Réalisable
                         </span>
                       </div>
                     )}
+                  </div>
 
-                    <div className="flex items-center space-x-1">
-                      <Users className="w-4 h-4" />
-                      <span>{recipe.servings} pers.</span>
+                  <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
+                    <CardTitle className="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight line-clamp-2 group-hover:text-primary-600 transition-colors">
+                      {recipe.title}
+                    </CardTitle>
+                    {recipe.description && (
+                      <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 mt-1">
+                        {recipe.description}
+                      </p>
+                    )}
+                  </CardHeader>
+                </div>
+
+                <CardContent className="pt-0 px-4 sm:px-5 pb-4 space-y-3">
+                  {/* Temps et Portions */}
+                  <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100/80">
+                    <div className="flex items-center space-x-3">
+                      {(recipe.prepTime || recipe.cookTime) && (
+                        <div className="flex items-center space-x-1 font-medium">
+                          <Clock className="w-3.5 h-3.5 text-gray-400" />
+                          <span>
+                            {(recipe.prepTime || 0) + (recipe.cookTime || 0)} min
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center space-x-1 font-medium">
+                        <Users className="w-3.5 h-3.5 text-gray-400" />
+                        <span>{recipe.servings} pers.</span>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Affichage des ingrédients disponibles */}
-                <div className="text-sm font-medium text-blue-600">
-                  {recipe.ingredients.length - (recipe.missingIngredientsCount || 0)} / {recipe.ingredients.length} ingrédients disponibles
-                </div>
-
-                {/* Coût estimé */}
-                {recipe.estimatedCost !== undefined && recipe.estimatedCost !== null && recipe.estimatedCost > 0 && (
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 text-xs">
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <Coins className="w-3.5 h-3.5 text-emerald-600" />
-                      Coût estimé :
-                    </span>
-                    <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                      ~{recipe.estimatedCost.toFixed(2)} €
-                      {recipe.costPerServing ? ` (${recipe.costPerServing.toFixed(2)} €/p.)` : ""}
+                    {/* Ingrédients disponibles ratio */}
+                    <span className="text-[11px] font-semibold text-gray-500">
+                      {recipe.ingredients.length - (recipe.missingIngredientsCount || 0)}/{recipe.ingredients.length} en stock
                     </span>
                   </div>
-                )}
 
-                {/* Ingrédients preview */}
-                <div className="mt-3">
-                  <div className="text-xs text-gray-500 mb-1">
-                    Ingrédients principaux:
-                  </div>
-                  <div className="text-sm text-gray-700">
-                    {recipe.ingredients && recipe.ingredients.length > 0
-                      ? recipe.ingredients
-                          .slice(0, 3)
-                          .map((ing) => ing.ingredient?.name || "Ingrédient")
-                          .join(", ")
-                      : "Aucun ingrédient"}
-                    {recipe.ingredients &&
-                      recipe.ingredients.length > 3 &&
-                      "..."}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  {/* Coût estimé */}
+                  {recipe.estimatedCost !== undefined && recipe.estimatedCost !== null && recipe.estimatedCost > 0 && (
+                    <div className="flex items-center justify-between py-1.5 px-2.5 bg-primary-50/50 rounded-xl border border-primary-200/50 text-xs">
+                      <span className="text-primary-800 font-medium flex items-center gap-1 text-[11px]">
+                        <Coins className="w-3.5 h-3.5 text-primary-600" />
+                        Coût estimé
+                      </span>
+                      <span className="font-bold text-primary-700">
+                        ~{recipe.estimatedCost.toFixed(2)} €
+                        {recipe.costPerServing ? ` (${recipe.costPerServing.toFixed(2)} €/p.)` : ""}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Aperçu des ingrédients */}
+                  {recipe.ingredients && recipe.ingredients.length > 0 && (
+                    <div className="text-[11px] text-gray-400 line-clamp-1">
+                      <span className="font-semibold text-gray-600">Avec : </span>
+                      {recipe.ingredients
+                        .slice(0, 3)
+                        .map((ing) => ing.ingredient?.name || "Ingrédient")
+                        .join(", ")}
+                      {recipe.ingredients.length > 3 && "..."}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -1645,7 +1657,7 @@ export function RecipesPage() {
                   )}
                   {selectedRecipe.source === "ai_generated" && (
                     <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                      ✨ Générée par l'IA
+                      Générée par l'IA
                     </span>
                   )}
                 </div>
