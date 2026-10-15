@@ -273,10 +273,10 @@ def main():
   ⚡ {BOLD}Backend API{RESET}                : {CYAN}http://localhost:5001{RESET}
   🩺 {BOLD}API Health Check{RESET}           : {CYAN}http://localhost:5001/api/health{RESET}
 
-{YELLOW}{BOLD}🔑 Comptes de test pré-configurés :{RESET}
-  • {BOLD}demo@fridgepro.com{RESET}  (mdp: {BOLD}demo123{RESET})  -> Profil avec inventaire
-  • {BOLD}test@fridgepro.com{RESET}  (mdp: {BOLD}test123{RESET})
-  • {BOLD}admin@fridgepro.com{RESET} (mdp: {BOLD}admin123{RESET})
+{YELLOW}{BOLD}🔑 Comptes de test pré-configurés (mots de passe : SEED_PASSWORD dans backend/.env) :{RESET}
+  • {BOLD}demo@fridgepro.com{RESET}  (défaut local : {BOLD}demo123{RESET})  -> Profil avec inventaire
+  • {BOLD}test@fridgepro.com{RESET}  (défaut local : {BOLD}test123{RESET})
+  • {BOLD}admin@fridgepro.com{RESET} (défaut local : {BOLD}admin123{RESET})
 
   {MAGENTA}Appuyez sur {BOLD}Ctrl + C{RESET}{MAGENTA} à tout moment pour arrêter l'application.{RESET}
 -----------------------------------------------------------------

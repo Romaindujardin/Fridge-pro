@@ -230,6 +230,15 @@ async function main() {
     }),
   ]);
 
+  // Mot de passe des comptes de démo : configurable via SEED_PASSWORD.
+  // En production, définissez SEED_PASSWORD avec une valeur forte avant de seeder.
+  const seedPassword = process.env.SEED_PASSWORD;
+  if (!seedPassword) {
+    console.warn(
+      "⚠️  SEED_PASSWORD non défini : mots de passe de démo par défaut utilisés (usage local uniquement, jamais en production).",
+    );
+  }
+
   // Créer des utilisateurs de test
   const users = await Promise.all([
     prisma.user.upsert({
@@ -237,7 +246,7 @@ async function main() {
       update: {},
       create: {
         email: "demo@fridgepro.com",
-        password: await bcrypt.hash("demo123", 10),
+        password: await bcrypt.hash(seedPassword || "demo123", 10),
         firstName: "Demo",
         lastName: "User",
       },
@@ -247,7 +256,7 @@ async function main() {
       update: {},
       create: {
         email: "test@fridgepro.com",
-        password: await bcrypt.hash("test123", 10),
+        password: await bcrypt.hash(seedPassword || "test123", 10),
         firstName: "Test",
         lastName: "User",
       },
@@ -257,7 +266,7 @@ async function main() {
       update: {},
       create: {
         email: "admin@fridgepro.com",
-        password: await bcrypt.hash("admin123", 10),
+        password: await bcrypt.hash(seedPassword || "admin123", 10),
         firstName: "Admin",
         lastName: "User",
       },
@@ -413,9 +422,15 @@ async function main() {
 
   console.log("✅ Database seeded successfully!");
   console.log("\n🔑 Comptes de test disponibles:");
-  console.log("📧 Email: demo@fridgepro.com | 🔒 Mot de passe: demo123");
-  console.log("📧 Email: test@fridgepro.com | 🔒 Mot de passe: test123");
-  console.log("📧 Email: admin@fridgepro.com | 🔒 Mot de passe: admin123");
+  console.log(
+    `📧 Email: demo@fridgepro.com | 🔒 Mot de passe: ${seedPassword || "demo123"}`,
+  );
+  console.log(
+    `📧 Email: test@fridgepro.com | 🔒 Mot de passe: ${seedPassword || "test123"}`,
+  );
+  console.log(
+    `📧 Email: admin@fridgepro.com | 🔒 Mot de passe: ${seedPassword || "admin123"}`,
+  );
   console.log("\n📊 Données créées:");
   console.log(`   - ${categories.length} catégories`);
   console.log(`   - ${ingredients.length} ingrédients`);
