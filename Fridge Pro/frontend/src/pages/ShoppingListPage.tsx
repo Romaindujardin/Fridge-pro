@@ -9,7 +9,6 @@ import {
   ShoppingCart,
   Check,
   X,
-  Edit3,
   Trash2,
   Calendar,
   Package,
@@ -38,12 +37,10 @@ import { fridgeService } from "@/services/fridgeService";
 import { recipeService } from "@/services/recipeService";
 import type {
   ShoppingList,
-  CreateShoppingListRequest,
   AddShoppingListItemRequest,
   Ingredient,
   GenerateShoppingListAIRequest,
   GenerateShoppingListAIResponse,
-  ShoppingListAISummary,
 } from "@/types";
 
 // Convertit et normalise un nombre décimal (gère virgule et point)

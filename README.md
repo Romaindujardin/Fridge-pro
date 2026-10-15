@@ -166,8 +166,6 @@ Fridge-pro/
 │   │   ├── vite.config.ts            # Configuration Vite (bundler)
 │   │   ├── tailwind.config.js        # Configuration Tailwind CSS
 │   │   └── tsconfig.json             # Configuration TypeScript
-│   │
-│   └── db_dump.txt                   # Export SQL de la base de données (backup)
 │
 ├── 📂 terraform/                     # Infrastructure as Code (Azure)
 │   ├── main.tf                       # Définition des ressources Azure (App Services, DB, etc.)
@@ -176,9 +174,7 @@ Fridge-pro/
 │   ├── versions.tf                   # Versions des providers Terraform
 │   └── terraform.tfstate             # État Terraform (généré automatiquement)
 │
-├── 📄 README.md                      # Ce fichier (documentation)
-├── 📄 DEPLOYMENT_INFO.json           # Informations de déploiement
-└── 📄 tf_outputs.json                # Outputs Terraform exportés
+└── 📄 README.md                      # Ce fichier (documentation)
 ```
 
 ### Flux de Données
@@ -215,6 +211,10 @@ Fridge-pro/
 
 - Terraform (IaC)
 - Azure (App Services, PostgreSQL Flexible Server)
+
+**Déploiement actuel (production)** : Frontend sur **Vercel**, backend sur **Render**, base PostgreSQL sur **Neon**.
+
+> 🔐 **Sécurité** : ce dépôt ne doit contenir aucun secret. Toutes les valeurs sensibles (`DATABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, mot de passe PostgreSQL, etc.) sont définies dans les variables d'environnement Render/Vercel et ne sont **jamais** committées dans Git. Les fichiers `.env`, dumps de base et exports d'infrastructure sont ignorés par `.gitignore`.
 
 ---
 
@@ -287,24 +287,22 @@ terraform output -raw database_url_connection_string
 ### Exemple de sortie
 
 ```
-postgresql://fridgeadmin:***REMOVED***@fridge-pro-db-xpeyok.postgres.database.azure.com:5432/fridge_pro?schema=public&sslmode=require
+postgresql://<utilisateur>:<mot-de-passe>@<serveur>.postgres.database.azure.com:5432/fridge_pro?schema=public&sslmode=require
 ```
 
-> **Note importante** : Copiez uniquement la partie après `postgresql://fridgeadmin:...` et **sans le `%` final** si présent.
+> **Note importante** : Ne copiez jamais une vraie chaîne de connexion ou un mot de passe dans un fichier suivi par Git. Utilisez uniquement des variables d'environnement (`DATABASE_URL`, définie dans Render pour la production et dans `backend/.env` en local).
 
 ```
 Outputs:
 
-backend_app_name = "fridge-pro-api-xpeyok"
-backend_url = "https://fridge-pro-api-xpeyok.azurewebsites.net"
+backend_app_name = "fridge-pro-api-xxxxx"
+backend_url = "https://fridge-pro-api-xxxxx.azurewebsites.net"
 database_url_connection_string = <sensitive>
 db_password = <sensitive>
-db_server_fqdn = "fridge-pro-db-xpeyok.postgres.database.azure.com"
-frontend_app_name = "fridge-pro-web-xpeyok"
-frontend_url = "https://fridge-pro-web-xpeyok.azurewebsites.net"
+db_server_fqdn = "fridge-pro-db-xxxxx.postgres.database.azure.com"
+frontend_app_name = "fridge-pro-web-xxxxx"
+frontend_url = "https://fridge-pro-web-xxxxx.azurewebsites.net"
 resource_group_name = "fridge-pro-prod-rg"
-romain@MacBook-Pro-de-Romain terraform % terraform output -raw database_url_connection_string
-postgresql://fridgeadmin:***REMOVED***@fridge-pro-db-xpeyok.postgres.database.azure.com:5432/fridge_pro?schema=public&sslmode=require%
 ```
 
 ### Si nécessaire, elles sont accessible de nouveau avec :

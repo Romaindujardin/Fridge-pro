@@ -17,9 +17,16 @@ import categoryRoutes from "./routes/categories";
 // Middleware d'erreur
 import { errorHandler } from "./middleware/errorHandler";
 import { notFound } from "./middleware/notFound";
+import { rateLimit } from "./middleware/rateLimit";
+import { getJwtSecret, parseFileSize } from "./utils/security";
 
 const app = express();
 const port = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === "production";
+
+// Derrière Render/Azure, req.ip doit refléter l'adresse client réelle
+// (nécessaire pour que le rate limiting soit efficace).
+app.set("trust proxy", 1);
 
 // Instance Prisma
 export const prisma = new PrismaClient();
@@ -27,7 +34,8 @@ export const prisma = new PrismaClient();
 // Middleware de sécurité
 app.use(helmet());
 
-// CORS
+// CORS strict : seules les origines explicitement autorisées peuvent appeler l'API.
+// FRONTEND_URL accepte plusieurs origines séparées par des virgules.
 const allowedOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
   .map((s) => s.trim().replace(/\/+$/, ""))
@@ -36,36 +44,61 @@ const allowedOrigins = (process.env.FRONTEND_URL || "")
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Autoriser les requêtes sans origine (curl, mobile, etc.)
+      // Requêtes sans origine (curl, apps mobiles natives, outils) : autorisées.
       if (!origin) return callback(null, true);
-      
-      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-      const isVercel = /\.vercel\.app$/.test(origin);
-      const isExplicitlyAllowed = allowedOrigins.includes(origin.replace(/\/+$/, ""));
 
-      if (isLocalhost || isVercel || isExplicitlyAllowed || process.env.NODE_ENV !== "production") {
+      const normalized = origin.replace(/\/+$/, "");
+      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(
+        normalized,
+      );
+      const isExplicitlyAllowed = allowedOrigins.includes(normalized);
+      const isDev = !isProduction;
+
+      if (isExplicitlyAllowed || (isDev && isLocalhost)) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissif pour éviter les blocages inopinés sur mobile
+
+      console.warn(
+        `[CORS] Origine refusée : ${origin}. Origines autorisées : ${
+          allowedOrigins.join(", ") || "(aucune — configurez FRONTEND_URL)"
+        }`,
+      );
+      return callback(null, false);
     },
     credentials: true,
   })
 );
 
+// Limite de taille des requêtes JSON (accepte "10mb", "10485760", etc.)
+const maxRequestSize = parseFileSize(
+  process.env.MAX_FILE_SIZE,
+  10 * 1024 * 1024,
+);
+
 // Parsing JSON
-app.use(express.json({ limit: process.env.MAX_FILE_SIZE || "10mb" }));
+app.use(express.json({ limit: maxRequestSize }));
 app.use(
   express.urlencoded({
     extended: true,
-    limit: process.env.MAX_FILE_SIZE || "10mb",
+    limit: maxRequestSize,
   })
 );
+
+// Limiteurs de débit : protection contre le force brute et l'abus des endpoints coûteux.
+const globalLimiter = rateLimit({ windowMs: 60_000, max: 300 });
+const authLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 30,
+  message:
+    "Trop de tentatives de connexion. Veuillez réessayer dans quelques minutes.",
+});
 
 // Servir les fichiers statiques (uploads)
 app.use("/uploads", express.static("uploads"));
 
 // Routes API
-app.use("/api/auth", authRoutes);
+app.use("/api", globalLimiter);
+app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/ingredients", ingredientRoutes);
@@ -90,6 +123,22 @@ app.use(errorHandler);
 // Démarrage du serveur
 async function startServer() {
   try {
+    // Échec explicite au démarrage si la configuration sécurité est incomplète.
+    getJwtSecret();
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL est manquant.");
+    }
+    if (!process.env.GEMINI_API_KEY) {
+      console.warn(
+        "⚠️  GEMINI_API_KEY non défini : seules les clés saisies par les utilisateurs dans leur profil seront utilisées.",
+      );
+    }
+    if (!allowedOrigins.length) {
+      console.warn(
+        "⚠️  FRONTEND_URL non défini : en production, aucune origine externe ne sera autorisée par CORS.",
+      );
+    }
+
     // Test de connexion à la base de données
     await prisma.$connect();
     console.log("✅ Base de données connectée");

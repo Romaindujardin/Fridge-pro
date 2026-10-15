@@ -1,5 +1,4 @@
-import React from "react";
-import { Clock, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Clock, AlertTriangle, AlertCircle } from "lucide-react";
 
 export interface FreshnessBadgeProps {
   expiryDate?: string | Date | null;

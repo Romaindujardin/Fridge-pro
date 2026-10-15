@@ -160,7 +160,11 @@ const GENERATED_RECIPE_SCHEMA = z.object({
     )
     .min(1),
   instructions: z.array(z.string().min(1)).min(1),
-  imageUrl: z.string().url().nullish(),
+  // Seules les URLs http(s) sont acceptées : pas de javascript:, data:, etc.
+  imageUrl: z
+    .string()
+    .refine((value) => /^https?:\/\//i.test(value), "URL d'image invalide")
+    .nullish(),
   tips: z.array(z.string().min(1)).nullish(),
 });
 

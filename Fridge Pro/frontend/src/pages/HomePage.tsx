@@ -5,9 +5,7 @@ import toast from "react-hot-toast";
 import {
   Plus,
   Clock,
-  Star,
   ChefHat,
-  Sparkles,
   ScanLine,
   ArrowRight,
   Coins,
@@ -22,12 +20,10 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { Card, CardContent } from "@/components/ui/Card";
 import { FreshnessBadge } from "@/components/ui/FreshnessBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { fridgeService } from "@/services/fridgeService";
 import { recipeService } from "@/services/recipeService";
-import { shoppingListService } from "@/services/shoppingListService";
 import { formatImageUrl } from "@/utils/imageUtils";
 import { isItemFrozen } from "@/utils/frozenUtils";
 import type { FridgeItem } from "@/types";
@@ -136,11 +132,6 @@ export function HomePage() {
   const { data: favoriteRecipes = [] } = useQuery({
     queryKey: ["favoriteRecipes"],
     queryFn: recipeService.getFavoriteRecipes,
-  });
-
-  const { data: shoppingLists = [] } = useQuery({
-    queryKey: ["shoppingLists"],
-    queryFn: shoppingListService.getShoppingLists,
   });
 
   // Recettes véritablement réalisables (0 ingrédient manquant)

@@ -3,16 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import {
-  User,
-  Mail,
-  Calendar,
-  Edit3,
-  Save,
-  X,
-  Shield,
-  Activity,
-} from "lucide-react";
+import { User, Edit3, Save, X, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -31,6 +22,7 @@ const profileSchema = z.object({
     .max(255, "La clé ne doit pas dépasser 255 caractères")
     .optional()
     .nullable(),
+  removeGeminiKey: z.boolean().optional(),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -40,14 +32,6 @@ export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const maskGeminiKey = (value?: string | null) => {
-    if (!value) return null;
-    if (value.length <= 8) {
-      return "••••";
-    }
-    return `${value.slice(0, 4)}••••${value.slice(-4)}`;
-  };
-
   // Formulaire
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -55,7 +39,8 @@ export function ProfilePage() {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       email: user?.email || "",
-      geminiApiKey: user?.geminiApiKey || "",
+      geminiApiKey: "",
+      removeGeminiKey: false,
     },
   });
 
@@ -74,7 +59,8 @@ export function ProfilePage() {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        geminiApiKey: user.geminiApiKey || "",
+        geminiApiKey: "",
+        removeGeminiKey: false,
       });
     }
   }, [user, form]);
@@ -83,12 +69,24 @@ export function ProfilePage() {
   const handleSave = async (data: ProfileForm) => {
     setIsLoading(true);
     try {
-      const payload = {
-        ...data,
-        geminiApiKey: data.geminiApiKey?.trim()
-          ? data.geminiApiKey.trim()
-          : null,
+      // La clé Gemini n'est envoyée que si l'utilisateur en saisit une nouvelle
+      // (ou coche la suppression) : elle n'est jamais relue depuis le serveur.
+      const payload: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        geminiApiKey?: string | null;
+      } = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
       };
+
+      if (data.geminiApiKey?.trim()) {
+        payload.geminiApiKey = data.geminiApiKey.trim();
+      } else if (data.removeGeminiKey) {
+        payload.geminiApiKey = null;
+      }
 
       const updatedUser = await userService.updateProfile(payload);
       setUser(updatedUser);
@@ -106,7 +104,8 @@ export function ProfilePage() {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       email: user?.email || "",
-      geminiApiKey: user?.geminiApiKey || "",
+      geminiApiKey: "",
+      removeGeminiKey: false,
     });
     setIsEditing(false);
   };
@@ -206,12 +205,23 @@ export function ProfilePage() {
                     label="Clé Gemini API"
                     type="password"
                     placeholder="AIza..."
-                    helper="Indiquez votre clé personnelle pour utiliser les fonctionnalités IA. Laissez vide pour la supprimer."
+                    helper="Indiquez votre clé personnelle pour utiliser les fonctionnalités IA. Elle est stockée côté serveur et n'est plus jamais affichée ensuite. Laissez vide pour conserver la clé actuelle."
                     error={
                       form.formState.errors.geminiApiKey?.message || undefined
                     }
                     {...form.register("geminiApiKey")}
                   />
+
+                  {user.hasGeminiKey && (
+                    <label className="flex items-center gap-2 text-xs font-medium text-gray-600">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        {...form.register("removeGeminiKey")}
+                      />
+                      Supprimer la clé Gemini enregistrée
+                    </label>
+                  )}
                 </form>
               ) : (
                 <div className="space-y-5">
@@ -246,8 +256,8 @@ export function ProfilePage() {
                       Clé Gemini API
                     </label>
                     <p className="mt-1 text-base font-bold text-gray-900 font-mono">
-                      {user.geminiApiKey
-                        ? maskGeminiKey(user.geminiApiKey)
+                      {user.hasGeminiKey
+                        ? "Clé enregistrée (masquée)"
                         : "Aucune clé configurée"}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">

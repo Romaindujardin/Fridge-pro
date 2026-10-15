@@ -4,6 +4,8 @@ import multer from "multer";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { AuthenticatedRequest, authenticateToken } from "../middleware/auth";
+import { rateLimit } from "../middleware/rateLimit";
+import { parseFileSize } from "../utils/security";
 import {
   analyzeReceiptImage,
   generateRecipeFromPrompt,
@@ -16,11 +18,21 @@ import { normalizeIngredient } from "../utils/ingredientMatcher";
 const router = Router();
 const prisma = new PrismaClient();
 
+// Limite l'usage des endpoints IA (coûteux) : 30 requêtes / heure / utilisateur.
+const aiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  keyGenerator: (req) =>
+    (req as AuthenticatedRequest).userId || req.ip || "unknown",
+  message:
+    "Limite d'utilisation de l'IA atteinte (30 requêtes par heure). Réessayez plus tard.",
+});
+
 // Stockage en mémoire des fichiers uploadés (images de tickets).
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: Number(process.env.MAX_FILE_SIZE || 10 * 1024 * 1024),
+    fileSize: parseFileSize(process.env.MAX_FILE_SIZE, 10 * 1024 * 1024),
   },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
@@ -38,6 +50,7 @@ const upload = multer({
 router.post(
   "/extract-receipt",
   authenticateToken,
+  aiLimiter,
   upload.single("receipt"),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -336,15 +349,7 @@ router.post(
         message: "Ticket traité avec succès.",
       });
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "Seuls les fichiers image sont autorisés."
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: error.message,
-        });
-      }
+      // Les erreurs d'upload (taille, type de fichier) sont formatées par errorHandler.
       next(error);
     }
   },
@@ -409,6 +414,7 @@ const generateRecipeSchema = z
 router.post(
   "/generate-recipe",
   authenticateToken,
+  aiLimiter,
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const {
@@ -704,6 +710,7 @@ function matchDbCategoryId(
 router.post(
   "/generate-shopping-list",
   authenticateToken,
+  aiLimiter,
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const {
@@ -1247,6 +1254,7 @@ router.post(
 router.post(
   "/shopping-lists/:id/replace-suggestion",
   authenticateToken,
+  aiLimiter,
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const suggestionIndex = z.coerce

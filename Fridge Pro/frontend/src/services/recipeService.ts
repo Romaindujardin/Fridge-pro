@@ -2,7 +2,6 @@ import api, { handleApiResponse, handleApiError } from "./api";
 import type {
   Recipe,
   CreateRecipeRequest,
-  FavoriteRecipe,
   GenerateRecipeAIRequest,
 } from "@/types";
 

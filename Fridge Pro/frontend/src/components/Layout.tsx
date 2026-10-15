@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   User,
   LogOut,
-  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 

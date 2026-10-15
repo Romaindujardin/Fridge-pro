@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth";
+import { getJwtSecret } from "../utils/security";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -22,6 +23,7 @@ const profileSchema = z.object({
 });
 
 // Projection standard pour éviter de renvoyer le mot de passe ou autres champs sensibles.
+// La clé Gemini n'est JAMAIS renvoyée : seul un booléen indique si elle est configurée.
 const userSelect = {
   id: true,
   email: true,
@@ -31,6 +33,12 @@ const userSelect = {
   createdAt: true,
   updatedAt: true,
 };
+
+// Retire la clé API de la réponse et la remplace par un simple indicateur.
+function toPublicUser<T extends { geminiApiKey: string | null }>(user: T) {
+  const { geminiApiKey, ...rest } = user;
+  return { ...rest, hasGeminiKey: Boolean(geminiApiKey) };
+}
 
 /**
  * GET /users/profile
@@ -59,7 +67,7 @@ router.get(
         success: true,
         data: {
           user: {
-            ...user,
+            ...toPublicUser(user),
             firstName: activeFirstName,
             activeProfile: activeFirstName,
           },
@@ -98,7 +106,7 @@ router.post(
 
       const newToken = jwt.sign(
         { userId: user.id, activeProfile: targetProfile },
-        process.env.JWT_SECRET || "your-secret-key",
+        getJwtSecret(),
         { expiresIn: "30d" }
       );
 
@@ -106,7 +114,7 @@ router.post(
         success: true,
         data: {
           user: {
-            ...user,
+            ...toPublicUser(user),
             firstName: targetProfile,
             activeProfile: targetProfile,
           },
@@ -156,16 +164,30 @@ router.put(
         }
       }
 
+      // Sémantique de la clé Gemini :
+      // - champ absent  -> la clé existante est conservée
+      // - chaîne vide ou null -> la clé est supprimée
+      // - valeur valide -> la clé est remplacée
+      const updateData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        geminiApiKey?: string | null;
+      } = {
+        firstName: body.firstName,
+        lastName: body.lastName,
+        email: body.email,
+      };
+
+      if (body.geminiApiKey !== undefined) {
+        updateData.geminiApiKey = body.geminiApiKey?.trim()
+          ? body.geminiApiKey.trim()
+          : null;
+      }
+
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
-        data: {
-          firstName: body.firstName,
-          lastName: body.lastName,
-          email: body.email,
-          geminiApiKey: body.geminiApiKey?.trim()
-            ? body.geminiApiKey.trim()
-            : null,
-        },
+        data: updateData,
         select: userSelect,
       });
 
@@ -175,7 +197,7 @@ router.put(
         success: true,
         data: {
           user: {
-            ...updatedUser,
+            ...toPublicUser(updatedUser),
             firstName: activeFirstName,
             activeProfile: activeFirstName,
           },

@@ -4,6 +4,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
+import { getJwtSecret } from "../utils/security";
 
 const prisma = new PrismaClient();
 
@@ -41,10 +42,10 @@ export const authenticateToken = async (
     }
 
     // Vérifier le token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "your-secret-key"
-    ) as { userId: string; activeProfile?: string };
+    const decoded = jwt.verify(token, getJwtSecret()) as {
+      userId: string;
+      activeProfile?: string;
+    };
 
     // Récupérer l'utilisateur correspondant en base
     const user = await prisma.user.findUnique({

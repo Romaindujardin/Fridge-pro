@@ -48,6 +48,25 @@ const parseDecimalNumber = (val: unknown): number | unknown => {
   return val;
 };
 
+// N'accepte que les URLs http(s), les data URLs d'image ou les chemins d'upload locaux.
+const imageUrlSchema = z
+  .string()
+  .refine(
+    (value) =>
+      /^https?:\/\//i.test(value) ||
+      /^data:image\//i.test(value) ||
+      value.startsWith("/uploads/"),
+    "URL d'image invalide",
+  );
+
+// Les recettes du catalogue commun (seed, createdById null) restent éditables par tous ;
+// les recettes personnelles (manuelles ou générées par IA) ne sont modifiables
+// que par leur auteur.
+const canManageRecipe = (
+  recipe: { createdById: string | null },
+  userId?: string,
+): boolean => recipe.createdById === null || recipe.createdById === userId;
+
 // Schemas de validation des payloads d'entrée.
 const createRecipeSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
@@ -59,7 +78,7 @@ const createRecipeSchema = z.object({
   cookTime: z.number().int().positive().optional(),
   servings: z.number().int().positive().default(4),
   difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
-  imageUrl: z.string().optional(),
+  imageUrl: imageUrlSchema.optional(),
   category: z.enum(["entree", "petit-dejeuner", "repas", "dessert", "autre"]).default("repas"),
   ingredients: z
     .array(
@@ -94,7 +113,7 @@ const updateRecipeSchema = z.object({
   cookTime: z.number().int().positive().nullable().optional(),
   servings: z.number().int().positive().optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
-  imageUrl: z.string().nullable().optional(),
+  imageUrl: imageUrlSchema.nullable().optional(),
   category: z.enum(["entree", "petit-dejeuner", "repas", "dessert", "autre"]).optional(),
   ingredients: z
     .array(
@@ -746,6 +765,13 @@ router.put(
         });
       }
 
+      if (!canManageRecipe(existingRecipe, req.userId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Vous ne pouvez modifier que les recettes de votre compte.",
+        });
+      }
+
       // Préparer les données de mise à jour de la recette
       const updateData: any = {};
       if (title !== undefined) updateData.title = title.trim();
@@ -919,12 +945,26 @@ router.post(
         });
       }
 
+      if (!canManageRecipe(recipe, req.userId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Vous ne pouvez modifier que les recettes de votre compte.",
+        });
+      }
+
       let imageUrl: string | null = null;
       if (req.file) {
         const mime = req.file.mimetype || "image/jpeg";
         imageUrl = `data:${mime};base64,${req.file.buffer.toString("base64")}`;
-      } else if (req.body.imageUrl) {
-        imageUrl = req.body.imageUrl.trim();
+      } else if (typeof req.body.imageUrl === "string" && req.body.imageUrl.trim()) {
+        const parsedUrl = imageUrlSchema.safeParse(req.body.imageUrl.trim());
+        if (!parsedUrl.success) {
+          return res.status(400).json({
+            success: false,
+            message: "URL d'image invalide.",
+          });
+        }
+        imageUrl = parsedUrl.data;
       }
 
       if (!imageUrl) {
@@ -974,6 +1014,13 @@ router.delete(
         return res.status(404).json({
           success: false,
           message: "Recette non trouvée",
+        });
+      }
+
+      if (!canManageRecipe(recipe, req.userId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Vous ne pouvez modifier que les recettes de votre compte.",
         });
       }
 
@@ -1031,6 +1078,13 @@ router.delete(
         return res.status(404).json({
           success: false,
           message: "Recette non trouvée",
+        });
+      }
+
+      if (!canManageRecipe(recipe, req.userId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Vous ne pouvez supprimer que les recettes de votre compte.",
         });
       }
 

@@ -5,7 +5,8 @@ export interface User {
   firstName: string;
   lastName: string;
   activeProfile?: string;
-  geminiApiKey?: string | null;
+  /** Indique si une clé Gemini est configurée côté serveur (la clé n'est jamais renvoyée au client). */
+  hasGeminiKey?: boolean;
   createdAt: string;
   updatedAt: string;
 }

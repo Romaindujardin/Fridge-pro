@@ -8,7 +8,6 @@ import { RecipesPage } from "@/pages/RecipesPage";
 import { ShoppingListPage } from "@/pages/ShoppingListPage";
 import { AuthPage } from "@/pages/AuthPage";
 import { ProfilePage } from "@/pages/ProfilePage";
-import OpenFoodFactsTest from "@/components/OpenFoodFactsTest";
 
 function App() {
   return (
@@ -63,14 +62,6 @@ function App() {
             element={
               <ErrorBoundary>
                 <ProfilePage />
-              </ErrorBoundary>
-            }
-          />
-          <Route
-            path="test-openff"
-            element={
-              <ErrorBoundary>
-                <OpenFoodFactsTest />
               </ErrorBoundary>
             }
           />

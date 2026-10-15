@@ -1,5 +1,3 @@
-import { FridgeItem } from "@/types";
-
 /**
  * Détecte si un aliment est dans une catégorie surgelés / congélation
  * ou porte une mention de congélation dans son nom ou ses notes.

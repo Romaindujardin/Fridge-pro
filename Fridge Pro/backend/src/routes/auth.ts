@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import { getJwtSecret } from "../utils/security";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -57,7 +58,6 @@ router.post("/register", async (req, res, next) => {
         email: true,
         firstName: true,
         lastName: true,
-        geminiApiKey: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -66,14 +66,14 @@ router.post("/register", async (req, res, next) => {
     // Générer le JWT
     const token = jwt.sign(
       { userId: user.id, activeProfile: user.firstName },
-      process.env.JWT_SECRET || "your-secret-key",
+      getJwtSecret(),
       { expiresIn: "30d" }
     );
 
     res.status(201).json({
       success: true,
       data: {
-        user,
+        user: { ...user, hasGeminiKey: false },
         token,
       },
       message: "Compte créé avec succès",
@@ -98,7 +98,9 @@ router.post("/login", async (req, res, next) => {
     let user = null;
     let activeProfile: string | null = null;
 
-    // Compte couple partagé (Romain & Sophie)
+    // Compte couple partagé (Romain & Sophie) :
+    // l'identifiant "sophie" / "romain" sélectionne le profil actif du compte partagé.
+    // Aucun compte de secours arbitraire : si le compte partagé n'existe pas, la connexion échoue.
     if (clean === "sophie" || clean.startsWith("sophie")) {
       activeProfile = "Sophie";
       user = await prisma.user.findFirst({
@@ -106,14 +108,9 @@ router.post("/login", async (req, res, next) => {
           OR: [
             { email: "demo@fridgepro.com" },
             { firstName: { equals: "Romain", mode: "insensitive" } },
-            { email: { contains: "romain", mode: "insensitive" } },
           ],
         },
       });
-      // Si pas trouvé par ces critères, fallback sur le premier compte utilisateur
-      if (!user) {
-        user = await prisma.user.findFirst();
-      }
     } else if (clean === "romain" || clean.startsWith("romain")) {
       activeProfile = "Romain";
       user = await prisma.user.findFirst({
@@ -121,13 +118,9 @@ router.post("/login", async (req, res, next) => {
           OR: [
             { email: "demo@fridgepro.com" },
             { firstName: { equals: "Romain", mode: "insensitive" } },
-            { email: { contains: "romain", mode: "insensitive" } },
           ],
         },
       });
-      if (!user) {
-        user = await prisma.user.findFirst();
-      }
     } else {
       user = await prisma.user.findFirst({
         where: {
@@ -171,17 +164,17 @@ router.post("/login", async (req, res, next) => {
     // Générer le JWT avec le profil actif
     const token = jwt.sign(
       { userId: user.id, activeProfile: finalFirstName },
-      process.env.JWT_SECRET || "your-secret-key",
+      getJwtSecret(),
       { expiresIn: "30d" }
     );
 
-    // Retourner les données utilisateur (sans le mot de passe)
+    // Retourner les données utilisateur (jamais de secret : mot de passe hashé ou clé API)
     const userData = {
       id: user.id,
       email: user.email,
       firstName: finalFirstName,
       lastName: user.lastName,
-      geminiApiKey: user.geminiApiKey,
+      hasGeminiKey: Boolean(user.geminiApiKey),
       activeProfile: finalFirstName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

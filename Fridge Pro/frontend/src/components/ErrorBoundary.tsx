@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 
 interface Props {
@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </p>
             </div>
 
-            {this.state.error && (
+            {this.state.error && import.meta.env.DEV && (
               <details className="text-left text-xs bg-gray-50 text-gray-600 rounded-lg p-3 cursor-pointer">
                 <summary className="font-semibold text-gray-700 select-none">
                   Détails techniques

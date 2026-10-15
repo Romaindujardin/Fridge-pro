@@ -15,7 +15,6 @@ import {
   Sparkles,
   Trash2,
   Camera,
-  Upload,
   Edit3,
   Coins,
   X,
@@ -26,7 +25,6 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
 import { recipeService } from "@/services/recipeService";
-import { fridgeService } from "@/services/fridgeService";
 import { shoppingListService } from "@/services/shoppingListService";
 import type { Recipe } from "@/types";
 import { useAuthStore } from "@/stores/authStore";
@@ -243,7 +241,7 @@ export function RecipesPage() {
         return await recipeService.toggleFavorite(recipeId);
       }
     },
-    onSuccess: (data, { recipeId, isFavorite }) => {
+    onSuccess: (_data, { recipeId, isFavorite }) => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
       queryClient.invalidateQueries({ queryKey: ["favoriteRecipes"] });
       queryClient.invalidateQueries({ queryKey: ["suggestedRecipes"] });
