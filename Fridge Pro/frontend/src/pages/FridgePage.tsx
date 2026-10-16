@@ -738,7 +738,7 @@ export function FridgePage() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["purchaseHistory"] });
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
-      toast.success("Aliment mis à jour et archivé dans l'historique !");
+      toast.success("Aliment mis à jour et enregistré dans l'historique !");
       setIsFinishModalOpen(false);
       setFinishingItem(null);
     },
@@ -2557,114 +2557,121 @@ export function FridgePage() {
               </div>
             </div>
 
-            {/* Quantité consommée */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Quantité consommée
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFinishQuantity(String(finishingItem.quantity));
-                    if (finishingItem.itemCount) setFinishCount(finishingItem.itemCount);
-                  }}
-                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded transition-colors"
-                >
-                  Tout terminer ({finishingItem.quantity} {finishingItem.unit})
-                </button>
-              </div>
-
-              <div className="relative">
-                <input
-                  type="number"
-                  step="any"
-                  min={0.001}
-                  max={finishingItem.quantity}
-                  value={finishQuantity}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFinishQuantity(value);
-                    // Garde le nombre d'exemplaires synchronisé avec la quantité saisie.
-                    const total = finishingItem.itemCount || 1;
-                    const parsed = parseFloat(value.replace(",", "."));
-                    if (total > 1 && !isNaN(parsed) && parsed > 0) {
-                      const nextCount = Math.max(
-                        1,
-                        Math.min(
-                          total,
-                          Math.round((parsed / finishingItem.quantity) * total)
-                        )
-                      );
-                      setFinishCount(nextCount);
-                    }
-                  }}
-                  placeholder={`ex: ${finishingItem.quantity >= 10 ? 200 : finishingItem.quantity}`}
-                  className="w-full pl-3 pr-14 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-                <span className="absolute right-3 top-2 text-gray-500 text-sm font-semibold pointer-events-none">
-                  {finishingItem.unit}
-                </span>
-              </div>
-
-              {/* Aperçu dynamique du stock restant */}
-              {(() => {
-                const parsed = parseFloat(finishQuantity.replace(",", "."));
-                if (isNaN(parsed) || parsed <= 0) return null;
-                if (parsed >= finishingItem.quantity) {
-                  return (
-                    <div className="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/60 flex items-center gap-1.5">
-                      <span>✨</span>
-                      <span>Tout le stock sera consommé. L'aliment sera retiré du frigo et archivé.</span>
-                    </div>
-                  );
-                }
-                const remaining = Math.round((finishingItem.quantity - parsed) * 1000) / 1000;
+            {/* Consommation : par exemplaires s'il y en a plusieurs, sinon par quantité */}
+            {(finishingItem.itemCount || 1) > 1 ? (
+              (() => {
                 const totalItems = finishingItem.itemCount || 1;
-                const remainingItems = Math.max(totalItems - finishCount, 0);
+                const remainingCount = Math.max(totalItems - finishCount, 0);
+                const consumedQuantity =
+                  Math.round((finishingItem.quantity / totalItems) * finishCount * 1000) / 1000;
+                const remainingQuantity =
+                  Math.round((finishingItem.quantity - consumedQuantity) * 1000) / 1000;
                 return (
-                  <div className="mt-2 text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200/60 flex items-center justify-between">
-                    <span>Il restera dans votre frigo :</span>
-                    <span className="font-bold text-emerald-900 text-sm">
-                      {remaining} {finishingItem.unit}
-                      {totalItems > 1 ? ` (x${remainingItems})` : ""}
-                    </span>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-sm font-medium text-gray-700">
+                        Combien d'exemplaires avez-vous consommés ?
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setFinishCount(totalItems)}
+                        className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded transition-colors"
+                      >
+                        Tout terminer ({totalItems} exemplaires)
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        min={1}
+                        max={totalItems}
+                        value={finishCount}
+                        onChange={(e) => {
+                          setFinishCount(
+                            Math.max(1, Math.min(totalItems, parseInt(e.target.value, 10) || 1))
+                          );
+                        }}
+                        className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-base text-center font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      />
+                      <span className="text-sm text-gray-600">
+                        sur {totalItems} exemplaire(s)
+                        <span className="block text-xs text-gray-400 mt-0.5">
+                          soit {consumedQuantity} {finishingItem.unit} sur {finishingItem.quantity} {finishingItem.unit}
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Aperçu dynamique du stock restant */}
+                    {remainingCount <= 0 ? (
+                      <div className="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/60 flex items-center gap-1.5">
+                        <span>✨</span>
+                        <span>Tous les exemplaires seront consommés. L'aliment sera retiré du frigo et archivé.</span>
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200/60 flex items-center justify-between">
+                        <span>Il restera dans votre frigo :</span>
+                        <span className="font-bold text-emerald-900 text-sm">
+                          {remainingCount} exemplaire(s) ({remainingQuantity} {finishingItem.unit})
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
-              })()}
-            </div>
+              })()
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-gray-700">
+                    Quantité consommée
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setFinishQuantity(String(finishingItem.quantity))}
+                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded transition-colors"
+                  >
+                    Tout terminer ({finishingItem.quantity} {finishingItem.unit})
+                  </button>
+                </div>
 
-            {/* Si plusieurs exemplaires, choix du nombre d'exemplaires */}
-            {(finishingItem.itemCount || 1) > 1 && (
-              <div className="pt-2 border-t border-gray-100">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre d'exemplaires concernés
-                </label>
-                <div className="flex items-center gap-2">
+                <div className="relative">
                   <input
                     type="number"
-                    min={1}
-                    max={finishingItem.itemCount || 1}
-                    value={finishCount}
-                    onChange={(e) => {
-                      // Garde la quantité synchronisée avec le nombre d'exemplaires choisi.
-                      const total = finishingItem.itemCount || 1;
-                      const nextCount = Math.max(
-                        1,
-                        Math.min(total, parseInt(e.target.value, 10) || 1)
-                      );
-                      setFinishCount(nextCount);
-                      const perCount = finishingItem.quantity / total;
-                      setFinishQuantity(
-                        String(Math.round(perCount * nextCount * 1000) / 1000)
-                      );
-                    }}
-                    className="w-20 p-2 border border-gray-300 rounded-md text-sm text-center font-bold"
+                    step="any"
+                    min={0.001}
+                    max={finishingItem.quantity}
+                    value={finishQuantity}
+                    onChange={(e) => setFinishQuantity(e.target.value)}
+                    placeholder={`ex: ${finishingItem.quantity >= 10 ? 200 : finishingItem.quantity}`}
+                    className="w-full pl-3 pr-14 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
-                  <span className="text-xs text-gray-500">
-                    sur {finishingItem.itemCount || 1} exemplaire(s)
+                  <span className="absolute right-3 top-2 text-gray-500 text-sm font-semibold pointer-events-none">
+                    {finishingItem.unit}
                   </span>
                 </div>
+
+                {/* Aperçu dynamique du stock restant */}
+                {(() => {
+                  const parsed = parseFloat(finishQuantity.replace(",", "."));
+                  if (isNaN(parsed) || parsed <= 0) return null;
+                  if (parsed >= finishingItem.quantity) {
+                    return (
+                      <div className="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/60 flex items-center gap-1.5">
+                        <span>✨</span>
+                        <span>Tout le stock sera consommé. L'aliment sera retiré du frigo et archivé.</span>
+                      </div>
+                    );
+                  }
+                  const remaining = Math.round((finishingItem.quantity - parsed) * 1000) / 1000;
+                  return (
+                    <div className="mt-2 text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200/60 flex items-center justify-between">
+                      <span>Il restera dans votre frigo :</span>
+                      <span className="font-bold text-emerald-900 text-sm">
+                        {remaining} {finishingItem.unit}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -2687,30 +2694,28 @@ export function FridgePage() {
                 onClick={() => {
                   if (!finishingItem) return;
                   const totalItems = finishingItem.itemCount || 1;
-                  const parsedQuantity = finishQuantity.trim()
-                    ? parseFloat(finishQuantity.trim().replace(",", "."))
-                    : undefined;
-                  // Quantité consommée : celle saisie, sinon dérivée du nombre d'exemplaires choisi.
+                  if (totalItems > 1) {
+                    // Choix par exemplaires : on n'envoie PAS de quantité, le serveur calcule l'exact.
+                    finishMutation.mutate({
+                      id: finishingItem.id,
+                      data: {
+                        status: "consumed",
+                        itemCount: finishCount,
+                        finishAll: finishCount >= totalItems,
+                        notes: finishNotes.trim() || undefined,
+                      },
+                    });
+                    return;
+                  }
+                  const parsed = parseFloat(finishQuantity.trim().replace(",", "."));
                   const quantityToSend =
-                    parsedQuantity !== undefined &&
-                    !isNaN(parsedQuantity) &&
-                    parsedQuantity > 0
-                      ? parsedQuantity
-                      : Math.round(
-                          (finishingItem.quantity / totalItems) *
-                            finishCount *
-                            1000
-                        ) / 1000;
-                  const isAll =
-                    quantityToSend >= finishingItem.quantity &&
-                    finishCount >= totalItems;
+                    !isNaN(parsed) && parsed > 0 ? parsed : finishingItem.quantity;
                   finishMutation.mutate({
                     id: finishingItem.id,
                     data: {
                       status: "consumed",
                       quantity: quantityToSend,
-                      itemCount: finishCount,
-                      finishAll: isAll,
+                      finishAll: quantityToSend >= finishingItem.quantity,
                       notes: finishNotes.trim() || undefined,
                     },
                   });
