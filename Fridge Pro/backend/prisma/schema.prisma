@@ -85,6 +85,7 @@ model FridgeItem {
   isExpiryEstimated Boolean?  @default(false) // true si la date est estimée (IA/ticket), false si officielle/confirmée
   addedDate        DateTime  @default(now()) // suivi pour FIFO
   notes            String?   // commentaire utilisateur
+  customName       String?   // titre personnalisé affiché dans le frigo (n'affecte ni l'ingrédient ni les recettes)
 
   // Relations
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)

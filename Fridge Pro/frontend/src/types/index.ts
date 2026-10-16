@@ -77,6 +77,7 @@ export interface FridgeItem {
   isExpiryEstimated?: boolean | null;
   addedDate: string;
   notes?: string;
+  customName?: string | null; // titre personnalisé affiché dans le frigo
   ingredient: Ingredient;
 }
 

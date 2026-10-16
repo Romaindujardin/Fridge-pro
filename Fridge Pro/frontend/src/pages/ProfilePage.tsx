@@ -3,13 +3,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { User, Edit3, Save, X, Shield } from "lucide-react";
+import { User, Edit3, Save, X, Shield, KeyRound } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { userService } from "@/services/userService";
+import { authService } from "@/services/authService";
 
 // Schéma de validation
 const profileSchema = z.object({
@@ -31,6 +33,13 @@ export function ProfilePage() {
   const { user, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Changement de mot de passe (compte partagé Romain & Sophie)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
 
   // Formulaire
   const form = useForm<ProfileForm>({
@@ -108,6 +117,44 @@ export function ProfilePage() {
       removeGeminiKey: false,
     });
     setIsEditing(false);
+  };
+
+  const closePasswordModal = () => {
+    setIsPasswordModalOpen(false);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      toast.error("Veuillez saisir votre mot de passe actuel");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Le nouveau mot de passe doit contenir au moins 8 caractères");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Les deux nouveaux mots de passe ne correspondent pas");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      toast.error("Le nouveau mot de passe doit être différent de l'actuel");
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    try {
+      await authService.changePassword({ currentPassword, newPassword });
+      toast.success("Mot de passe mis à jour !");
+      closePasswordModal();
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors du changement de mot de passe");
+    } finally {
+      setIsPasswordLoading(false);
+    }
   };
 
   if (!user) {
@@ -312,20 +359,69 @@ export function ProfilePage() {
             </CardHeader>
             <CardContent className="p-5 pt-0">
               <div className="space-y-2.5">
-                <Button variant="outline" size="sm" className="w-full rounded-full text-xs font-semibold">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-full text-xs font-semibold"
+                  onClick={() => setIsPasswordModalOpen(true)}
+                >
+                  <KeyRound className="w-3.5 h-3.5 mr-1.5" />
                   Changer le mot de passe
                 </Button>
-                <Button variant="outline" size="sm" className="w-full rounded-full text-xs font-semibold">
-                  Télécharger mes données
-                </Button>
-                <Button variant="danger" size="sm" className="w-full rounded-full text-xs font-semibold">
-                  Supprimer mon compte
-                </Button>
+                <p className="text-[11px] text-gray-500 leading-relaxed px-1">
+                  Le compte est partagé entre Romain et Sophie : le nouveau mot
+                  de passe s'appliquera aux deux profils de connexion.
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Modal : changer le mot de passe */}
+      <Modal
+        isOpen={isPasswordModalOpen}
+        onClose={closePasswordModal}
+        title="Changer le mot de passe"
+        size="sm"
+      >
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <Input
+            label="Mot de passe actuel"
+            type="password"
+            placeholder="••••••••"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
+          <Input
+            label="Nouveau mot de passe"
+            type="password"
+            placeholder="8 caractères minimum"
+            helper="Au moins 8 caractères."
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <Input
+            label="Confirmer le nouveau mot de passe"
+            type="password"
+            placeholder="Ressaisissez le même mot de passe"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <p className="text-[11px] text-gray-500">
+            Compte partagé Romain &amp; Sophie : le mot de passe est commun aux
+            deux profils de connexion.
+          </p>
+          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <Button type="button" variant="outline" onClick={closePasswordModal}>
+              Annuler
+            </Button>
+            <Button type="submit" loading={isPasswordLoading}>
+              Enregistrer
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

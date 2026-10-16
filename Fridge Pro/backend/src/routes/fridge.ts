@@ -828,10 +828,9 @@ router.put(
       const targetIngredientId = updates.ingredientId || existingItem.ingredientId;
 
       if (nameInput && nameInput.trim()) {
-        await prisma.ingredient.update({
-          where: { id: targetIngredientId },
-          data: { name: nameInput.trim() },
-        });
+        // "Changer le titre" ne renomme QUE cet élément du frigo (titre d'affichage) :
+        // l'ingrédient et les recettes qui l'utilisent ne sont pas modifiés.
+        updateData.customName = nameInput.trim();
       }
 
       let isCategoryFrozen = false;

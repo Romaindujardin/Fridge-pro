@@ -123,4 +123,17 @@ export const authService = {
       return handleApiError(error);
     }
   },
+
+  // Changer le mot de passe du compte connecté (compte partagé Romain & Sophie)
+  async changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<void> {
+    try {
+      const response = await api.post("/auth/change-password", payload);
+      handleApiResponse<null>(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
 };

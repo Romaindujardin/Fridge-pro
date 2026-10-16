@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { getJwtSecret } from "../utils/security";
+import { AuthenticatedRequest, authenticateToken } from "../middleware/auth";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -198,6 +199,77 @@ router.post("/login", async (req, res, next) => {
     next(error);
   }
 });
+
+// POST /api/auth/change-password
+// Modifie le mot de passe du compte connecté (compte partagé Romain & Sophie inclus).
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Le mot de passe actuel est requis"),
+  newPassword: z
+    .string()
+    .min(8, "Le nouveau mot de passe doit contenir au moins 8 caractères"),
+});
+
+router.post(
+  "/change-password",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { currentPassword, newPassword } = changePasswordSchema.parse(
+        req.body
+      );
+
+      const user = await prisma.user.findUnique({
+        where: { id: req.userId! },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Utilisateur non trouvé",
+        });
+      }
+
+      const isCurrentValid = await bcrypt.compare(
+        currentPassword,
+        user.password
+      );
+
+      if (!isCurrentValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Le mot de passe actuel est incorrect",
+        });
+      }
+
+      if (currentPassword === newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Le nouveau mot de passe doit être différent de l'actuel",
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+
+      res.json({
+        success: true,
+        message: "Mot de passe mis à jour",
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: error.errors[0].message,
+        });
+      }
+      next(error);
+    }
+  }
+);
 
 // POST /api/auth/logout
 router.post("/logout", async (req, res, next) => {

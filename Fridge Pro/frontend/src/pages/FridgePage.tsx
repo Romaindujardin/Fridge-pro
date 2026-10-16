@@ -39,6 +39,7 @@ import type {
   Category,
 } from "@/types";
 import { isItemFrozen } from "@/utils/frozenUtils";
+import { getFridgeItemName } from "@/utils/itemName";
 
 // Hook de debouncing pour fluidifier la recherche et éviter les spams d'API
 function useDebounce<T>(value: T, delay: number): T {
@@ -864,12 +865,12 @@ export function FridgePage() {
         addedDate: new Date().toISOString(),
       },
     });
-    toast.success(`"${item.ingredient.name}" mis en congélation !`);
+    toast.success(`"${getFridgeItemName(item)}" mis en congélation !`);
   };
 
   // Action rapide : Terminer (100% consommé)
   const handleQuickFinish = (item: FridgeItem) => {
-    if (confirm(`Marquer "${item.ingredient.name}" comme terminé et l'archiver dans l'historique ?`)) {
+    if (confirm(`Marquer "${getFridgeItemName(item)}" comme terminé et l'archiver dans l'historique ?`)) {
       finishMutation.mutate({
         id: item.id,
         data: {
@@ -944,6 +945,7 @@ export function FridgePage() {
   const filteredItems = fridgeItems.filter((item) => {
     const term = searchTerm.trim().toLowerCase();
     const ingredientName = (item.ingredient?.name || "").toLowerCase();
+    const customName = (item.customName || "").toLowerCase();
     const categoryName = (item.ingredient?.category?.name || "").toLowerCase();
     const brandName = (typeof item.brand === "string" ? item.brand : "").toLowerCase();
     const notes = (typeof item.notes === "string" ? item.notes : "").toLowerCase();
@@ -951,6 +953,7 @@ export function FridgePage() {
     const matchesSearch =
       !term ||
       ingredientName.includes(term) ||
+      customName.includes(term) ||
       categoryName.includes(term) ||
       brandName.includes(term) ||
       notes.includes(term);
@@ -1064,7 +1067,21 @@ export function FridgePage() {
     };
 
     if (editingItem) {
-      updateMutation.mutate({ id: editingItem.id, data: itemData });
+      // Conserve le badge « Estimée (IA) » tant que la date n'est pas modifiée à la main :
+      // une simple édition du prix ne doit pas le faire disparaître.
+      const originalExpiry = editingItem.expiryDate
+        ? editingItem.expiryDate.split("T")[0]
+        : "";
+      const dateChanged = (itemData.expiryDate || "") !== originalExpiry;
+      updateMutation.mutate({
+        id: editingItem.id,
+        data: {
+          ...itemData,
+          isExpiryEstimated: dateChanged
+            ? false
+            : (data.isExpiryEstimated ?? false),
+        },
+      });
     } else {
       addMutation.mutate(itemData);
     }
@@ -1107,7 +1124,7 @@ export function FridgePage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <CardTitle className="text-base sm:text-lg font-bold text-gray-900 tracking-tight">
-                  {item.ingredient?.name || "Ingrédient"}
+                  {getFridgeItemName(item)}
                 </CardTitle>
                 {item.brand && (
                   <span className="text-xs bg-gray-100/80 text-gray-600 px-2.5 py-0.5 rounded-full font-medium border border-gray-200/50">
@@ -1213,7 +1230,7 @@ export function FridgePage() {
                         onClick={() => {
                           setActiveMenuId(null);
                           setTitleModalItem(item);
-                          setQuickTitle(item.ingredient?.name || "");
+                          setQuickTitle(getFridgeItemName(item));
                         }}
                         className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
                       >
@@ -2518,7 +2535,7 @@ export function FridgePage() {
           <div className="space-y-4">
             <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
               <div className="font-semibold text-gray-900 text-base">
-                {finishingItem.ingredient?.name || "Aliment"}
+                {getFridgeItemName(finishingItem)}
               </div>
               <div className="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-2">
                 {finishingItem.brand && (
@@ -2565,7 +2582,23 @@ export function FridgePage() {
                   min={0.001}
                   max={finishingItem.quantity}
                   value={finishQuantity}
-                  onChange={(e) => setFinishQuantity(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFinishQuantity(value);
+                    // Garde le nombre d'exemplaires synchronisé avec la quantité saisie.
+                    const total = finishingItem.itemCount || 1;
+                    const parsed = parseFloat(value.replace(",", "."));
+                    if (total > 1 && !isNaN(parsed) && parsed > 0) {
+                      const nextCount = Math.max(
+                        1,
+                        Math.min(
+                          total,
+                          Math.round((parsed / finishingItem.quantity) * total)
+                        )
+                      );
+                      setFinishCount(nextCount);
+                    }
+                  }}
                   placeholder={`ex: ${finishingItem.quantity >= 10 ? 200 : finishingItem.quantity}`}
                   className="w-full pl-3 pr-14 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
@@ -2587,11 +2620,14 @@ export function FridgePage() {
                   );
                 }
                 const remaining = Math.round((finishingItem.quantity - parsed) * 1000) / 1000;
+                const totalItems = finishingItem.itemCount || 1;
+                const remainingItems = Math.max(totalItems - finishCount, 0);
                 return (
                   <div className="mt-2 text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200/60 flex items-center justify-between">
                     <span>Il restera dans votre frigo :</span>
                     <span className="font-bold text-emerald-900 text-sm">
                       {remaining} {finishingItem.unit}
+                      {totalItems > 1 ? ` (x${remainingItems})` : ""}
                     </span>
                   </div>
                 );
@@ -2610,17 +2646,19 @@ export function FridgePage() {
                     min={1}
                     max={finishingItem.itemCount || 1}
                     value={finishCount}
-                    onChange={(e) =>
-                      setFinishCount(
-                        Math.max(
-                          1,
-                          Math.min(
-                            finishingItem.itemCount || 1,
-                            parseInt(e.target.value, 10) || 1
-                          )
-                        )
-                      )
-                    }
+                    onChange={(e) => {
+                      // Garde la quantité synchronisée avec le nombre d'exemplaires choisi.
+                      const total = finishingItem.itemCount || 1;
+                      const nextCount = Math.max(
+                        1,
+                        Math.min(total, parseInt(e.target.value, 10) || 1)
+                      );
+                      setFinishCount(nextCount);
+                      const perCount = finishingItem.quantity / total;
+                      setFinishQuantity(
+                        String(Math.round(perCount * nextCount * 1000) / 1000)
+                      );
+                    }}
                     className="w-20 p-2 border border-gray-300 rounded-md text-sm text-center font-bold"
                   />
                   <span className="text-xs text-gray-500">
@@ -2648,15 +2686,29 @@ export function FridgePage() {
                 loading={finishMutation.isPending}
                 onClick={() => {
                   if (!finishingItem) return;
+                  const totalItems = finishingItem.itemCount || 1;
                   const parsedQuantity = finishQuantity.trim()
                     ? parseFloat(finishQuantity.trim().replace(",", "."))
                     : undefined;
-                  const isAll = parsedQuantity !== undefined ? parsedQuantity >= finishingItem.quantity : true;
+                  // Quantité consommée : celle saisie, sinon dérivée du nombre d'exemplaires choisi.
+                  const quantityToSend =
+                    parsedQuantity !== undefined &&
+                    !isNaN(parsedQuantity) &&
+                    parsedQuantity > 0
+                      ? parsedQuantity
+                      : Math.round(
+                          (finishingItem.quantity / totalItems) *
+                            finishCount *
+                            1000
+                        ) / 1000;
+                  const isAll =
+                    quantityToSend >= finishingItem.quantity &&
+                    finishCount >= totalItems;
                   finishMutation.mutate({
                     id: finishingItem.id,
                     data: {
                       status: "consumed",
-                      quantity: !isNaN(parsedQuantity as number) && (parsedQuantity as number) > 0 ? parsedQuantity : finishingItem.quantity,
+                      quantity: quantityToSend,
                       itemCount: finishCount,
                       finishAll: isAll,
                       notes: finishNotes.trim() || undefined,
@@ -2676,7 +2728,7 @@ export function FridgePage() {
       <Modal
         isOpen={!!categoryModalItem}
         onClose={() => setCategoryModalItem(null)}
-        title={`Changer la catégorie : ${categoryModalItem?.ingredient?.name || ""}`}
+        title={`Changer la catégorie : ${getFridgeItemName(categoryModalItem)}`}
         size="sm"
       >
         <div className="space-y-4">
@@ -2759,7 +2811,7 @@ export function FridgePage() {
       <Modal
         isOpen={!!expiryModalItem}
         onClose={() => setExpiryModalItem(null)}
-        title={`Date de péremption : ${expiryModalItem?.ingredient?.name || ""}`}
+        title={`Date de péremption : ${getFridgeItemName(expiryModalItem)}`}
         size="sm"
       >
         <form onSubmit={handleQuickExpirySave} className="space-y-4">

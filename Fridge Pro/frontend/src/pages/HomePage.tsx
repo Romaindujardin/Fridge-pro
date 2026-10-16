@@ -26,6 +26,7 @@ import { fridgeService } from "@/services/fridgeService";
 import { recipeService } from "@/services/recipeService";
 import { formatImageUrl } from "@/utils/imageUtils";
 import { isItemFrozen } from "@/utils/frozenUtils";
+import { getFridgeItemName } from "@/utils/itemName";
 import type { FridgeItem } from "@/types";
 
 export function HomePage() {
@@ -110,7 +111,7 @@ export function HomePage() {
         addedDate: new Date().toISOString(),
       },
     });
-    toast.success(`"${item.ingredient.name}" mis en congélation !`);
+    toast.success(`"${getFridgeItemName(item)}" mis en congélation !`);
   };
 
   const handleQuickExpirySave = (e: React.FormEvent) => {
@@ -384,9 +385,9 @@ export function HomePage() {
                     <div className="flex-1 min-w-0">
                       <h4
                         className="font-bold text-[#1A1C19] text-sm truncate group-hover:text-primary-700 transition-colors"
-                        title={item.ingredient.name}
+                        title={getFridgeItemName(item)}
                       >
-                        {item.ingredient.name}
+                        {getFridgeItemName(item)}
                       </h4>
                       {item.brand && (
                         <span className="text-[11px] text-stone-400 truncate block">
@@ -465,7 +466,7 @@ export function HomePage() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (confirm(`Marquer "${item.ingredient.name}" comme consommé ?`)) {
+                        if (confirm(`Marquer "${getFridgeItemName(item)}" comme consommé ?`)) {
                           finishMutation.mutate({ id: item.id });
                         }
                       }}
@@ -724,7 +725,7 @@ export function HomePage() {
       <Modal
         isOpen={!!expiryModalItem}
         onClose={() => setExpiryModalItem(null)}
-        title={`Date de péremption : ${expiryModalItem?.ingredient?.name || ""}`}
+        title={`Date de péremption : ${getFridgeItemName(expiryModalItem)}`}
         size="sm"
       >
         <form onSubmit={handleQuickExpirySave} className="space-y-4">

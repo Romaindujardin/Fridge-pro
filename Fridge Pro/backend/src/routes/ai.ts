@@ -18,6 +18,34 @@ import { normalizeIngredient } from "../utils/ingredientMatcher";
 const router = Router();
 const prisma = new PrismaClient();
 
+/**
+ * Convertit une valeur numérique renvoyée par l'IA (nombre ou chaîne type
+ * "2x100g", "1,5 kg") en nombre exploitable pour la base.
+ * Gère la multiplication ("2x100g" → 200) et évite de concaténer les chiffres.
+ */
+function parseAiNumericValue(raw: unknown): number | undefined {
+  if (typeof raw === "number") {
+    return Number.isFinite(raw) ? raw : undefined;
+  }
+  if (typeof raw !== "string") {
+    return undefined;
+  }
+
+  const text = raw.replace(",", ".");
+  const multiMatch = text.match(/(\d+(?:\.\d+)?)\s*[xX×*]\s*(\d+(?:\.\d+)?)/);
+  if (multiMatch) {
+    const product = parseFloat(multiMatch[1]) * parseFloat(multiMatch[2]);
+    return Number.isFinite(product) ? product : undefined;
+  }
+
+  const singleMatch = text.match(/\d+(?:\.\d+)?/);
+  if (!singleMatch) {
+    return undefined;
+  }
+  const value = parseFloat(singleMatch[0]);
+  return Number.isFinite(value) ? value : undefined;
+}
+
 // Limite l'usage des endpoints IA (coûteux) : 30 requêtes / heure / utilisateur.
 const aiLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -105,237 +133,225 @@ router.post(
       >();
 
       // Pour chaque ligne détectée sur le ticket, on crée/actualise l'ingrédient
-      for (const item of analysis.items) {
-        const name = item.name?.trim();
-        if (!name) {
-          continue;
-        }
-
-        const quantityValue =
-          typeof item.quantity === "number"
-            ? item.quantity
-            : parseFloat(
-                String(item.quantity ?? "")
-                  .replace(",", ".")
-                  .replace(/[^0-9.]/g, ""),
-              );
-        const quantity =
-          Number.isFinite(quantityValue) && quantityValue > 0
-            ? quantityValue
-            : 1;
-
-        const unit = item.unit?.trim() || "pièce";
-        const notes = item.notes?.trim() || undefined;
-
-        // Extraction intelligente du poids/volume depuis les notes ou le nom
-        let finalQuantity = quantity;
-        let finalUnit = unit;
-        let finalItemCount = 1;
-        let finalNotes = notes;
-
-        const isStandardUnit = ["g", "kg", "mg", "ml", "cl", "l"].includes(
-          unit.toLowerCase(),
-        );
-        const textToScan = `${notes || ""} ${name}`;
-
-        const multiMatch = textToScan.match(
-          /(\d+)\s*[xX*]\s*(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i,
-        );
-        if (multiMatch) {
-          const packs = parseInt(multiMatch[1], 10);
-          const each = parseFloat(multiMatch[2].replace(",", "."));
-          const u = multiMatch[3].toLowerCase();
-          finalItemCount = packs;
-          finalQuantity = packs * each;
-          finalUnit = u === "l" ? "L" : u;
-          if (finalNotes) {
-            finalNotes =
-              finalNotes
-                .replace(multiMatch[0], "")
-                .replace(/^[,\s-]+|[,\s-]+$/g, "")
-                .trim() || undefined;
-          }
-        } else if (!isStandardUnit) {
-          const singleMatch = textToScan.match(
-            /(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i,
-          );
-          if (singleMatch) {
-            const val = parseFloat(singleMatch[1].replace(",", "."));
-            const u = singleMatch[2].toLowerCase();
-            if (
-              quantity > 1 &&
-              [
-                "paquet",
-                "bouteille",
-                "boîte",
-                "pot",
-                "barquette",
-                "pièce",
-              ].includes(unit.toLowerCase())
-            ) {
-              finalQuantity = quantity * val;
-              finalItemCount = quantity;
-            } else {
-              finalQuantity = val;
+      // Transaction : ajout tout-ou-rien, jamais d'état partiel si une ligne échoue.
+      await prisma.$transaction(
+        async (tx) => {
+          for (const item of analysis.items) {
+            const name = item.name?.trim();
+            if (!name) {
+              continue;
             }
-            finalUnit = u === "l" ? "L" : u;
-            if (finalNotes) {
-              finalNotes =
-                finalNotes
-                  .replace(singleMatch[0], "")
-                  .replace(/^[,\s-]+|[,\s-]+$/g, "")
-                  .trim() || undefined;
-            }
-          }
-        }
 
-        const countMatch = textToScan.match(/(?:[xX](\d+)|\b(\d+)[xX]\b)/);
-        if (countMatch && finalItemCount === 1) {
-          finalItemCount = parseInt(countMatch[1] || countMatch[2], 10);
-          if (finalNotes) {
-            finalNotes =
-              finalNotes
-                .replace(countMatch[0], "")
-                .replace(/^[,\s-]+|[,\s-]+$/g, "")
-                .trim() || undefined;
-          }
-        }
+            const quantityValue = parseAiNumericValue(item.quantity);
+            const quantity =
+              quantityValue !== undefined && quantityValue > 0 ? quantityValue : 1;
 
-        if (
-          finalNotes &&
-          ["null", "undefined"].includes(finalNotes.trim().toLowerCase())
-        ) {
-          finalNotes = undefined;
-        }
+            const unit = item.unit?.trim() || "pièce";
+            const notes = item.notes?.trim() || undefined;
 
-        const daysToExpire =
-          typeof item.estimatedDaysToExpire === "number"
-            ? item.estimatedDaysToExpire
-            : parseInt(String(item.estimatedDaysToExpire ?? ""), 10);
+            // Extraction intelligente du poids/volume depuis les notes ou le nom
+            let finalQuantity = quantity;
+            let finalUnit = unit;
+            let finalItemCount = 1;
+            let finalNotes = notes;
 
-        // Détection de la catégorie la plus adaptée
-        let matchedCategoryId: string | undefined = undefined;
-        if (item.category) {
-          const rawCat = item.category.trim().toLowerCase();
-          const found = allCategories.find((cat) => {
-            const cName = cat.name.toLowerCase();
-            return (
-              cName === rawCat ||
-              rawCat.includes(cName) ||
-              cName.includes(rawCat)
+            const isStandardUnit = ["g", "kg", "mg", "ml", "cl", "l"].includes(
+              unit.toLowerCase(),
             );
-          });
-          if (found) {
-            matchedCategoryId = found.id;
-          }
-        }
+            const textToScan = `${notes || ""} ${name}`;
 
-        const isFrozen =
-          (item.category || "").toLowerCase().includes("surgele") ||
-          (item.category || "").toLowerCase().includes("surgelé") ||
-          (item.category || "").toLowerCase().includes("congel") ||
-          name.toLowerCase().includes("surgel") ||
-          name.toLowerCase().includes("congel") ||
-          (matchedCategoryId
-            ? allCategories.some(
-                (c) =>
-                  c.id === matchedCategoryId &&
-                  (c.name.toLowerCase().includes("surgele") ||
-                    c.name.toLowerCase().includes("surgelé") ||
-                    c.name.toLowerCase().includes("congel"))
-              )
-            : false);
-
-        const expiryDate =
-          !isFrozen && Number.isFinite(daysToExpire) && daysToExpire > 0
-            ? new Date(Date.now() + daysToExpire * 24 * 60 * 60 * 1000)
-            : undefined;
-
-        const priceValue =
-          typeof item.price === "number"
-            ? item.price
-            : parseFloat(
-                String(item.price ?? "")
-                  .replace(",", ".")
-                  .replace(/[^0-9.]/g, "")
+            const multiMatch = textToScan.match(
+              /(\d+)\s*[xX*]\s*(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i,
+            );
+            if (multiMatch) {
+              const packs = parseInt(multiMatch[1], 10);
+              const each = parseFloat(multiMatch[2].replace(",", "."));
+              const u = multiMatch[3].toLowerCase();
+              finalItemCount = packs;
+              finalQuantity = packs * each;
+              finalUnit = u === "l" ? "L" : u;
+              if (finalNotes) {
+                finalNotes =
+                  finalNotes
+                    .replace(multiMatch[0], "")
+                    .replace(/^[,\s-]+|[,\s-]+$/g, "")
+                    .trim() || undefined;
+              }
+            } else if (!isStandardUnit) {
+              const singleMatch = textToScan.match(
+                /(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i,
               );
-        const price =
-          Number.isFinite(priceValue) && priceValue > 0
-            ? priceValue
-            : undefined;
+              if (singleMatch) {
+                const val = parseFloat(singleMatch[1].replace(",", "."));
+                const u = singleMatch[2].toLowerCase();
+                if (
+                  quantity > 1 &&
+                  [
+                    "paquet",
+                    "bouteille",
+                    "boîte",
+                    "pot",
+                    "barquette",
+                    "pièce",
+                  ].includes(unit.toLowerCase())
+                ) {
+                  finalQuantity = quantity * val;
+                  finalItemCount = quantity;
+                } else {
+                  finalQuantity = val;
+                }
+                finalUnit = u === "l" ? "L" : u;
+                if (finalNotes) {
+                  finalNotes =
+                    finalNotes
+                      .replace(singleMatch[0], "")
+                      .replace(/^[,\s-]+|[,\s-]+$/g, "")
+                      .trim() || undefined;
+                }
+              }
+            }
 
-        let ingredient = await prisma.ingredient.findFirst({
-          where: {
-            name: {
-              equals: name,
-              mode: "insensitive",
-            },
-          },
-        });
+            const countMatch = textToScan.match(/(?:[xX](\d+)|\b(\d+)[xX]\b)/);
+            if (countMatch && finalItemCount === 1) {
+              finalItemCount = parseInt(countMatch[1] || countMatch[2], 10);
+              if (finalNotes) {
+                finalNotes =
+                  finalNotes
+                    .replace(countMatch[0], "")
+                    .replace(/^[,\s-]+|[,\s-]+$/g, "")
+                    .trim() || undefined;
+              }
+            }
 
-        if (!ingredient) {
-          ingredient = await prisma.ingredient.create({
-            data: {
-              name,
-              categoryId: matchedCategoryId,
-            },
-          });
-        } else if (!ingredient.categoryId && matchedCategoryId) {
-          ingredient = await prisma.ingredient.update({
-            where: { id: ingredient.id },
-            data: {
-              categoryId: matchedCategoryId,
-            },
-          });
-        }
+            if (
+              finalNotes &&
+              ["null", "undefined"].includes(finalNotes.trim().toLowerCase())
+            ) {
+              finalNotes = undefined;
+            }
 
-        const isExpiryEstimated = expiryDate !== undefined;
+            const daysToExpire =
+              typeof item.estimatedDaysToExpire === "number"
+                ? item.estimatedDaysToExpire
+                : parseInt(String(item.estimatedDaysToExpire ?? ""), 10);
 
-        const fridgeItem = await prisma.fridgeItem.upsert({
-          where: {
-            userId_ingredientId: {
-              userId,
-              ingredientId: ingredient.id,
-            },
-          },
-          create: {
-            userId,
-            ingredientId: ingredient.id,
-            itemCount: finalItemCount,
-            initialItemCount: finalItemCount,
-            quantity: finalQuantity,
-            initialQuantity: finalQuantity,
-            unit: finalUnit,
-            price,
-            expiryDate,
-            isExpiryEstimated,
-            notes: finalNotes,
-          },
-          update: {
-            quantity: {
-              increment: finalQuantity,
-            },
-            unit: finalUnit,
-            ...(finalItemCount > 1
-              ? { itemCount: { increment: finalItemCount } }
-              : {}),
-            ...(price !== undefined ? { price } : {}),
-            ...(expiryDate !== undefined
-              ? { expiryDate, isExpiryEstimated: true }
-              : {}),
-            ...(finalNotes ? { notes: finalNotes } : {}),
-          },
-          include: {
-            ingredient: {
-              include: {
-                category: true,
+            // Détection de la catégorie la plus adaptée
+            let matchedCategoryId: string | undefined = undefined;
+            if (item.category) {
+              const rawCat = item.category.trim().toLowerCase();
+              const found = allCategories.find((cat) => {
+                const cName = cat.name.toLowerCase();
+                return (
+                  cName === rawCat ||
+                  rawCat.includes(cName) ||
+                  cName.includes(rawCat)
+                );
+              });
+              if (found) {
+                matchedCategoryId = found.id;
+              }
+            }
+
+            const isFrozen =
+              (item.category || "").toLowerCase().includes("surgele") ||
+              (item.category || "").toLowerCase().includes("surgelé") ||
+              (item.category || "").toLowerCase().includes("congel") ||
+              name.toLowerCase().includes("surgel") ||
+              name.toLowerCase().includes("congel") ||
+              (matchedCategoryId
+                ? allCategories.some(
+                    (c) =>
+                      c.id === matchedCategoryId &&
+                      (c.name.toLowerCase().includes("surgele") ||
+                        c.name.toLowerCase().includes("surgelé") ||
+                        c.name.toLowerCase().includes("congel"))
+                  )
+                : false);
+
+            const expiryDate =
+              !isFrozen && Number.isFinite(daysToExpire) && daysToExpire > 0
+                ? new Date(Date.now() + daysToExpire * 24 * 60 * 60 * 1000)
+                : undefined;
+
+            const priceValue = parseAiNumericValue(item.price);
+            const price =
+              priceValue !== undefined && priceValue > 0 ? priceValue : undefined;
+
+            let ingredient = await tx.ingredient.findFirst({
+              where: {
+                name: {
+                  equals: name,
+                  mode: "insensitive",
+                },
               },
-            },
-          },
-        });
+            });
 
-        itemsMap.set(fridgeItem.ingredientId, fridgeItem);
-      }
+            if (!ingredient) {
+              ingredient = await tx.ingredient.create({
+                data: {
+                  name,
+                  categoryId: matchedCategoryId,
+                },
+              });
+            } else if (!ingredient.categoryId && matchedCategoryId) {
+              ingredient = await tx.ingredient.update({
+                where: { id: ingredient.id },
+                data: {
+                  categoryId: matchedCategoryId,
+                },
+              });
+            }
+
+            const isExpiryEstimated = expiryDate !== undefined;
+
+            const fridgeItem = await tx.fridgeItem.upsert({
+              where: {
+                userId_ingredientId: {
+                  userId,
+                  ingredientId: ingredient.id,
+                },
+              },
+              create: {
+                userId,
+                ingredientId: ingredient.id,
+                itemCount: finalItemCount,
+                initialItemCount: finalItemCount,
+                quantity: finalQuantity,
+                initialQuantity: finalQuantity,
+                unit: finalUnit,
+                price,
+                expiryDate,
+                isExpiryEstimated,
+                notes: finalNotes,
+              },
+              update: {
+                quantity: {
+                  increment: finalQuantity,
+                },
+                unit: finalUnit,
+                ...(finalItemCount > 1
+                  ? { itemCount: { increment: finalItemCount } }
+                  : {}),
+                ...(price !== undefined ? { price } : {}),
+                ...(expiryDate !== undefined
+                  ? { expiryDate, isExpiryEstimated: true }
+                  : {}),
+                ...(finalNotes ? { notes: finalNotes } : {}),
+              },
+              include: {
+                ingredient: {
+                  include: {
+                    category: true,
+                  },
+                },
+              },
+            });
+
+            itemsMap.set(fridgeItem.ingredientId, fridgeItem);
+          }
+        },
+        { maxWait: 10000, timeout: 30000 },
+      );
 
       const addedItems = Array.from(itemsMap.values());
 
@@ -867,27 +883,6 @@ router.post(
           unit: ingredient.unit,
         })),
       }));
-      const basePlanningPlan = planShoppingList({
-        recipes: basePlanningRecipes,
-        fridgeItems: fridgeItems.map((fridgeItem) => ({
-          name: fridgeItem.ingredient.name,
-          brand: fridgeItem.brand,
-          quantity: fridgeItem.quantity,
-          unit: fridgeItem.unit,
-        })),
-        pantryItems: outOfStockItems,
-        includePantryBasics,
-        mealHints: aiResult.mealPlan?.map((meal) => ({
-          dishName: meal.dishName,
-          details: meal.details,
-        })),
-        targetRecipeIds,
-        excludedRecipeIds,
-        daysCount: daysCount!,
-        dessertsCount: dessertsCount || 0,
-        servings: servings!,
-        allowRepeatMeals: allowRepeatMeals!,
-      });
 
       // Les idées ne sont pas utilisées directement : on les transforme en vraies
       // recettes avec le générateur existant, en lui donnant tout le carnet pour
@@ -1109,81 +1104,89 @@ router.post(
         aiResult.listName ||
         "Courses optimisées IA";
 
-      const createdList = await prisma.shoppingList.create({
-        data: {
-          name: finalListName,
-          userId: req.userId!,
-          aiSummary: persistedAiSummary as any,
-        },
-      });
-
-      // 5. Créer les items de la liste
-      const dbCategories = await prisma.category.findMany();
-      const itemsByIngredientId = new Map<
-        string,
-        {
-          quantity: number;
-          unit: string;
-          notes?: string;
-        }
-      >();
-      for (const item of shoppingPlan.itemsToBuy) {
-        const rawName = item.name.trim();
-        if (!rawName) continue;
-
-        let ingredient = await prisma.ingredient.findFirst({
-          where: {
-            name: {
-              equals: rawName,
-              mode: "insensitive",
-            },
-          },
-        });
-
-        if (!ingredient) {
-          const categoryId = matchDbCategoryId(rawName, dbCategories);
-          ingredient = await prisma.ingredient.create({
+      // 4. + 5. Créer la liste de courses et ses items dans une transaction (tout-ou-rien).
+      const createdList = await prisma.$transaction(
+        async (tx) => {
+          const list = await tx.shoppingList.create({
             data: {
-              name: rawName,
-              categoryId,
+              name: finalListName,
+              userId: req.userId!,
+              aiSummary: persistedAiSummary as any,
             },
           });
-        }
 
-        const existingItem = itemsByIngredientId.get(ingredient.id);
-        if (existingItem) {
-          const sameUnit =
-            existingItem.unit.trim().toLowerCase() ===
-            item.unit.trim().toLowerCase();
-          if (sameUnit) {
-            existingItem.quantity += item.quantity;
+          // 5. Créer les items de la liste
+          const dbCategories = await tx.category.findMany();
+          const itemsByIngredientId = new Map<
+            string,
+            {
+              quantity: number;
+              unit: string;
+              notes?: string;
+            }
+          >();
+          for (const item of shoppingPlan.itemsToBuy) {
+            const rawName = item.name.trim();
+            if (!rawName) continue;
+
+            let ingredient = await tx.ingredient.findFirst({
+              where: {
+                name: {
+                  equals: rawName,
+                  mode: "insensitive",
+                },
+              },
+            });
+
+            if (!ingredient) {
+              const categoryId = matchDbCategoryId(rawName, dbCategories);
+              ingredient = await tx.ingredient.create({
+                data: {
+                  name: rawName,
+                  categoryId,
+                },
+              });
+            }
+
+            const existingItem = itemsByIngredientId.get(ingredient.id);
+            if (existingItem) {
+              const sameUnit =
+                existingItem.unit.trim().toLowerCase() ===
+                item.unit.trim().toLowerCase();
+              if (sameUnit) {
+                existingItem.quantity += item.quantity;
+              }
+              existingItem.notes =
+                [existingItem.notes, item.notes]
+                  .filter(Boolean)
+                  .filter((note, index, notes) => notes.indexOf(note) === index)
+                  .join(". ") || undefined;
+              continue;
+            }
+
+            itemsByIngredientId.set(ingredient.id, {
+              quantity: item.quantity,
+              unit: item.unit,
+              notes: item.notes,
+            });
           }
-          existingItem.notes =
-            [existingItem.notes, item.notes]
-              .filter(Boolean)
-              .filter((note, index, notes) => notes.indexOf(note) === index)
-              .join(". ") || undefined;
-          continue;
-        }
 
-        itemsByIngredientId.set(ingredient.id, {
-          quantity: item.quantity,
-          unit: item.unit,
-          notes: item.notes,
-        });
-      }
+          for (const [ingredientId, item] of itemsByIngredientId) {
+            await tx.shoppingListItem.create({
+              data: {
+                shoppingListId: list.id,
+                ingredientId,
+                quantity: item.quantity,
+                unit: item.unit,
+                notes: item.notes,
+              },
+            });
+          }
 
-      for (const [ingredientId, item] of itemsByIngredientId) {
-        await prisma.shoppingListItem.create({
-          data: {
-            shoppingListId: createdList.id,
-            ingredientId,
-            quantity: item.quantity,
-            unit: item.unit,
-            notes: item.notes,
-          },
-        });
-      }
+          return list;
+        },
+        { maxWait: 10000, timeout: 30000 },
+      );
 
       // 6. Récupérer la liste complète avec ses items
       const fullShoppingList = await prisma.shoppingList.findUnique({
