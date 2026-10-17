@@ -31,15 +31,18 @@ import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { FreshnessBadge } from "@/components/ui/FreshnessBadge";
+import { ReceiptReviewModal } from "@/components/ReceiptReviewModal";
 import { fridgeService } from "@/services/fridgeService";
 import type {
   FridgeItem,
   AddFridgeItemRequest,
   Ingredient,
   Category,
+  ReceiptPreviewItem,
 } from "@/types";
 import { isItemFrozen } from "@/utils/frozenUtils";
 import { getFridgeItemName } from "@/utils/itemName";
+import { compressImageForStorage } from "@/utils/imageCompression";
 
 // Hook de debouncing pour fluidifier la recherche et éviter les spams d'API
 function useDebounce<T>(value: T, delay: number): T {
@@ -331,6 +334,15 @@ export function FridgePage() {
 
   const [ingredientInputValue, setIngredientInputValue] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+  // Aperçu éditable du ticket : les lignes détectées attendent la confirmation
+  const [receiptPreviewItems, setReceiptPreviewItems] = useState<
+    ReceiptPreviewItem[]
+  >([]);
+  const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(
+    null
+  );
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isConfirmingReceipt, setIsConfirmingReceipt] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
 
@@ -629,12 +641,17 @@ export function FridgePage() {
     try {
       setIsScanning(true);
       const result = await fridgeService.scanReceipt(file);
+      const detected = result.items || [];
 
-      queryClient.invalidateQueries({ queryKey: ["fridgeItems"] });
+      if (!detected.length) {
+        toast.error("Aucun aliment détecté sur ce ticket.");
+        return;
+      }
 
-      toast.success(
-        `Ticket analysé : ${result.items?.length || result.addedCount || 0} ingrédient(s) extrait(s)`
-      );
+      // On ouvre l'aperçu éditable : rien n'est encore ajouté au frigo.
+      setPendingReceiptFile(file);
+      setReceiptPreviewItems(detected);
+      setIsReceiptModalOpen(true);
     } catch (error: any) {
       const message =
         error?.message || "Erreur lors de l'analyse du ticket de caisse.";
@@ -642,6 +659,39 @@ export function FridgePage() {
     } finally {
       setIsScanning(false);
       event.target.value = "";
+    }
+  };
+
+  const closeReceiptModal = () => {
+    setIsReceiptModalOpen(false);
+    setReceiptPreviewItems([]);
+    setPendingReceiptFile(null);
+  };
+
+  const handleConfirmReceipt = async (items: ReceiptPreviewItem[]) => {
+    try {
+      setIsConfirmingReceipt(true);
+      // La photo est compressée pour rester légère dans l'historique.
+      const compressed = pendingReceiptFile
+        ? await compressImageForStorage(pendingReceiptFile)
+        : undefined;
+      const result = await fridgeService.confirmReceipt(items, compressed);
+
+      queryClient.invalidateQueries({ queryKey: ["fridgeItems"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      queryClient.invalidateQueries({ queryKey: ["scannedReceipts"] });
+
+      toast.success(
+        `${result.addedCount || items.length} aliment(s) ajouté(s) au frigo !`
+      );
+      closeReceiptModal();
+    } catch (error: any) {
+      toast.error(
+        error?.message || "Erreur lors de l'ajout du ticket au frigo"
+      );
+    } finally {
+      setIsConfirmingReceipt(false);
     }
   };
 
@@ -2728,6 +2778,15 @@ export function FridgePage() {
           </div>
         )}
       </Modal>
+
+      {/* Aperçu éditable du ticket scanné (avant ajout au frigo) */}
+      <ReceiptReviewModal
+        isOpen={isReceiptModalOpen}
+        items={receiptPreviewItems}
+        isSaving={isConfirmingReceipt}
+        onClose={closeReceiptModal}
+        onConfirm={handleConfirmReceipt}
+      />
 
       {/* Modal d'action rapide : Changer la catégorie */}
       <Modal

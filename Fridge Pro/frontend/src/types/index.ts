@@ -251,10 +251,40 @@ export interface ExtractReceiptRequest {
   image: File;
 }
 
+// Ligne de ticket détectée par l'IA, affichée puis éditable dans l'aperçu
+export interface ReceiptPreviewItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  itemCount: number;
+  price: number | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  categoryIcon: string | null;
+  notes: string | null;
+  expiryDate: string | null;
+  isExpiryEstimated: boolean;
+}
+
 export interface ExtractReceiptResponse {
+  items: ReceiptPreviewItem[];
+  detectedCount: number;
+  message?: string;
+}
+
+export interface ConfirmReceiptResponse {
   items: FridgeItem[];
   addedCount: number;
-  message: string;
+  receiptId?: string;
+}
+
+// Ticket scanné conservé dans l'historique du compte
+export interface ScannedReceipt {
+  id: string;
+  scannedAt: string;
+  itemCount: number;
+  mimeType?: string | null;
+  items?: ReceiptPreviewItem[] | null;
 }
 
 export interface GenerateRecipeAIRequest {

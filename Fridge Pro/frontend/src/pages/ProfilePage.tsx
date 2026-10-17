@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { User, Edit3, Save, X, Shield, KeyRound } from "lucide-react";
+import { User, Edit3, Save, X, Shield, KeyRound, Receipt, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -12,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { userService } from "@/services/userService";
 import { authService } from "@/services/authService";
+import { fridgeService } from "@/services/fridgeService";
+import type { ScannedReceipt } from "@/types";
 
 // Schéma de validation
 const profileSchema = z.object({
@@ -29,6 +32,62 @@ const profileSchema = z.object({
 
 type ProfileForm = z.infer<typeof profileSchema>;
 
+const formatReceiptDate = (isoDate: string) =>
+  new Date(isoDate).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+const formatReceiptTime = (isoDate: string) =>
+  new Date(isoDate).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+/** Vignette d'un ticket scanné : la photo est chargée en blob (requête authentifiée). */
+function ReceiptThumbnail({ receiptId }: { receiptId: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    fridgeService
+      .getScannedReceiptImageUrl(receiptId)
+      .then((imageUrl) => {
+        if (cancelled) {
+          URL.revokeObjectURL(imageUrl);
+          return;
+        }
+        objectUrl = imageUrl;
+        setUrl(imageUrl);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [receiptId]);
+
+  return (
+    <div className="w-full aspect-[3/4] bg-gray-100 flex items-center justify-center overflow-hidden">
+      {url ? (
+        <img
+          src={url}
+          alt="Ticket scanné"
+          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-200"
+        />
+      ) : (
+        <Receipt className="w-6 h-6 text-gray-300" />
+      )}
+    </div>
+  );
+}
+
 export function ProfilePage() {
   const { user, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +99,62 @@ export function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+
+  // Historique des tickets scannés
+  const queryClient = useQueryClient();
+  const [selectedReceipt, setSelectedReceipt] = useState<ScannedReceipt | null>(
+    null
+  );
+  const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null);
+
+  const { data: scannedReceipts = [], isLoading: isReceiptsLoading } = useQuery(
+    {
+      queryKey: ["scannedReceipts"],
+      queryFn: () => fridgeService.getScannedReceipts(),
+    }
+  );
+
+  const deleteReceiptMutation = useMutation({
+    mutationFn: (id: string) => fridgeService.deleteScannedReceipt(id),
+    onSuccess: () => {
+      toast.success("Ticket supprimé de l'historique");
+      queryClient.invalidateQueries({ queryKey: ["scannedReceipts"] });
+      setSelectedReceipt(null);
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erreur lors de la suppression du ticket");
+    },
+  });
+
+  // Charge la photo du ticket sélectionné (blob authentifié)
+  useEffect(() => {
+    if (!selectedReceipt) {
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    fridgeService
+      .getScannedReceiptImageUrl(selectedReceipt.id)
+      .then((imageUrl) => {
+        if (cancelled) {
+          URL.revokeObjectURL(imageUrl);
+          return;
+        }
+        objectUrl = imageUrl;
+        setReceiptImageUrl(imageUrl);
+      })
+      .catch(() => setReceiptImageUrl(null));
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      setReceiptImageUrl(null);
+    };
+  }, [selectedReceipt]);
 
   // Formulaire
   const form = useForm<ProfileForm>({
@@ -378,6 +493,54 @@ export function ProfilePage() {
         </div>
       </div>
 
+      {/* Historique des tickets scannés */}
+      <Card className="rounded-3xl border border-gray-150/80 bg-white shadow-card overflow-hidden">
+        <CardHeader className="p-5 sm:p-6 pb-3">
+          <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">
+            <Receipt className="w-5 h-5 text-primary-600" />
+            <span>Tickets scannés</span>
+          </CardTitle>
+          <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
+            Les tickets analysés avec l'IA, conservés avec leur photo et leur
+            date de scan.
+          </p>
+        </CardHeader>
+        <CardContent className="p-5 sm:p-6 pt-2">
+          {isReceiptsLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+            </div>
+          ) : scannedReceipts.length === 0 ? (
+            <p className="text-sm text-gray-500 py-4">
+              Aucun ticket scanné pour le moment. Scannez un ticket depuis la
+              page « Mon Frigo » : il apparaîtra ici avec sa photo.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {scannedReceipts.map((receipt) => (
+                <button
+                  key={receipt.id}
+                  type="button"
+                  onClick={() => setSelectedReceipt(receipt)}
+                  className="group text-left rounded-2xl border border-gray-150/80 bg-gray-50/60 overflow-hidden hover:border-primary-300 hover:shadow-soft transition-all"
+                >
+                  <ReceiptThumbnail receiptId={receipt.id} />
+                  <div className="p-2.5">
+                    <p className="text-xs font-bold text-gray-900">
+                      {formatReceiptDate(receipt.scannedAt)} à{" "}
+                      {formatReceiptTime(receipt.scannedAt)}
+                    </p>
+                    <p className="text-[11px] text-gray-500 font-medium">
+                      {receipt.itemCount} aliment(s) ajouté(s)
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Modal : changer le mot de passe */}
       <Modal
         isOpen={isPasswordModalOpen}
@@ -421,6 +584,87 @@ export function ProfilePage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal : détail d'un ticket scanné */}
+      <Modal
+        isOpen={!!selectedReceipt}
+        onClose={() => setSelectedReceipt(null)}
+        title={
+          selectedReceipt
+            ? `Ticket du ${formatReceiptDate(selectedReceipt.scannedAt)} à ${formatReceiptTime(selectedReceipt.scannedAt)}`
+            : "Ticket scanné"
+        }
+        size="lg"
+      >
+        {selectedReceipt && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-gray-150/80 bg-gray-50 overflow-hidden">
+              {receiptImageUrl ? (
+                <img
+                  src={receiptImageUrl}
+                  alt="Photo du ticket scanné"
+                  className="w-full max-h-[45vh] object-contain mx-auto"
+                />
+              ) : (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                </div>
+              )}
+            </div>
+
+            {selectedReceipt.items && selectedReceipt.items.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                  Aliments ajoutés au frigo
+                </h4>
+                <ul className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                  {selectedReceipt.items.map((item, index) => (
+                    <li
+                      key={index}
+                      className="flex items-center justify-between gap-3 text-sm bg-gray-50/60 border border-gray-100 rounded-xl px-3 py-2"
+                    >
+                      <span className="font-medium text-gray-800 truncate">
+                        {item.categoryIcon ? `${item.categoryIcon} ` : ""}
+                        {item.name}
+                      </span>
+                      <span className="text-xs font-bold text-gray-500 shrink-0">
+                        {item.quantity} {item.unit}
+                        {item.price != null
+                          ? ` • ${item.price.toFixed(2)} €`
+                          : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50"
+                loading={deleteReceiptMutation.isPending}
+                onClick={() => {
+                  if (confirm("Supprimer ce ticket de l'historique ?")) {
+                    deleteReceiptMutation.mutate(selectedReceipt.id);
+                  }
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                Supprimer de l'historique
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedReceipt(null)}
+              >
+                Fermer
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

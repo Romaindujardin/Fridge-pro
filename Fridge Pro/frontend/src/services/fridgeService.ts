@@ -4,6 +4,9 @@ import type {
   AddFridgeItemRequest,
   Ingredient,
   ExtractReceiptResponse,
+  ConfirmReceiptResponse,
+  ReceiptPreviewItem,
+  ScannedReceipt,
   GetHistoryResponse,
   PurchaseHistoryItem,
 } from "@/types";
@@ -192,6 +195,63 @@ export const fridgeService = {
       });
 
       return handleApiResponse<ExtractReceiptResponse>(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // Confirmer les lignes du ticket éditées : ajout au frigo + historique
+  async confirmReceipt(
+    items: ReceiptPreviewItem[],
+    image?: Blob | File
+  ): Promise<ConfirmReceiptResponse> {
+    try {
+      const formData = new FormData();
+      formData.append("items", JSON.stringify(items));
+      if (image) {
+        formData.append("receipt", image, "ticket.jpg");
+      }
+
+      const response = await api.post("/ai/confirm-receipt", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return handleApiResponse<ConfirmReceiptResponse>(response);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // Historique des tickets scannés (métadonnées + lignes)
+  async getScannedReceipts(): Promise<ScannedReceipt[]> {
+    try {
+      const response = await api.get("/ai/receipts");
+      const data = handleApiResponse<{ receipts: ScannedReceipt[] }>(response);
+      return data.receipts;
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // URL temporaire (blob) de la photo d'un ticket scanné
+  async getScannedReceiptImageUrl(id: string): Promise<string> {
+    try {
+      const response = await api.get(`/ai/receipts/${id}/image`, {
+        responseType: "blob",
+      });
+      return URL.createObjectURL(response.data as Blob);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // Supprimer un ticket de l'historique
+  async deleteScannedReceipt(id: string): Promise<void> {
+    try {
+      const response = await api.delete(`/ai/receipts/${id}`);
+      return handleApiResponse<void>(response);
     } catch (error) {
       return handleApiError(error);
     }

@@ -30,6 +30,7 @@ model User {
   recipes         Recipe[]
   favoriteRecipes FavoriteRecipe[]
   shoppingLists   ShoppingList[]
+  scannedReceipts ScannedReceipt[]
 
   @@map("users") // table physique dans Postgres
 }
@@ -207,4 +208,21 @@ model PurchaseHistory {
 
   @@index([userId, boughtDate])
   @@map("purchase_history")
+}
+
+/// Tickets de caisse scannés : photo + lignes validées, conservés pour l'historique
+model ScannedReceipt {
+  id        String   @id @default(uuid())
+  userId    String
+  imageData Bytes?   // photo (compressée) du ticket
+  mimeType  String?  @default("image/jpeg") // type MIME de la photo
+  itemCount Int      @default(0) // nombre de lignes ajoutées au frigo
+  items     Json?    // lignes validées (nom, quantité, unité, prix...)
+  scannedAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scannedAt])
+  @@map("scanned_receipts")
 }

@@ -1,12 +1,13 @@
 // Routes liées aux fonctionnalités IA : extraction de tickets et génération de recettes.
 import { Router } from "express";
 import multer from "multer";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { AuthenticatedRequest, authenticateToken } from "../middleware/auth";
 import { rateLimit } from "../middleware/rateLimit";
 import { parseFileSize } from "../utils/security";
 import {
+  ReceiptAnalysis,
   analyzeReceiptImage,
   generateRecipeFromPrompt,
   generateShoppingListWithAI,
@@ -45,6 +46,213 @@ function parseAiNumericValue(raw: unknown): number | undefined {
   const value = parseFloat(singleMatch[0]);
   return Number.isFinite(value) ? value : undefined;
 }
+
+/** Ligne de ticket normalisée : affichée dans l'aperçu éditable avant ajout au frigo. */
+type NormalizedReceiptItem = {
+  name: string;
+  quantity: number;
+  unit: string;
+  itemCount: number;
+  price: number | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  categoryIcon: string | null;
+  notes: string | null;
+  expiryDate: string | null;
+  isExpiryEstimated: boolean;
+};
+
+/** Schéma des lignes confirmées depuis la modale d'aperçu. */
+const confirmReceiptSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1, "Le nom est requis").max(200),
+        quantity: z.number().positive().max(10000000),
+        unit: z.string().trim().min(1, "L'unité est requise").max(50),
+        itemCount: z.number().int().positive().max(10000).optional().default(1),
+        price: z.number().nonnegative().max(1000000).nullable().optional(),
+        categoryId: z.string().nullable().optional(),
+        notes: z.string().max(500).nullable().optional(),
+        expiryDate: z.string().nullable().optional(),
+        isExpiryEstimated: z.boolean().optional(),
+      }),
+    )
+    .min(1, "Aucune ligne à ajouter")
+    .max(100, "Trop de lignes à ajouter (100 maximum)"),
+});
+
+/**
+ * Normalise les lignes détectées par l'IA (poids/volume, multi-packs,
+ * catégorie, péremption estimée) SANS écrire en base : sert à l'aperçu
+ * éditable présenté à l'utilisateur avant l'ajout au frigo.
+ */
+const buildReceiptItems = (
+  analysisItems: ReceiptAnalysis["items"],
+  allCategories: Array<{ id: string; name: string; icon: string }>,
+): NormalizedReceiptItem[] => {
+  const normalizedItems: NormalizedReceiptItem[] = [];
+
+  for (const item of analysisItems) {
+    const name = item.name?.trim();
+    if (!name) {
+      continue;
+    }
+
+    const quantityValue = parseAiNumericValue(item.quantity);
+    const quantity =
+      quantityValue !== undefined && quantityValue > 0 ? quantityValue : 1;
+
+    const unit = item.unit?.trim() || "pièce";
+    const notes = item.notes?.trim() || undefined;
+
+    // Extraction intelligente du poids/volume depuis les notes ou le nom
+    let finalQuantity = quantity;
+    let finalUnit = unit;
+    let finalItemCount = 1;
+    let finalNotes = notes;
+
+    const isStandardUnit = ["g", "kg", "mg", "ml", "cl", "l"].includes(
+      unit.toLowerCase(),
+    );
+    const textToScan = `${notes || ""} ${name}`;
+
+    const multiMatch = textToScan.match(
+      /(\d+)\s*[xX*]\s*(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i,
+    );
+    if (multiMatch) {
+      const packs = parseInt(multiMatch[1], 10);
+      const each = parseFloat(multiMatch[2].replace(",", "."));
+      const u = multiMatch[3].toLowerCase();
+      finalItemCount = packs;
+      finalQuantity = packs * each;
+      finalUnit = u === "l" ? "L" : u;
+      if (finalNotes) {
+        finalNotes =
+          finalNotes
+            .replace(multiMatch[0], "")
+            .replace(/^[,\s-]+|[,\s-]+$/g, "")
+            .trim() || undefined;
+      }
+    } else if (!isStandardUnit) {
+      const singleMatch = textToScan.match(
+        /(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i,
+      );
+      if (singleMatch) {
+        const val = parseFloat(singleMatch[1].replace(",", "."));
+        const u = singleMatch[2].toLowerCase();
+        if (
+          quantity > 1 &&
+          [
+            "paquet",
+            "bouteille",
+            "boîte",
+            "pot",
+            "barquette",
+            "pièce",
+          ].includes(unit.toLowerCase())
+        ) {
+          finalQuantity = quantity * val;
+          finalItemCount = quantity;
+        } else {
+          finalQuantity = val;
+        }
+        finalUnit = u === "l" ? "L" : u;
+        if (finalNotes) {
+          finalNotes =
+            finalNotes
+              .replace(singleMatch[0], "")
+              .replace(/^[,\s-]+|[,\s-]+$/g, "")
+              .trim() || undefined;
+        }
+      }
+    }
+
+    const countMatch = textToScan.match(/(?:[xX](\d+)|\b(\d+)[xX]\b)/);
+    if (countMatch && finalItemCount === 1) {
+      finalItemCount = parseInt(countMatch[1] || countMatch[2], 10);
+      if (finalNotes) {
+        finalNotes =
+          finalNotes
+            .replace(countMatch[0], "")
+            .replace(/^[,\s-]+|[,\s-]+$/g, "")
+            .trim() || undefined;
+      }
+    }
+
+    if (
+      finalNotes &&
+      ["null", "undefined"].includes(finalNotes.trim().toLowerCase())
+    ) {
+      finalNotes = undefined;
+    }
+
+    const daysToExpire =
+      typeof item.estimatedDaysToExpire === "number"
+        ? item.estimatedDaysToExpire
+        : parseInt(String(item.estimatedDaysToExpire ?? ""), 10);
+
+    // Détection de la catégorie la plus adaptée
+    let matchedCategory:
+      | { id: string; name: string; icon: string }
+      | undefined = undefined;
+    if (item.category) {
+      const rawCat = item.category.trim().toLowerCase();
+      const found = allCategories.find((cat) => {
+        const cName = cat.name.toLowerCase();
+        return (
+          cName === rawCat ||
+          rawCat.includes(cName) ||
+          cName.includes(rawCat)
+        );
+      });
+      if (found) {
+        matchedCategory = found;
+      }
+    }
+
+    const isFrozen =
+      (item.category || "").toLowerCase().includes("surgele") ||
+      (item.category || "").toLowerCase().includes("surgelé") ||
+      (item.category || "").toLowerCase().includes("congel") ||
+      name.toLowerCase().includes("surgel") ||
+      name.toLowerCase().includes("congel") ||
+      (matchedCategory
+        ? allCategories.some(
+            (c) =>
+              c.id === matchedCategory!.id &&
+              (c.name.toLowerCase().includes("surgele") ||
+                c.name.toLowerCase().includes("surgelé") ||
+                c.name.toLowerCase().includes("congel"))
+          )
+        : false);
+
+    const expiryDate =
+      !isFrozen && Number.isFinite(daysToExpire) && daysToExpire > 0
+        ? new Date(Date.now() + daysToExpire * 24 * 60 * 60 * 1000)
+        : undefined;
+
+    const priceValue = parseAiNumericValue(item.price);
+    const price =
+      priceValue !== undefined && priceValue > 0 ? priceValue : undefined;
+
+    normalizedItems.push({
+      name,
+      quantity: finalQuantity,
+      unit: finalUnit,
+      itemCount: finalItemCount,
+      price: price ?? null,
+      categoryId: matchedCategory?.id ?? null,
+      categoryName: matchedCategory?.name ?? null,
+      categoryIcon: matchedCategory?.icon ?? null,
+      notes: finalNotes ?? null,
+      expiryDate: expiryDate ? expiryDate.toISOString() : null,
+      isExpiryEstimated: expiryDate !== undefined,
+    });
+  }
+
+  return normalizedItems;
+};
 
 // Limite l'usage des endpoints IA (coûteux) : 30 requêtes / heure / utilisateur.
 const aiLimiter = rateLimit({
@@ -125,157 +333,108 @@ router.post(
         });
       }
 
-      const userId = req.userId!;
       const allCategories = await prisma.category.findMany();
+      const items = buildReceiptItems(analysis.items, allCategories);
+
+      if (!items.length) {
+        return res.status(200).json({
+          success: false,
+          message: "Aucun ingrédient n'a pu être extrait du ticket.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          items,
+          detectedCount: items.length,
+        },
+        message: `${items.length} aliment(s) détecté(s) sur le ticket. Vérifiez avant d'ajouter au frigo.`,
+      });
+    } catch (error) {
+      // Les erreurs d'upload (taille, type de fichier) sont formatées par errorHandler.
+      next(error);
+    }
+  },
+);
+
+/**
+ * POST /ai/confirm-receipt
+ * Ajoute au frigo les lignes validées depuis l'aperçu du ticket
+ * et conserve le ticket scanné (photo + lignes) dans l'historique.
+ */
+router.post(
+  "/confirm-receipt",
+  authenticateToken,
+  upload.single("receipt"),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      let rawItems: unknown;
+      try {
+        rawItems = JSON.parse(String(req.body?.items ?? "[]"));
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: "Données du ticket illisibles.",
+        });
+      }
+
+      const parsed = confirmReceiptSchema.safeParse({ items: rawItems });
+      if (!parsed.success) {
+        return res.status(400).json({
+          success: false,
+          message:
+            parsed.error.issues[0]?.message ||
+            "Les lignes du ticket sont invalides.",
+        });
+      }
+
+      const body = parsed.data;
+      const userId = req.userId!;
+
+      const allCategories = await prisma.category.findMany();
+      const categoryIds = new Set(allCategories.map((category) => category.id));
+
       const itemsMap = new Map<
         string,
         Awaited<ReturnType<typeof prisma.fridgeItem.upsert>>
       >();
 
-      // Pour chaque ligne détectée sur le ticket, on crée/actualise l'ingrédient
-      // Transaction : ajout tout-ou-rien, jamais d'état partiel si une ligne échoue.
+      let receiptId: string | undefined;
+
+      // Transaction : ajout au frigo + enregistrement du ticket, tout-ou-rien.
       await prisma.$transaction(
         async (tx) => {
-          for (const item of analysis.items) {
-            const name = item.name?.trim();
+          for (const item of body.items) {
+            const name = item.name.trim();
             if (!name) {
               continue;
             }
 
-            const quantityValue = parseAiNumericValue(item.quantity);
-            const quantity =
-              quantityValue !== undefined && quantityValue > 0 ? quantityValue : 1;
-
-            const unit = item.unit?.trim() || "pièce";
-            const notes = item.notes?.trim() || undefined;
-
-            // Extraction intelligente du poids/volume depuis les notes ou le nom
-            let finalQuantity = quantity;
-            let finalUnit = unit;
-            let finalItemCount = 1;
-            let finalNotes = notes;
-
-            const isStandardUnit = ["g", "kg", "mg", "ml", "cl", "l"].includes(
-              unit.toLowerCase(),
-            );
-            const textToScan = `${notes || ""} ${name}`;
-
-            const multiMatch = textToScan.match(
-              /(\d+)\s*[xX*]\s*(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i,
-            );
-            if (multiMatch) {
-              const packs = parseInt(multiMatch[1], 10);
-              const each = parseFloat(multiMatch[2].replace(",", "."));
-              const u = multiMatch[3].toLowerCase();
-              finalItemCount = packs;
-              finalQuantity = packs * each;
-              finalUnit = u === "l" ? "L" : u;
-              if (finalNotes) {
-                finalNotes =
-                  finalNotes
-                    .replace(multiMatch[0], "")
-                    .replace(/^[,\s-]+|[,\s-]+$/g, "")
-                    .trim() || undefined;
-              }
-            } else if (!isStandardUnit) {
-              const singleMatch = textToScan.match(
-                /(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/i,
-              );
-              if (singleMatch) {
-                const val = parseFloat(singleMatch[1].replace(",", "."));
-                const u = singleMatch[2].toLowerCase();
-                if (
-                  quantity > 1 &&
-                  [
-                    "paquet",
-                    "bouteille",
-                    "boîte",
-                    "pot",
-                    "barquette",
-                    "pièce",
-                  ].includes(unit.toLowerCase())
-                ) {
-                  finalQuantity = quantity * val;
-                  finalItemCount = quantity;
-                } else {
-                  finalQuantity = val;
-                }
-                finalUnit = u === "l" ? "L" : u;
-                if (finalNotes) {
-                  finalNotes =
-                    finalNotes
-                      .replace(singleMatch[0], "")
-                      .replace(/^[,\s-]+|[,\s-]+$/g, "")
-                      .trim() || undefined;
-                }
-              }
-            }
-
-            const countMatch = textToScan.match(/(?:[xX](\d+)|\b(\d+)[xX]\b)/);
-            if (countMatch && finalItemCount === 1) {
-              finalItemCount = parseInt(countMatch[1] || countMatch[2], 10);
-              if (finalNotes) {
-                finalNotes =
-                  finalNotes
-                    .replace(countMatch[0], "")
-                    .replace(/^[,\s-]+|[,\s-]+$/g, "")
-                    .trim() || undefined;
-              }
-            }
-
-            if (
-              finalNotes &&
-              ["null", "undefined"].includes(finalNotes.trim().toLowerCase())
-            ) {
-              finalNotes = undefined;
-            }
-
-            const daysToExpire =
-              typeof item.estimatedDaysToExpire === "number"
-                ? item.estimatedDaysToExpire
-                : parseInt(String(item.estimatedDaysToExpire ?? ""), 10);
-
-            // Détection de la catégorie la plus adaptée
-            let matchedCategoryId: string | undefined = undefined;
-            if (item.category) {
-              const rawCat = item.category.trim().toLowerCase();
-              const found = allCategories.find((cat) => {
-                const cName = cat.name.toLowerCase();
-                return (
-                  cName === rawCat ||
-                  rawCat.includes(cName) ||
-                  cName.includes(rawCat)
-                );
-              });
-              if (found) {
-                matchedCategoryId = found.id;
-              }
-            }
-
-            const isFrozen =
-              (item.category || "").toLowerCase().includes("surgele") ||
-              (item.category || "").toLowerCase().includes("surgelé") ||
-              (item.category || "").toLowerCase().includes("congel") ||
-              name.toLowerCase().includes("surgel") ||
-              name.toLowerCase().includes("congel") ||
-              (matchedCategoryId
-                ? allCategories.some(
-                    (c) =>
-                      c.id === matchedCategoryId &&
-                      (c.name.toLowerCase().includes("surgele") ||
-                        c.name.toLowerCase().includes("surgelé") ||
-                        c.name.toLowerCase().includes("congel"))
-                  )
-                : false);
-
-            const expiryDate =
-              !isFrozen && Number.isFinite(daysToExpire) && daysToExpire > 0
-                ? new Date(Date.now() + daysToExpire * 24 * 60 * 60 * 1000)
+            const categoryId =
+              item.categoryId && categoryIds.has(item.categoryId)
+                ? item.categoryId
                 : undefined;
-
-            const priceValue = parseAiNumericValue(item.price);
+            const notes = item.notes?.trim() || undefined;
             const price =
-              priceValue !== undefined && priceValue > 0 ? priceValue : undefined;
+              item.price !== null &&
+              item.price !== undefined &&
+              Number.isFinite(item.price)
+                ? item.price
+                : undefined;
+            const unit = item.unit.trim() || "pièce";
+            const itemCount = item.itemCount ?? 1;
+            const quantity = item.quantity > 0 ? item.quantity : 1;
+
+            let expiryDate: Date | undefined;
+            if (item.expiryDate) {
+              const parsedDate = new Date(item.expiryDate);
+              if (!Number.isNaN(parsedDate.getTime())) {
+                expiryDate = parsedDate;
+              }
+            }
+            const isExpiryEstimated =
+              expiryDate !== undefined && item.isExpiryEstimated !== false;
 
             let ingredient = await tx.ingredient.findFirst({
               where: {
@@ -290,19 +449,17 @@ router.post(
               ingredient = await tx.ingredient.create({
                 data: {
                   name,
-                  categoryId: matchedCategoryId,
+                  categoryId,
                 },
               });
-            } else if (!ingredient.categoryId && matchedCategoryId) {
+            } else if (!ingredient.categoryId && categoryId) {
               ingredient = await tx.ingredient.update({
                 where: { id: ingredient.id },
                 data: {
-                  categoryId: matchedCategoryId,
+                  categoryId,
                 },
               });
             }
-
-            const isExpiryEstimated = expiryDate !== undefined;
 
             const fridgeItem = await tx.fridgeItem.upsert({
               where: {
@@ -314,29 +471,27 @@ router.post(
               create: {
                 userId,
                 ingredientId: ingredient.id,
-                itemCount: finalItemCount,
-                initialItemCount: finalItemCount,
-                quantity: finalQuantity,
-                initialQuantity: finalQuantity,
-                unit: finalUnit,
+                itemCount,
+                initialItemCount: itemCount,
+                quantity,
+                initialQuantity: quantity,
+                unit,
                 price,
                 expiryDate,
                 isExpiryEstimated,
-                notes: finalNotes,
+                notes,
               },
               update: {
                 quantity: {
-                  increment: finalQuantity,
+                  increment: quantity,
                 },
-                unit: finalUnit,
-                ...(finalItemCount > 1
-                  ? { itemCount: { increment: finalItemCount } }
-                  : {}),
+                unit,
+                ...(itemCount > 1 ? { itemCount: { increment: itemCount } } : {}),
                 ...(price !== undefined ? { price } : {}),
                 ...(expiryDate !== undefined
                   ? { expiryDate, isExpiryEstimated: true }
                   : {}),
-                ...(finalNotes ? { notes: finalNotes } : {}),
+                ...(notes ? { notes } : {}),
               },
               include: {
                 ingredient: {
@@ -349,6 +504,18 @@ router.post(
 
             itemsMap.set(fridgeItem.ingredientId, fridgeItem);
           }
+
+          // Historique : le ticket est conservé avec sa photo (si fournie).
+          const receipt = await tx.scannedReceipt.create({
+            data: {
+              userId,
+              imageData: req.file ? req.file.buffer : null,
+              mimeType: req.file ? req.file.mimetype : null,
+              itemCount: itemsMap.size,
+              items: body.items as unknown as Prisma.InputJsonValue,
+            },
+          });
+          receiptId = receipt.id;
         },
         { maxWait: 10000, timeout: 30000 },
       );
@@ -360,12 +527,104 @@ router.post(
         data: {
           items: addedItems,
           addedCount: addedItems.length,
-          message: `${addedItems.length} ingrédient(s) ajouté(s) ou mis à jour depuis le ticket.`,
+          receiptId,
         },
-        message: "Ticket traité avec succès.",
+        message: `${addedItems.length} aliment(s) ajouté(s) au frigo depuis le ticket.`,
       });
     } catch (error) {
       // Les erreurs d'upload (taille, type de fichier) sont formatées par errorHandler.
+      next(error);
+    }
+  },
+);
+
+/**
+ * GET /ai/receipts
+ * Historique des tickets scannés (métadonnées + lignes, sans la photo).
+ */
+router.get(
+  "/receipts",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const receipts = await prisma.scannedReceipt.findMany({
+        where: { userId: req.userId! },
+        orderBy: { scannedAt: "desc" },
+        take: 100,
+        select: {
+          id: true,
+          scannedAt: true,
+          itemCount: true,
+          mimeType: true,
+          items: true,
+        },
+      });
+
+      return res.json({
+        success: true,
+        data: { receipts },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * GET /ai/receipts/:id/image
+ * Renvoie la photo d'un ticket scanné (accès limité à son propriétaire).
+ */
+router.get(
+  "/receipts/:id/image",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const receipt = await prisma.scannedReceipt.findFirst({
+        where: { id: req.params.id, userId: req.userId! },
+        select: { imageData: true, mimeType: true },
+      });
+
+      if (!receipt || !receipt.imageData) {
+        return res.status(404).json({
+          success: false,
+          message: "Photo introuvable.",
+        });
+      }
+
+      res.setHeader("Content-Type", receipt.mimeType || "image/jpeg");
+      res.setHeader("Cache-Control", "private, max-age=3600");
+      return res.send(Buffer.from(receipt.imageData));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * DELETE /ai/receipts/:id
+ * Supprime un ticket de l'historique (la photo associée est supprimée aussi).
+ */
+router.delete(
+  "/receipts/:id",
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const result = await prisma.scannedReceipt.deleteMany({
+        where: { id: req.params.id, userId: req.userId! },
+      });
+
+      if (!result.count) {
+        return res.status(404).json({
+          success: false,
+          message: "Ticket introuvable.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "Ticket supprimé de l'historique.",
+      });
+    } catch (error) {
       next(error);
     }
   },
