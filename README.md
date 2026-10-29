@@ -1,615 +1,566 @@
 # Fridge Pro
 
-## Sommaire
-
-1. [Vue d'ensemble de l'application](#vue-densemble-de-lapplication)
-2. [Tuto déploiement Azure](#tuto-for-deployement-on-azure)
-3. [Features à ajouter/corriger](#features-à-ajoutercorriger)
-4. [Annexe photo](#annexe-photo)
+Application intelligente de gestion des stocks alimentaires, de lutte contre le gaspillage, de generation culinaire par intelligence artificielle et de planification de courses.
 
 ---
 
-## Vue d'ensemble de l'application
+## Sommaire
 
-**Fridge Pro** est une application de gestion de frigo intelligente qui vous aide à optimiser votre frigo, découvrir de nouvelles recettes adaptés à vos ingrédients.
+1. [Presentation generale](#presentation-generale)
+2. [Fonctionnalites cles et galerie visuelle](#fonctionnalites-cles-et-galerie-visuelle)
+   - [2.1 Tableau de bord et metriques en direct](#21-tableau-de-bord-et-metriques-en-direct)
+   - [2.2 Gestion du refrigerateur et suivi de fraicheur](#22-gestion-du-refrigerateur-et-suivi-de-fraicheur)
+   - [2.3 Numerisation de tickets de caisse par vision IA](#23-numerisation-de-tickets-de-caisse-par-vision-ia)
+   - [2.4 Moteur de recettes et compatibilite de stock](#24-moteur-de-recettes-et-compatibilite-de-stock)
+   - [2.5 Listes de courses intelligentes et batch cooking](#25-listes-de-courses-intelligentes-et-batch-cooking)
+   - [2.6 Profil utilisateur, securite et gestion des cles](#26-profil-utilisateur-securite-et-gestion-des-cles)
+3. [Architecture technique et flux de donnees](#architecture-technique-et-flux-de-donnees)
+   - [3.1 Technologies utilisees](#31-technologies-utilisees)
+   - [3.2 Diagramme d'architecture](#32-diagramme-darchitecture)
+   - [3.3 Modele de donnees relationnel (Prisma)](#33-modele-de-donnees-relationnel-prisma)
+4. [Arborescence detaillee du projet](#arborescence-detaillee-du-projet)
+5. [Referentiel des API REST](#referentiel-des-api-rest)
+6. [Demarrage en developpement local](#demarrage-en-developpement-local)
+   - [6.1 Lanceur unifie (run.py)](#61-lanceur-unifie-runpy)
+   - [6.2 Demarrage manuel pas a pas](#62-demarrage-manuel-pas-a-pas)
+   - [6.3 Comptes de test et reinitialisation](#63-comptes-de-test-et-reinitialisation)
+7. [Guides de deploiement en production](#guides-de-deploiement-en-production)
+   - [7.1 Deploiement Cloud actuel (Vercel + Render + Neon)](#71-deploiement-cloud-actuel-vercel--render--neon)
+   - [7.2 Deploiement alternatif sur Azure (Terraform)](#72-deploiement-alternatif-sur-azure-terraform)
+8. [Audit de securite et durcissement](#audit-de-securite-et-durcissement)
+9. [Feuille de route (Roadmap)](#feuille-de-route-roadmap)
 
-### Fonctionnalités
+---
 
-- **Ajout d'ingrédients** :
+## Presentation generale
 
-  - **Manuellement** : Recherchez et ajoutez vos ingrédients avec l'aide de l'API OpenFoodFacts pour un vaste catalogue de produits.
-  - **Scan de ticket de caisse** : Utilisez l'OCR IA (Google Gemini) pour scanner votre ticket de caisse et ajouter automatiquement tous les ingrédients à votre frigo.
+Fridge Pro est une plateforme complete concue pour repondre aux defis quotidiens de la gestion domestique des denrees alimentaires :
+- Eviter les pertes financieres et le gaspillage alimentaire grace a un suivi rigoureux des dates limites de consommation (DLC/DLUO).
+- Automatiser la saisie des stocks grace a la vision par ordinateur et a l'OCR multimodal base sur Google Gemini.
+- Optimiser la preparation des repas en suggerant des recettes exploitant prioritairement les ingredients deja disponibles.
+- Faciliter le reapprovisionnement grace a un planificateur intelligent qui extrait les manquants et consolide les courses.
 
-- **Suivi des dates d'expiration** : Visualisez les ingrédients qui expirent bientôt (dans les 3 jours) ou qui sont déjà expirés, avec des alertes visuelles pour éviter le gaspillage.
+![Tableau de bord Fridge Pro](docs/screenshots/01_dashboard.png)
 
-- **Statistiques live** : Consultez le nombre total d'ingrédients, ceux qui expirent bientôt et ceux déjà expirés.
+---
 
-#### **Gestion et création de recettes**
+## Fonctionnalites cles et galerie visuelle
 
-- **Création manuelle** : Créez vos propres recettes avec ingrédients, quantités, instructions détaillées, temps de préparation/cuisson et niveau de difficulté.
+### 2.1 Tableau de bord et metriques en direct
 
-- **Génération par IA** : Générez des recettes personnalisées via Google Gemini AI :
+Le tableau de bord centralise en temps reel l'etat de vos provisions et vos activites culinaires :
+- Statistiques de stock : total des ingredients enregistres, alertes d'expiration a court terme (3 jours) et produits perimes.
+- Exclusion intelligente des surgeles : les denrees marquees comme congelees ne faussent pas les alertes d'expiration urgente.
+- Raccourcis d'actions rapides : ajout manuel, scan de ticket, creation et generation de recettes.
+- Suggestions personnalisees : mise en avant directe des recettes faisables sans achats supplementaires.
 
-  - Décrivez vos envies culinaires (type de plat, inspiration, nombre de personnes)
-  - Option pour utiliser uniquement les ingrédients disponibles dans votre frigo
-  - Les recettes générées sont automatiquement sauvegardées
+![Tableau de bord et recommandations](docs/screenshots/01_dashboard.png)
 
-- **Système de favoris** : Marquez vos recettes préférées pour un accès rapide.
+### 2.2 Gestion du refrigerateur et suivi de fraicheur
 
-- **Recherche et filtres avancés** :
+L'inventaire permet un controle fin et intuitif des denrees :
+- Double mode de comptage : gestion simultanee des unites physiques (grammes, millilitres, litres, etc.) et du nombre d'exemplaires (ex: 4 yaourts, 2 briques de lait).
+- Consommation partielle ou totale : fenetre de deduction permettant de consommer soit par quantite metrique, soit par decrementation d'exemplaires avec calcul automatique du solde.
+- Badges de fraicheur multi-niveaux :
+  - Bon (fraicheur garantie).
+  - A consommer sous 3 jours (surveillance recommandee).
+  - Expire aujourd'hui (priorite immediate).
+  - Perime (alerte visuelle).
+  - Surgeles / Congeles (traitement specifique hors DLC courte).
+  - Indicateur de date estimee par IA (`isExpiryEstimated`).
+- Titres personnalisables par article (`customName`) sans corrompre le catalogue global d'ingredients.
+- Ajout enrichi par OpenFoodFacts : recherche instantanee dans la base ouverte pour recuperer les marques, photos et informations nutritionnelles moyennes.
+- Historique d'achats et de consommation : conservation des aliments termines ou jetes avec possibilite de restauration dans le frigo en un clic.
 
-  - Recherche par nom ou description
-  - Filtres par difficulté (facile, moyen, difficile)
-  - Filtre "Réalisables" : affiche uniquement les recettes pour lesquelles vous avez tous les ingrédients
-  - Filtre "Favoris" : vos recettes favorites
-  - Filtre "Recettes IA" : recettes générées par l'intelligence artificielle
-  - Filtre "Mes recettes" : vos créations personnelles
+![Inventaire du refrigerateur](docs/screenshots/02_fridge_inventory.png)
 
-- **Compatibilité avec le frigo** : Pour chaque recette, visualisez :
+![Modale d'ajout d'ingredient et recherche](docs/screenshots/03_fridge_add_modal.png)
 
-  - Le nombre d'ingrédients disponibles dans votre frigo
-  - Les ingrédients manquants
+### 2.3 Numerisation de tickets de caisse par vision IA
 
-- **Recettes recommandées** : Le dashboard vous suggère des recettes adaptées à vos ingrédients disponibles.
+Le module d'analyse optique transforme une photo de ticket en inventaire structure :
+- Extraction automatique par Google Gemini : detection des noms d'articles, quantites, unites, prix d'achat et estimation automatique des categories et dates limites de conservation.
+- Modale d'apercu editable (`ReceiptReviewModal`) : l'utilisateur inspecte, modifie (nom, volume, prix) ou supprime chaque ligne detectee avant toute ecriture en base de donnees.
+- Sauvegarde transactionnelle tout-ou-rien : integration atomique des articles au stock et conservation de la photo compressee du ticket dans l'historique du profil.
 
-#### Listes de courses intelligentes
+### 2.4 Moteur de recettes et compatibilite de stock
 
-- **Gestion de plusieurs listes** : Créez et gérez plusieurs listes de courses (ex: courses hebdomadaires, courses spéciales, etc.).
+Le catalogue de recettes integre un moteur de calcul dynamique compare a votre inventaire reel :
+- Ratio de faisabilite en temps reel : chaque fiche recette indique le nombre d'ingredients possedes et dresse la liste chiffree des elements manquants.
+- Filtres specialises : recettes 100% realisables avec le contenu actuel, favoris, recettes generees par IA, recettes manuelles, difficultes et categories (petit-dejeuner, entree, repas, dessert).
+- Generation sur-mesure par IA : saisie d'un prompt d'inspiration, choix du nombre de convives et option stricte "Uniquement avec ce que j'ai au frigo" pour exploiter les restes sans devoir faire de courses.
+- Creation manuelle complete : ajout des temps de preparation/cuisson, etapes ordonnees, portions, categories et telechargement de visuels.
 
-- **Ajout automatique** : Ajoutez automatiquement les ingrédients manquants d'une recette à votre liste de courses en un clic.
+![Catalogue de recettes et filtres](docs/screenshots/04_recipes_catalog.png)
 
-- **Suivi des achats** : Cochez/décochez les articles achetés pour suivre votre progression.
+![Fiche detaillee de recette avec calcul de stock](docs/screenshots/05_recipe_detail_modal.png)
 
-- **Ajout manuel** : Ajoutez manuellement des ingrédients à vos listes avec quantités et unités.
+![Generation culinaire IA](docs/screenshots/06_recipe_ai_modal.png)
 
-#### Dashboard
+![Creation manuelle de recette](docs/screenshots/07_recipe_create_modal.png)
 
-- **Statistiques globales** : Vue d'ensemble de vos ingrédients disponibles, recettes réalisables, favoris et articles en liste de courses.
+### 2.5 Listes de courses intelligentes et batch cooking
 
-- **Actions rapides** : Accès direct pour ajouter des ingrédients, scanner un ticket ou générer une recette.
+Le planificateur de courses fluidifie le reapprovisionnement du foyer :
+- Listes multiples autonomes : separation claire des courses hebdomadaires, evenements speciaux ou magasins specifiques.
+- Export direct depuis une recette : ajout instantane des ingredients manquants d'un plat dans la liste choisie.
+- Planification cumulative IA (`shoppingListPlanner`) : algorithme capable de planifier des menus multi-repas (jusqu'a 15 repas / 6 recettes) en deduisant les reserves existantes et en agregeant les quantites par unite pour eviter les doublons.
+- Suivi en magasin : pointage interactif avec marquage coche/decoche.
 
-- **Recettes recommandées** : Suggestions de recettes basées sur vos ingrédients disponibles.
+![Gestion des listes de courses et batch cooking](docs/screenshots/08_shopping_list.png)
 
-#### Profil utilisateur
+### 2.6 Profil utilisateur, securite et gestion des cles
 
-- **Gestion des informations** : Modifiez vos informations personnelles (prénom, nom, email).
+Le module profil offre une autonomie totale sur les donnees et les parametres securises :
+- Identite et changement de mot de passe directement operationnel.
+- Configuration personnelle de l'API Google Gemini : la cle privee est conservee de maniere protegee et n'est jamais restituee en clair via les reponses API (`hasGeminiKey`).
+- Galerie d'historique des tickets : affichage des miniatures de tickets photographies, consultation du detail des lignes d'articles integrees et possibilite de suppression.
 
-- **Configuration de l'IA** : Configurez votre clé API Google Gemini personnelle pour utiliser les fonctionnalités IA (scan de tickets et génération de recettes).
+![Profil utilisateur et configuration des cles](docs/screenshots/09_profile_settings.png)
 
-## Structure de la Codebase
+![Ecran de connexion securise](docs/screenshots/10_auth_login.png)
+
+---
+
+## Architecture technique et flux de donnees
+
+### 3.1 Technologies utilisees
+
+| Couche | Technologies |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS (Nordic Minimalist), React Query (TanStack v5), Zustand, React Router v6, Lucide React |
+| Backend API | Node.js, Express, TypeScript, Prisma ORM v5, Zod, Multer, Helmet, Rate-Limit |
+| Base de donnees | PostgreSQL (relationnel avec contraintes d'unicite et cles etrangeres en cascade) |
+| Services externes | Google Gemini API (modeles 2.5-flash / vision multimodale), OpenFoodFacts REST API |
+| Hebergement Cloud | Frontend sur Vercel, API sur Render (Web Service), Base de donnees sur Neon PostgreSQL |
+| Infrastructure as Code | Terraform (modules Azure App Service + PostgreSQL Flexible Server) |
+| Outillage de developpement | Python 3 (script superviseur run.py), tsx, ESLint, TypeScript Compiler |
+
+### 3.2 Diagramme d'architecture
+
+```mermaid
+graph TD
+    Client["Navigateur Web / PWA (React 18 + Vite)"]
+    
+    subgraph Frontend ["Frontend (Vercel)"]
+        UI["Interface Utilisateur (Tailwind CSS)"]
+        State["Etat Global (Zustand: Auth)"]
+        Cache["Cache Serveur (React Query)"]
+        UI --> State
+        UI --> Cache
+    end
+    
+    subgraph Backend ["Backend API (Render)"]
+        Router["Express Router & Middlewares (Auth JWT, RateLimit, Helmet, CORS)"]
+        AI_Module["Module IA (Gemini Vision OCR & Planificateur)"]
+        Fridge_Module["Module Frigo & Fraicheur (DLC/DLUO, FIFO)"]
+        Recipe_Module["Module Recettes (Matching d'ingredients, IDOR Check)"]
+        PrismaORM["Prisma Client ORM"]
+        
+        Router --> AI_Module
+        Router --> Fridge_Module
+        Router --> Recipe_Module
+        AI_Module --> PrismaORM
+        Fridge_Module --> PrismaORM
+        Recipe_Module --> PrismaORM
+    end
+    
+    subgraph DataLayer ["Donnees & Services Externes"]
+        NeonDB[("PostgreSQL (Neon Serverless)")]
+        GeminiAPI["Google Gemini API (Vision / 2.5-Flash)"]
+        OFFAPI["OpenFoodFacts API"]
+    end
+
+    Client --> Frontend
+    Cache -->|Requetes HTTPS / Bearer Token| Router
+    PrismaORM -->|SQL Transactionnel| NeonDB
+    AI_Module -->|Analyse OCR & Prompts| GeminiAPI
+    Fridge_Module -->|Recherche de produits| OFFAPI
+```
+
+### 3.3 Modele de donnees relationnel (Prisma)
+
+Le schema relationnel s'articule autour de 11 tables physiques :
+
+1. `users` : comptes d'utilisateurs, empreintes de mots de passe (bcrypt), prenom, nom, cle Gemini personnelle optionnelle.
+2. `categories` : taxonomie des aliments (Legumes, Fruits, Produits laitiers, Viandes, Epicerie, etc.).
+3. `ingredients` : catalogue normalise des denrees avec valeurs nutritionnelles moyennes pour 100g (calories, proteines, glucides, lipides, fibres).
+4. `fridge_items` : contenu en temps reel du frigo par utilisateur. Stocke les quantites physiques, les exemplaires (`itemCount`), marques, prix, dates limites, le drapeau d'estimation IA (`isExpiryEstimated`) et le libelle sur-mesure (`customName`).
+5. `recipes` : recettes de cuisine (titre, instructions, temps, portions, difficulte, categories, image, source manuelle ou IA).
+6. `recipe_ingredients` : table pivot liant recettes et ingredients avec quantite requise, unite et remarques de preparation.
+7. `favorite_recipes` : association plusieurs-a-plusieurs des recettes favorites par utilisateur.
+8. `shopping_lists` : listes de courses denommees avec resume IA structure (`aiSummary`).
+9. `shopping_list_items` : articles individuels d'une liste de courses avec indicateur d'achat (`purchased`).
+10. `purchase_history` : historique d'archivage des articles consommes ou perimes pour l'analyse des habitudes et la restauration rapide.
+11. `scanned_receipts` : historique des tickets de caisse scannnes, associant la photo compressee (`imageData`), le type MIME, le nombre d'articles extraits et la charge utile JSON des lignes validees.
+
+---
+
+## Arborescence detaillee du projet
 
 ```
 Fridge-pro/
 │
-├── 📂 Fridge Pro/                    # Dossier principal de l'application
-│   │
-│   ├── 📂 backend/                   # API REST Node.js/Express avec TypeScript
-│   │   ├── 📂 src/                   # Code source TypeScript
-│   │   │   ├── index.ts              # Point d'entrée : configuration Express, routes, middleware
-│   │   │   │
-│   │   │   ├── 📂 middleware/        # Middlewares Express
-│   │   │   │   ├── auth.ts           # Authentification JWT (vérification des tokens)
-│   │   │   │   ├── errorHandler.ts   # Gestion centralisée des erreurs
-│   │   │   │   └── notFound.ts       # Handler 404 pour routes inexistantes
-│   │   │   │
-│   │   │   ├── 📂 routes/            # Routes API (endpoints REST)
-│   │   │   │   ├── auth.ts           # POST /api/auth/login, /api/auth/register
-│   │   │   │   ├── users.ts          # CRUD utilisateurs (GET, PUT /api/users/*)
-│   │   │   │   ├── ingredients.ts    # Gestion des ingrédients (CRUD)
-│   │   │   │   ├── fridge.ts         # Gestion du frigo (ajout, suppression, expiration)
-│   │   │   │   ├── recipes.ts        # CRUD recettes, recherche, favoris
-│   │   │   │   ├── shopping-lists.ts # Gestion des listes de courses
-│   │   │   │   └── ai.ts             # Endpoints pour génération IA (Gemini)
-│   │   │   │
-│   │   │   └── 📂 services/          # Services externes et logique métier
-│   │   │       ├── geminiService.ts   # Intégration Google Gemini AI (génération recettes)
-│   │   │       └── openFoodFactsService.ts # API OpenFoodFacts (infos produits)
-│   │   │
-│   │   ├── 📂 prisma/                # ORM Prisma (base de données)
-│   │   │   ├── schema.prisma         # Schéma de la base (modèles : User, Recipe, FridgeItem, etc.)
-│   │   │   ├── seed.ts               # Script de peuplement initial de la DB
-│   │   │   └── 📂 migrations/        # Migrations SQL (historique des changements DB)
-│   │   │
-│   │   ├── 📂 scripts/               # Scripts utilitaires
-│   │   │   └── seedFrenchRecipes.ts  # Script pour ajouter des recettes françaises
-│   │   │
-│   │   ├── 📂 dist/                  # Code JavaScript compilé (généré par `npm run build`)
-│   │   ├── package.json              # Dépendances backend (Express, Prisma, JWT, etc.)
-│   │   ├── tsconfig.json             # Configuration TypeScript
-│   │   └── env.example               # Template des variables d'environnement
-│   │
-│   ├── 📂 frontend/                  # Application React avec TypeScript
-│   │   ├── 📂 src/                   # Code source React
-│   │   │   ├── main.tsx              # Point d'entrée React (rendu de l'app)
-│   │   │   ├── App.tsx               # Configuration des routes (React Router)
-│   │   │   ├── index.css             # Styles globaux
-│   │   │   │
-│   │   │   ├── 📂 pages/             # Pages principales de l'application
-│   │   │   │   ├── HomePage.tsx      # Page d'accueil (dashboard, suggestions)
-│   │   │   │   ├── AuthPage.tsx      # Connexion/Inscription
-│   │   │   │   ├── FridgePage.tsx    # Gestion du contenu du frigo
-│   │   │   │   ├── RecipesPage.tsx   # Liste et recherche de recettes
-│   │   │   │   ├── ShoppingListPage.tsx # Gestion des listes de courses
-│   │   │   │   └── ProfilePage.tsx   # Profil utilisateur (clé API Gemini)
-│   │   │   │
-│   │   │   ├── 📂 components/        # Composants React réutilisables
-│   │   │   │   ├── Layout.tsx        # Layout principal (header, navigation)
-│   │   │   │   ├── ProtectedRoute.tsx # HOC pour protéger les routes (auth)
-│   │   │   │   ├── OpenFoodFactsTest.tsx # Composant de test API
-│   │   │   │   └── 📂 ui/            # Composants UI réutilisables
-│   │   │   │       ├── Button.tsx    # Bouton stylisé
-│   │   │   │       ├── Card.tsx      # Carte conteneur
-│   │   │   │       ├── Input.tsx     # Champ de saisie
-│   │   │   │       ├── Modal.tsx     # Modal/dialog
-│   │   │   │       └── index.ts      # Exports centralisés
-│   │   │   │
-│   │   │   ├── 📂 services/          # Services API (appels HTTP)
-│   │   │   │   ├── api.ts            # Configuration Axios (baseURL, interceptors)
-│   │   │   │   ├── authService.ts    # Login, register, logout
-│   │   │   │   ├── userService.ts    # CRUD utilisateur
-│   │   │   │   ├── fridgeService.ts  # Gestion du frigo
-│   │   │   │   ├── recipeService.ts  # Recherche, création, favoris recettes
-│   │   │   │   └── shoppingListService.ts # CRUD listes de courses
-│   │   │   │
-│   │   │   ├── 📂 stores/            # State management (Zustand)
-│   │   │   │   └── authStore.ts      # Store global pour l'authentification
-│   │   │   │
-│   │   │   ├── 📂 hooks/             # Hooks React personnalisés
-│   │   │   │   └── useAuth.ts        # Hook pour l'authentification
-│   │   │   │
-│   │   │   └── 📂 types/             # Définitions TypeScript
-│   │   │       └── index.ts          # Types partagés (User, Recipe, Ingredient, etc.)
-│   │   │
-│   │   ├── 📂 dist/                  # Build de production (généré par `npm run build`)
-│   │   ├── server.js                 # Serveur Express pour servir le build en production
-│   │   ├── package.json              # Dépendances frontend (React, Vite, Tailwind, etc.)
-│   │   ├── vite.config.ts            # Configuration Vite (bundler)
-│   │   ├── tailwind.config.js        # Configuration Tailwind CSS
-│   │   └── tsconfig.json             # Configuration TypeScript
+├── .gitignore                          # Fichiers ignores (secrets, builds, dumps, terraform state)
+├── README.md                           # Documentation de reference du projet
+├── render.yaml                         # Blueprint d'infrastructure pour le deploiement sur Render
+├── run.py                              # Script superviseur pour l'environnement de developpement local
 │
-├── 📂 terraform/                     # Infrastructure as Code (Azure)
-│   ├── main.tf                       # Définition des ressources Azure (App Services, DB, etc.)
-│   ├── variables.tf                  # Variables Terraform (project_name, location, etc.)
-│   ├── outputs.tf                    # Outputs Terraform (URLs, credentials)
-│   ├── versions.tf                   # Versions des providers Terraform
-│   └── terraform.tfstate             # État Terraform (généré automatiquement)
+├── Fridge Pro/
+│   │
+│   ├── backend/                        # API REST Node.js / Express avec TypeScript
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma           # Definition du schema de donnees relationnel
+│   │   │   └── seed.ts                 # Script de peuplement de donnees initiales
+│   │   │
+│   │   ├── src/
+│   │   │   ├── index.ts                # Point d'entree du serveur, middlewares globaux et ecoute
+│   │   │   │
+│   │   │   ├── middleware/             # Filtres d'interception Express
+│   │   │   │   ├── auth.ts             # Verification du Bearer JWT et typage AuthenticatedRequest
+│   │   │   │   ├── errorHandler.ts     # Gestionnaire centralise des erreurs (Prisma, Multer, App)
+│   │   │   │   ├── notFound.ts         # Reponse 404 standardisee pour routes inconnues
+│   │   │   │   └── rateLimit.ts        # Limiteur de debit en memoire (brute-force et saturation IA)
+│   │   │   │
+│   │   │   ├── routes/                 # Controleurs et routes REST
+│   │   │   │   ├── ai.ts               # Scan OCR tickets, generation de recettes, listes de courses IA
+│   │   │   │   ├── auth.ts             # Connexion, inscription, renouvellement de mot de passe
+│   │   │   │   ├── categories.ts       # Consultation des categories d'aliments
+│   │   │   │   ├── fridge.ts           # Inventaire, consommation, peremption, historique
+│   │   │   │   ├── ingredients.ts      # Recherche et autocompletion des ingredients
+│   │   │   │   ├── recipes.ts          # CRUD recettes, favoris, calcul de compatibilite frigo
+│   │   │   │   ├── shopping-lists.ts   # Gestion des listes de courses et articles
+│   │   │   │   └── users.ts            # Gestion du profil et des cles utilisateur
+│   │   │   │
+│   │   │   ├── services/               # Integrations externes
+│   │   │   │   ├── geminiService.ts    # Client SDK Google Generative AI (Vision / Text)
+│   │   │   │   └── openFoodFactsService.ts # Client HTTP OpenFoodFacts pour produits de marque
+│   │   │   │
+│   │   │   ├── utils/                  # Utilitaires metier et securite
+│   │   │   │   ├── costEstimator.ts    # Calculs et estimations budgetaires
+│   │   │   │   ├── ingredientMatcher.ts# Normalisation et correspondance syntaxique d'ingredients
+│   │   │   │   ├── recipeCache.ts      # Mise en cache locale des analyses de recettes
+│   │   │   │   ├── security.ts         # Validation stricte des variables sensibles (getJwtSecret, etc.)
+│   │   │   │   └── shoppingListPlanner.ts # Algorithme d'agregation de courses et batch cooking
+│   │   │   │
+│   │   │   └── scripts/                # Scripts utilitaires d'administration
+│   │   │       ├── migrateToCloud.ts   # Script de migration de donnees vers PostgreSQL Cloud
+│   │   │       ├── resetPassword.ts    # Script de reinitialisation de mot de passe en invite de commande
+│   │   │       └── seedFrenchRecipes.ts# Injecteur de recettes classiques francaises
+│   │   │
+│   │   ├── env.example                 # Modele de configuration des variables d'environnement
+│   │   ├── package.json                # Dependances backend et commandes npm
+│   │   └── tsconfig.json               # Options de compilation TypeScript (strict)
+│   │
+│   └── frontend/                       # Application Single-Page React 18 avec TypeScript
+│       ├── public/                     # Fichiers statiques et visuels publics
+│       ├── src/
+│       │   ├── main.tsx                # Initialisation React DOM et configuration React Query
+│       │   ├── App.tsx                 # Routage principal (React Router v6)
+│       │   ├── index.css               # Feuilles de style globales et utilitaires Tailwind
+│       │   │
+│       │   ├── components/             # Composants d'interface
+│       │   │   ├── ErrorBoundary.tsx   # Capture des plantages avec affichage securise
+│       │   │   ├── Layout.tsx          # Cadre applicatif (entete, barre de navigation, responsive)
+│       │   │   ├── ProtectedRoute.tsx  # Gardien d'authentification pour les vues privees
+│       │   │   ├── ReceiptReviewModal.tsx # Modale d'edition avant insertion d'un ticket numerise
+│       │   │   └── ui/                 # Composants d'interface atomiques
+│       │   │       ├── Button.tsx      # Bouton standardise avec etats (chargement, variantes)
+│       │   │       ├── Card.tsx        # Conteneur de carte stylise
+│       │   │       ├── FreshnessBadge.tsx # Badge visuel d'etat de fraicheur (couleurs, statut)
+│       │   │       ├── Input.tsx       # Champ de saisie controle avec gestion d'erreurs
+│       │   │       └── Modal.tsx       # Boite de dialogue modale accessible
+│       │   │
+│       │   ├── pages/                  # Ecrans complets de l'application
+│       │   │   ├── AuthPage.tsx        # Ecran d'authentification (connexion et inscription)
+│       │   │   ├── FridgePage.tsx      # Gestion du frigo, stock, filtres et ajout
+│       │   │   ├── HomePage.tsx        # Dashboard, statistiques et recommandations
+│       │   │   ├── ProfilePage.tsx     # Profil, cle IA, securite et historique des tickets
+│       │   │   ├── RecipesPage.tsx     # Recherche, filtres, creation et generation IA de recettes
+│       │   │   └── ShoppingListPage.tsx# Listes de courses, batch cooking et cochage
+│       │   │
+│       │   ├── services/               # Clients d'appel HTTP vers l'API backend
+│       │   │   ├── api.ts              # Instance Axios avec intercepteur d'authentification Bearer
+│       │   │   ├── authService.ts      # Appels register, login, change-password
+│       │   │   ├── fridgeService.ts    # Appels inventaire, consommation, historique, tickets
+│       │   │   ├── recipeService.ts    # Appels recettes, favoris, generation IA
+│       │   │   ├── shoppingListService.ts # Appels gestion des listes de courses
+│       │   │   └── userService.ts      # Appels consultation et mise a jour du profil
+│       │   │
+│       │   ├── stores/                 # Gestion d'etat global Zustand
+│       │   │   └── authStore.ts        # Etat de l'utilisateur connecte, token et persistance locale
+│       │   │
+│       │   ├── utils/                  # Fonctions utilitaires frontend
+│       │   │   ├── cn.ts               # Utilitaire de fusion conditionnelle de classes CSS
+│       │   │   ├── frozenUtils.ts      # Detection des aliments surgeles/congeles
+│       │   │   ├── imageCompression.ts # Compression d'image avant upload pour reduire le trafic
+│       │   │   ├── imageUtils.ts       # Normalisation des chemins d'images et apercus
+│       │   │   └── itemName.ts         # Formatage unifie des noms et denominations d'aliments
+│       │   │
+│       │   └── types/                  # Interfaces et types TypeScript partages
+│       │       └── index.ts            # Definitions User, FridgeItem, Recipe, ShoppingList, etc.
+│       │
+│       ├── package.json                # Dependances frontend (React, Vite, Tailwind, etc.)
+│       ├── tailwind.config.js          # Parametrage de la palette Nordic Minimalist
+│       ├── vercel.json                 # Regles de reecriture SPA et en-tetes de securite pour Vercel
+│       └── vite.config.ts              # Configuration du bundler Vite et port de dev (3000)
 │
-└── 📄 README.md                      # Ce fichier (documentation)
+└── terraform/                          # Infrastructure as Code (Azure alternatif)
+    ├── main.tf                         # Definition des ressources Azure (App Services, Database)
+    ├── variables.tf                    # Parametres configurables (region, SKU, noms)
+    ├── outputs.tf                      # Restitution des identifiants et URL d'infrastructure
+    └── versions.tf                     # Contraintes de versions du provider azurerm
 ```
-
-### Flux de Données
-
-1. **Frontend** (React) → Appels HTTP via Axios → **Backend** (Express)
-2. **Backend** → Prisma ORM → **PostgreSQL** (base de données)
-3. **Backend** → Services externes (Gemini AI, OpenFoodFacts API)
-4. **Authentification** : JWT tokens stockés côté client, vérifiés par middleware `auth.ts`
-
-### Technologies Utilisées
-
-**Backend** :
-
-- Node.js + Express
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- JWT (jsonwebtoken)
-- Google Gemini AI
-- OpenFoodFacts API
-
-**Frontend** :
-
-- React 18
-- TypeScript
-- Vite (bundler)
-- React Router (routing)
-- Zustand (state management)
-- Tailwind CSS (styling)
-- Axios (HTTP client)
-- React Query (gestion des requêtes)
-
-**Infrastructure** :
-
-- Terraform (IaC)
-- Azure (App Services, PostgreSQL Flexible Server)
-
-**Déploiement actuel (production)** : Frontend sur **Vercel**, backend sur **Render**, base PostgreSQL sur **Neon**.
-
-> 🔐 **Sécurité** : ce dépôt ne doit contenir aucun secret. Toutes les valeurs sensibles (`DATABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, mot de passe PostgreSQL, etc.) sont définies dans les variables d'environnement Render/Vercel et ne sont **jamais** committées dans Git. Les fichiers `.env`, dumps de base et exports d'infrastructure sont ignorés par `.gitignore`.
 
 ---
 
-# Tuto for deployement on Azure
+## Referentiel des API REST
 
-## Étape 1 : Déploiement de l'infrastructure avec Terraform
+Toutes les routes privees exigent la transmission de l'en-tete HTTP `Authorization: Bearer <token_jwt>`.
 
-###  NB: Pour éviter les erreurs de déploiement et garantir la compatibilité avec Azure, il est fortement recommandé d’utiliser PowerShell 7 (pwsh) pour les utilisateurs windows pour créer les archives ZIP.
+### Authentification & Profil (`/api/auth`, `/api/users`)
+- `POST /api/auth/register` : creation d'un nouveau compte utilisateur.
+- `POST /api/auth/login` : authentification et generation du token JWT.
+- `POST /api/auth/change-password` : modification securisee du mot de passe de l'utilisateur connecte.
+- `GET /api/users/profile` : consultation des informations du profil (nom, prenom, email, presence d'une cle Gemini).
+- `PUT /api/users/profile` : mise a jour des informations personnelles ou enregistrement/suppression de la cle Gemini.
 
-### 1.1 Initialisation de Terraform
+### Refrigerateur & Inventaire (`/api/fridge`)
+- `GET /api/fridge` : recuperation des ingredients presents dans le frigo avec calcul de fraicheur.
+- `POST /api/fridge/add` : ajout manuel ou via OpenFoodFacts d'un ingredient dans le frigo.
+- `PUT /api/fridge/item/:id` : mise a jour d'un article (quantite, exemplaires, date d'expiration, libelle).
+- `DELETE /api/fridge/item/:id` : suppression d'un article du frigo.
+- `POST /api/fridge/consume` : deduction partielle ou totale d'un article avec transfert automatique vers l'historique.
+- `POST /api/fridge/expire` : marquage d'un aliment comme jete/perime et archivage dans l'historique.
+- `GET /api/fridge/history` : consultation du journal des denrees consommees ou expirees.
+- `POST /api/fridge/history/restore` : restitution d'un article depuis l'historique vers le refrigerateur.
+- `DELETE /api/fridge/history/:id` : suppression definitive d'une ligne d'historique.
 
-Accédez au dossier Terraform et initialisez le projet :
+### Recettes (`/api/recipes`)
+- `GET /api/recipes` : liste complete des recettes avec ratio de couverture des ingredients du frigo.
+- `GET /api/recipes/recommended` : selection des recettes ideales pour limiter les pertes de denrees.
+- `GET /api/recipes/favorites` : liste des recettes enregistrees en favoris par l'utilisateur.
+- `GET /api/recipes/:id` : consultation detaillee d'une recette avec instructions et proportions.
+- `POST /api/recipes` : enregistrement d'une recette creee manuellement.
+- `PUT /api/recipes/:id` : modification d'une recette existante (avec verification de propriete).
+- `DELETE /api/recipes/:id` : suppression d'une recette (avec verification de propriete).
+- `POST /api/recipes/:id/favorite` : ajout d'une recette dans les favoris.
+- `DELETE /api/recipes/:id/favorite` : retrait d'une recette des favoris.
+- `POST /api/recipes/:id/image` : televersement d'une image d'illustration.
+- `DELETE /api/recipes/:id/image` : suppression de l'image associee.
+
+### Listes de courses (`/api/shopping-lists`)
+- `GET /api/shopping-lists` : liste des listes de courses de l'utilisateur.
+- `POST /api/shopping-lists` : creation d'une nouvelle liste de courses.
+- `GET /api/shopping-lists/:id` : consultation du detail d'une liste et de ses articles.
+- `DELETE /api/shopping-lists/:id` : suppression d'une liste de courses.
+- `POST /api/shopping-lists/:id/items` : ajout direct d'un article dans une liste.
+- `PUT /api/shopping-lists/:id/items/:itemId` : ajustement de la quantite ou des notes d'un article.
+- `PATCH /api/shopping-lists/:id/items/:itemId/toggle` : inversion de l'etat achete / a acheter.
+- `DELETE /api/shopping-lists/:id/items/:itemId` : suppression d'un article de la liste.
+
+### Intelligence Artificielle (`/api/ai`)
+- `POST /api/ai/scan-receipt` : envoi multipart d'une photo de ticket pour analyse OCR et renvoi des lignes detectees (sans ecriture en base).
+- `POST /api/ai/confirm-receipt` : validation des lignes revues par l'utilisateur, ecriture atomique dans le frigo et archivage du ticket.
+- `GET /api/ai/receipts` : historique des tickets scannes par l'utilisateur.
+- `GET /api/ai/receipts/:id/image` : telechargement du flux binaire de la photo du ticket.
+- `DELETE /api/ai/receipts/:id` : suppression d'un ticket scanne de l'historique.
+- `POST /api/ai/generate-recipe` : generation d'une recette structuree selon des criteres d'inspiration et l'inventaire actuel.
+- `POST /api/ai/recipe-to-shopping-list` : detection des manquants d'une recette et injection dans une liste de courses.
+- `POST /api/ai/generate-shopping-list` : synthese de courses intelligente pour batch cooking multi-repas.
+
+### Donnees de reference et Sante
+- `GET /api/categories` : catalogue des categories alimentaires.
+- `GET /api/ingredients/search` : recherche d'ingredients dans le catalogue local.
+- `GET /api/health` : sonde de supervision de disponibilite de l'API.
+
+---
+
+## Demarrage en developpement local
+
+### 6.1 Lanceur unifie (run.py)
+
+Un script Python est disponible a la racine du projet pour initialiser et lancer l'ensemble des composants sans manipulation complexe :
+- Detecte et lance automatiquement l'instance PostgreSQL locale (Homebrew ou pg_ctl).
+- Cree les fichiers `.env` frontend et backend avec des parametres securises si ceux-ci sont absents.
+- Installe les modules npm et genere le client Prisma automatiquement si necessaire.
+- Demarre le backend sur le port 5001 (pour eviter les conflits avec AirPlay sur macOS) et le frontend sur le port 3000.
+- Centralise et colore les logs de chaque service dans un unique terminal.
+
+Pour l'executer :
 
 ```bash
-cd ./terraform/
+python3 run.py
 ```
 
-Récupérez votre ID d'abonnement Azure :
+Pour arreter tous les processus proprement, appuyez sur `Ctrl + C`.
 
+### 6.2 Demarrage manuel pas a pas
 
+Si vous preferez lancer chaque composant independamment :
 
+#### Etape 1 : Configuration et demarrage de la base de donnees
+Assurez-vous qu'une instance PostgreSQL est active sur `localhost:5432` et creez la base :
 ```bash
-az account show --query id -o tsv
+createdb fridge_pro
 ```
 
-Initialisez Terraform avec votre ID d'abonnement :
-
-Mac
+#### Etape 2 : Configuration et execution du backend
 ```bash
-export ARM_SUBSCRIPTION_ID="<votre-id-abonnement-azure>" && terraform init
-```
-Windows
+cd "Fridge Pro/backend"
 
-```pwsh
-$env:ARM_SUBSCRIPTION_ID = "<votre-id-abonnement-azure>"
+# Copie du modele de variables d'environnement
+cp env.example .env
+
+# Installation des paquets
+npm install
+
+# Generation du client Prisma et application du schema
+npx prisma generate
+npx prisma db push
+
+# Peuplement optionnel des donnees de demonstration
+npm run seed
+
+# Demarrage en mode surveillance
+npm run dev
+```
+
+#### Etape 3 : Configuration et execution du frontend
+Dans un second terminal :
+```bash
+cd "Fridge Pro/frontend"
+
+# Configuration de l'URL d'API
+echo "VITE_API_URL=http://localhost:5001" > .env
+
+# Installation et demarrage
+npm install
+npm run dev
+```
+
+L'application est desormais accessible sur `http://localhost:3000`.
+
+### 6.3 Comptes de test et reinitialisation
+
+Lorsque vous initialisez la base de donnees avec le script de peuplement (`npx prisma db seed`), trois profils de test sont mis a votre disposition. Le mot de passe par defaut peut etre configure via la variable `SEED_PASSWORD` dans le fichier `.env` du backend :
+
+- `demo@fridgepro.com` (mot de passe par defaut : `demo123`) : compte actif comprenant un inventaire garni et des recettes enregistrees.
+- `test@fridgepro.com` (mot de passe par defaut : `test123`).
+- `admin@fridgepro.com` (mot de passe par defaut : `admin123`).
+
+Pour changer le mot de passe d'un utilisateur en ligne de commande locale :
+```bash
+cd "Fridge Pro/backend"
+npx tsx src/scripts/resetPassword.ts
+```
+
+---
+
+## Guides de deploiement en production
+
+### 7.1 Deploiement Cloud actuel (Vercel + Render + Neon)
+
+L'architecture de production actuellement en vigueur repose sur un decouplage Cloud optimise :
+
+#### 1. Base de donnees sur Neon (PostgreSQL Serverless)
+- Creer un projet PostgreSQL sur [Neon.tech](https://neon.tech).
+- Copier l'URI de connexion avec SSL (`postgresql://<user>:<password>@<endpoint>.neon.tech/fridge_pro?sslmode=require`).
+
+#### 2. Backend API sur Render
+- Le deploiement est pilote par le fichier declarativement defini dans [render.yaml](render.yaml).
+- Creer un nouveau Web Service sur [Render](https://render.com) connecte au depot GitHub.
+- Configurer les variables d'environnement suivantes sur le tableau de bord Render :
+  - `NODE_ENV` : `production`
+  - `PORT` : `5001`
+  - `DATABASE_URL` : l'URI de connexion Neon PostgreSQL.
+  - `JWT_SECRET` : une cle secrete aleatoire d'au moins 32 caracteres.
+  - `FRONTEND_URL` : l'URL de votre application frontend Vercel (ex: `https://fridge-pro.vercel.app`).
+  - `GEMINI_API_KEY` (optionnel) : cle d'API serveur globale.
+- Commande de build : `npm install --include=dev && npx prisma generate && npx prisma db push --skip-generate && npm run build`
+- Commande de demarrage : `npm start`
+- Chemin de sonde de disponibilite (Health Check Path) : `/api/health`
+
+#### 3. Frontend sur Vercel
+- Importer le projet sur [Vercel](https://vercel.com) en definissant la racine du projet (`Root Directory`) sur `Fridge Pro/frontend`.
+- Variable d'environnement a configurer :
+  - `VITE_API_URL` : l'URL HTTPS du backend Render (ex: `https://fridge-pro-api.onrender.com`).
+- Le fichier `vercel.json` applique automatiquement la reecriture vers `index.html` pour React Router et configure les en-tetes de securite HTTP (`nosniff`, `frame-options`, `referrer-policy`).
+
+### 7.2 Deploiement alternatif sur Azure (Terraform)
+
+Le dossier `terraform/` contient les specifications IaC pour deployer l'ensemble de la pile sur Microsoft Azure.
+
+#### Initialisation et creation des ressources
+```bash
+cd terraform
+
+# Initialisation du provider Azure
 terraform init
-```
 
-### 1.2 Création des ressources Azure
-
-Appliquez la configuration Terraform pour créer toutes les ressources (App Services, base de données PostgreSQL, etc.) :
-
-Mac
-```bash
-export ARM_SUBSCRIPTION_ID="<votre-id-abonnement-azure>" && terraform apply
-```
-Windows
-
-```pwsh
-$env:ARM_SUBSCRIPTION_ID = "<votre-id-abonnement-azure>"
+# Application du plan d'infrastructure
 terraform apply
 ```
 
+Terraform provisionne :
+- Un groupe de ressources Azure (`fridge-pro-prod-rg`).
+- Un serveur de donnees Azure Database for PostgreSQL Flexible Server.
+- Une App Service Linux pour le backend Node.js.
+- Une App Service Linux pour le frontend React.
 
-Terraform va créer :
-
-- Un groupe de ressources
-- Un serveur PostgreSQL Flexible Server
-- Une App Service pour le backend
-- Une App Service pour le frontend
-
-### 1.3 Récupération des informations de connexion
-
-Récupérez la chaîne de connexion à la base de données :
-
-```pwsh
+#### Reciperation des sorties
+```bash
 terraform output -raw database_url_connection_string
-```
-
-### Exemple de sortie
-
-```
-postgresql://<utilisateur>:<mot-de-passe>@<serveur>.postgres.database.azure.com:5432/fridge_pro?schema=public&sslmode=require
-```
-
-> **Note importante** : Ne copiez jamais une vraie chaîne de connexion ou un mot de passe dans un fichier suivi par Git. Utilisez uniquement des variables d'environnement (`DATABASE_URL`, définie dans Render pour la production et dans `backend/.env` en local).
-
-```
-Outputs:
-
-backend_app_name = "fridge-pro-api-xxxxx"
-backend_url = "https://fridge-pro-api-xxxxx.azurewebsites.net"
-database_url_connection_string = <sensitive>
-db_password = <sensitive>
-db_server_fqdn = "fridge-pro-db-xxxxx.postgres.database.azure.com"
-frontend_app_name = "fridge-pro-web-xxxxx"
-frontend_url = "https://fridge-pro-web-xxxxx.azurewebsites.net"
-resource_group_name = "fridge-pro-prod-rg"
-```
-
-### Si nécessaire, elles sont accessible de nouveau avec :
-
-```bash
-# Nom du groupe de ressources
-terraform output -raw resource_group_name
-
-# URL du backend
 terraform output -raw backend_url
-
-# URL du frontend
 terraform output -raw frontend_url
-
-# Nom du serveur de base de données
-terraform output -raw db_server_fqdn
-```
-
-Exportez la variable d'environnement `DATABASE_URL` :
-
-Mac
-```
-export DATABASE_URL='<l'url de la databse que vous venez de copier>'
-```
-
-Windows
-
-```bash
-$env:DATABASE_URL = "<l'url de la database que vous venez de copier>"
-
-```
-
-### 1.4 Configuration du pare-feu PostgreSQL
-
-Pour pouvoir accéder à la base de données depuis votre machine locale, vous devez autoriser votre adresse IP.
-
-Récupérez votre adresse IP publique sur [whatismyip.com](https://www.whatismyip.com).
-
-Créez une règle de pare-feu :
-
-Mac/windows
-```bash
-az postgres flexible-server firewall-rule create \
-  --resource-group <nom-du-groupe-de-ressources> \
-  --name <nom-du-serveur-db> \
-  --rule-name allow-my-ip \
-  --start-ip-address <votre-IP> \
-  --end-ip-address <votre-IP>
-```
-
-
-## Étape 2 : Déploiement de la base de données
-
-### 2.1 Application des migrations Prisma
-
-Accédez au dossier backend :
-
-```bash
-cd ../Fridge\ Pro/backend
-```
-
-Appliquez les migrations Prisma pour créer le schéma de base de données :
-
-
-```bash
-npm install prisma @prisma/client
-npx prisma migrate deploy
-```
-
-> **Optionnel** : Si vous souhaitez peupler la base de données avec des données initiales :
->
-> ```bash
-> npx prisma db seed
-> ```
-
----
-
-## Étape 3 : Déploiement du backend
-
-### 3.1 Build et préparation du package
-
-Installez les dépendances et compilez le code TypeScript :
-
-```bash
-npm install
-npm run build
-```
-
-Créez un package de déploiement contenant uniquement les fichiers nécessaires :
-
-Mac
-
-```bash
-mkdir deploy_temp
-cp -r dist prisma package.json package-lock.json deploy_temp/
-cd deploy_temp
-npm install --omit=dev
-zip -r ../backend.zip .
-cd ..
-rm -rf deploy_temp
-```
-
-Windows
-
-```pwsh
-mkdir deploy_temp
-Copy-Item -Recurse dist, prisma, package.json, package-lock.json -Destination deploy_temp
-Set-Location deploy_temp
-npm install --omit=dev
-Compress-Archive -Path * -DestinationPath ../backend.zip -Force
-Set-Location ..
-Remove-Item deploy_temp -Recurse -Force
-```
-
-### 3.2 Déploiement sur Azure App Service
-
-Déployez le package sur l'App Service backend : 
-
-Mac/windows
-
-```bash
-az webapp deploy \
-  --resource-group <nom-du-groupe-de-ressources> \
-  --name <nom-de-l-app-service-backend> \
-  --src-path backend.zip \
-  --type zip
 ```
 
 ---
 
-## Étape 4 : Déploiement du frontend
+## Audit de securite et durcissement
 
-### 4.1 Build du frontend
+Le projet integre des standards de securite eleves appliques a l'ensemble des couches applicatives :
 
-Accédez au dossier frontend :
+1. **Politique zero-secret dans le depot** :
+   - Aucun mot de passe, secret de hachage ou cle d'API n'est present dans l'historique ou le code source.
+   - Les fichiers sensibles (`.env`, `.env.backup`, `.tfstate`, dumps SQL) sont strictement rejetes par le fichier `.gitignore`.
 
-```bash
-cd ../frontend/
-```
+2. **Validation stricte au demarrage** :
+   - La fonction `getJwtSecret()` verifie la presence et la consistance de la cle JWT au demarrage du serveur. Aucun repli sur une cle par defaut n'est accepte en production, empechant la falsification de jetons.
 
-Définissez l'URL de l'API backend et compilez l'application :
+3. **Protection contre les attaques par force brute (Rate Limiting)** :
+   - Limiteur global : 300 requetes par tranche de 60 secondes.
+   - Limiteur d'authentification : 30 requetes par tranche de 15 minutes sur les points d'entree de connexion et inscription.
+   - Limiteur specifique IA : 5 generations par minute par utilisateur pour prevenir les abus de quota d'API.
+   - Prise en compte du proxy inverse via `app.set("trust proxy", 1)` afin d'analyser l'adresse IP reelle du client derriere Render ou Azure.
 
-```bash
-export VITE_API_URL="<url-du-backend>"
-npm install
-npm run build
-```
+4. **Cloisonnement CORS** :
+   - Seules les origines explicitement declarees dans `FRONTEND_URL` sont autorisees a communiquer avec l'API en production. Les origines de developpement local (`localhost`, `127.0.0.1`) sont limitees aux environnements hors production.
 
-### 4.2 Préparation du package de déploiement
+5. **Controle de propriete et prevention des failles IDOR** :
+   - Toutes les operations de modification ou de suppression de recettes (`PUT`, `DELETE`, upload d'images) verifient imperativement que l'auteur de la requete est bien le createur de la ressource.
 
-Créez un package contenant les fichiers compilés et le serveur Node.js :
+6. **Integrite des transactions** :
+   - Les ajouts d'articles issus d'un ticket scanne et la generation de listes de courses sont executes dans des blocs transactionnels `$transaction` de Prisma : en cas d'anomalie sur une ligne, aucun enregistrement orphelin n'est persiste.
 
-Mac
-
-```bash
-mkdir deploy_front
-cp -r dist server.js package.json package-lock.json deploy_front/
-cd deploy_front
-npm install --omit=dev
-zip -r ../frontend.zip .
-cd ..
-rm -rf deploy_front
-```
-
-Windows
-
-```pwsh
-mkdir deploy_front
-Copy-Item -Recurse dist, server.js, package.json, package-lock.json -Destination deploy_front
-Set-Location deploy_front
-npm install --omit=dev
-Compress-Archive -Path * -DestinationPath ../frontend.zip -Force
-Set-Location ..
-Remove-Item deploy_front -Recurse -Force
-```
-
-### 4.3 Déploiement sur Azure App Service
-
-Déployez le frontend sur son App Service :
-
-Mac/windows
-```bash
-az webapp deploy \
-  --resource-group <nom-du-groupe-de-ressources> \
-  --name <nom-de-l-app-service-frontend> \
-  --src-path frontend.zip \
-  --type zip
-```
-
-### 4.4 Configuration CORS
-
-Configurez CORS sur le backend pour autoriser les requêtes depuis le frontend :
-
-Mac/ windows
-```bash
-az webapp cors add \
-  --resource-group <nom-du-groupe-de-ressources> \
-  --name <nom-de-l-app-service-backend> \
-  --allowed-origins "<url-du-frontend>"
-```
+7. **Durcissement des en-tetes HTTP** :
+   - `helmet()` est active sur toutes les reponses Express.
+   - Le frontend Vercel injecte les en-tetes `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` et `Referrer-Policy: strict-origin-when-cross-origin`.
 
 ---
 
-## Vérification du déploiement
+## Feuille de route (Roadmap)
 
-Une fois toutes les étapes terminées, vous pouvez vérifier que tout fonctionne :
+### Fonctionnalites prevues
+- [ ] Notifications push PWA pour les alertes de peremption avant echeance.
+- [ ] Partage collaboratif d'un meme refrigerateur entre membres d'un foyer.
+- [ ] Mode hors-ligne PWA complet avec synchronisation des recettes en arriere-plan.
+- [ ] Export et import complet des donnees personnelles sous format JSON/CSV.
+- [ ] Possibilite de suppression definitive de compte depuis l'interface de profil.
+- [ ] Systeme de notation communautaire et commentaires sur les recettes.
+- [ ] Theme sombre natif (Dark Mode) base sur les variables CSS Tailwind.
 
-1. **Backend** : Accédez à `https://<backend-url>/api/health` - vous devriez voir un statut "OK"
-2. **Frontend** : Accédez à `https://<frontend-url>` - l'application devrait se charger
-3. **Base de données** : Les migrations Prisma ont créé toutes les tables nécessaires
-
----
-
-## Features à ajouter/corriger
-
-### Fonctionnalités à implémenter
-
-- [ ] Amélioration du système de notifications pour les dates d'expiration
-- [ ] Ajouter l'option d'Export/Import des données utilisateur & option supression compte
-- [ ] Partage de recettes entre utilisateurs
-- [ ] Mode hors-ligne pour la consultation des recettes
-- [ ] Génération de liste de courses automatique basée sur les recettes favorites
-- [ ] Historique des recettes préparées
-- [ ] Système de notation et commentaires sur les recettes
-- [ ] Mode sombre
-
-### Corrections et améliorations
-
-- [ ] Optimisation des performances de recherche d'ingrédients (via openfoodfact)
-- [ ] Gestion des erreurs plus robuste côté frontend
-- [ ] Tests unitaires et d'intégration
-- [ ] Régler le petit soucis de connexion où on doit s'y prendre à 2 reprises
-
----
-
-## Annexe photo
-
-### Captures d'écran de l'application
-
-> **Note** : Les captures d'écran seront ajoutées ici pour illustrer les différentes fonctionnalités de l'application.
-
-#### Dashboard
-
-- Vue d'ensemble avec statistiques et recettes recommandées
-
-![CleanShot 2025-11-26 at 07 58 48](https://github.com/user-attachments/assets/c883bffc-6c89-4396-9fcc-1fc6bb966fd6)
-
-
-#### Gestion du frigo
-
-- Liste des ingrédients avec dates d'expiration
-
-<img width="2880" height="1369" alt="CleanShot 2025-11-24 at 23 47 10@2x" src="https://github.com/user-attachments/assets/6afa3a67-ffb9-46e1-9a47-98a7a4f16a85" />
-
-
-- Modal d'ajout d'ingrédient avec recherche OpenFoodFacts
-
-![CleanShot 2025-11-24 at 23 44 23](https://github.com/user-attachments/assets/ed8d22fc-c74b-4fe8-a801-0e7d554c306b)
-
-
-- Scanner de ticket de caisse
-
-![CleanShot 2025-11-24 at 23 50 29](https://github.com/user-attachments/assets/b3d06cb6-7587-4d33-a161-699419610f10)
-
-
-#### Recettes
-
-- Liste des recettes avec filtres
-
-![CleanShot 2025-11-26 at 07 55 13](https://github.com/user-attachments/assets/c1dfb27d-64bd-4040-b3c1-c4128849362b)
-
-
-- Détail d'une recette avec ingrédients et instructions
-
-![CleanShot 2025-11-25 at 12 05 02](https://github.com/user-attachments/assets/a7db47b2-d4e1-49ea-82c6-487feffb5047)
-
-
-- Modal de génération de recette par IA
-
-![CleanShot 2025-11-25 at 11 58 52](https://github.com/user-attachments/assets/416b8046-b69d-4963-8ecd-9b1634417805)
-
-
-- Modal de création manuelle de recette
-
-![CleanShot 2025-11-26 at 07 47 30](https://github.com/user-attachments/assets/3467058b-4197-4ff8-925d-249509f33da7)
-
-
-
-#### Listes de courses
-
-- Gestion des listes de courses
-
-![CleanShot 2025-11-25 at 12 03 15](https://github.com/user-attachments/assets/b091664f-151d-4d69-8fea-cdd7f86d515b)
-
-
-- Ajout d'ingrédients manquants depuis une recette
-
-![CleanShot 2025-11-25 at 12 00 46](https://github.com/user-attachments/assets/ea855fe7-8bea-4b6d-b638-9ab55bc1b982)
-
-
-#### Profil utilisateur
-
-- Modification des informations personnelles
-
-![CleanShot 2025-11-26 at 07 53 04](https://github.com/user-attachments/assets/dc12069e-e770-4f23-a2b2-e0fb4e2f1191)
-
-
-- Configuration de la clé API Gemini
-
-<img width="2880" height="1366" alt="CleanShot 2025-11-26 at 07 53 45@2x" src="https://github.com/user-attachments/assets/5790d643-d11b-4d0b-99d8-10e0e880f180" />
+### Chantiers d'optimisation
+- [ ] Mise en cache avancee des requetes de recherche OpenFoodFacts pour soulager l'API distante.
+- [ ] Couverture de tests unitaires et de tests d'integration automatises (Vitest / Jest / Supertest).
+- [ ] Optimisation de la resilience aux demarrages a froid des plateformes d'hebergement gratuites.
